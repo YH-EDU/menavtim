@@ -1,7 +1,6 @@
 import React from 'react';
 import { nav } from '../App';
 import { HeroBg } from '../ui/PageShell';
-import { SiteCredit } from '../ui/Feedback';
 
 export default function Landing() {
   return (
@@ -50,11 +49,8 @@ export default function Landing() {
           </button>
         </div>
         <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 40, textShadow: '0 1px 6px rgba(0,0,0,0.35)' }}>
-          מבוסס על מנוע המשחקים של חפציה בן ארצי · חולמים תקשוב
+          מבוסס על מנוע המשחקים של חפציה בן ארצי
         </p>
-        <div style={{ position: 'absolute', bottom: 16, right: 16, left: 16, display: 'flex', justifyContent: 'flex-end' }}>
-          <SiteCredit light />
-        </div>
       </div>
     </HeroBg>
   );

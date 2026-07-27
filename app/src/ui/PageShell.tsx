@@ -2,13 +2,13 @@ import React from 'react';
 
 /** רקעים רכים לעמודי תוכן — מתחלפים לפי מפתח */
 export const SOFT_BGS = [
-  '/aramit/bg-pages.webp',
-  '/aramit/bg-soft-circle.webp',
-  '/aramit/bg-soft-meadow.webp',
-  '/aramit/bg-soft-blossom.webp',
-  '/aramit/bg-soft-sunset.webp',
-  '/aramit/bg-cottage.webp',
-  '/aramit/bg-join.webp',
+  '/lomdim-aramit/bg-pages.webp',
+  '/lomdim-aramit/bg-soft-circle.webp',
+  '/lomdim-aramit/bg-soft-meadow.webp',
+  '/lomdim-aramit/bg-soft-blossom.webp',
+  '/lomdim-aramit/bg-soft-sunset.webp',
+  '/lomdim-aramit/bg-cottage.webp',
+  '/lomdim-aramit/bg-join.webp',
 ] as const;
 
 export function pickSoftBg(seed = ''): string {

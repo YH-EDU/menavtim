@@ -60,7 +60,7 @@ function TeacherAuth({ onAuth }: { onAuth: (t: TeacherSession) => void }) {
   };
 
   return (
-    <HeroBg image="/aramit/bg-cottage.webp" overlay="linear-gradient(170deg, rgba(30,41,59,0.72) 0%, rgba(51,65,85,0.65) 100%)">
+    <HeroBg image="/lomdim-aramit/bg-cottage.webp" overlay="linear-gradient(170deg, rgba(30,41,59,0.72) 0%, rgba(51,65,85,0.65) 100%)">
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <form className="card pop-in" onSubmit={submit} style={{ width: '100%', maxWidth: 400, background: 'rgba(255,255,255,0.95)' }}>
         <div style={{ textAlign: 'center' }}>

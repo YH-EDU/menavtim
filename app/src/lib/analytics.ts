@@ -10,7 +10,7 @@ declare global {
 /** שולח צפיית עמוד וירטואלית עבור מסך ה-SPA הנוכחי */
 export function trackPage(hash: string): void {
   if (typeof window.gtag !== 'function') return;
-  const path = '/aramit/' + (hash.replace(/^#/, '') || '/');
+  const path = '/lomdim-aramit/' + (hash.replace(/^#/, '') || '/');
   window.gtag('event', 'page_view', {
     page_path: path,
     page_location: window.location.origin + window.location.pathname + hash,

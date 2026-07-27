@@ -2,11 +2,11 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  base: '/aramit/',
+  base: '/lomdim-aramit/',
   plugins: [react()],
   server: {
     proxy: {
-      '/aramit/api': {
+      '/lomdim-aramit/api': {
         target: 'http://localhost:8090',
         rewrite: (p) => p.replace(/^\/aramit\/api/, '/api'),
       },

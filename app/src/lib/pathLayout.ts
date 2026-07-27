@@ -2,8 +2,8 @@ import { UNITS } from '../data/units';
 
 export interface Pt { x: number; y: number }
 
-export const BG = '/aramit/bg-journey.webp';
-export const BG_TINY = '/aramit/bg-journey-tiny.webp';
+export const BG = '/lomdim-aramit/bg-journey.webp';
+export const BG_TINY = '/lomdim-aramit/bg-journey-tiny.webp';
 export const BG_RATIO = 2413 / 1200;
 export const UNIT_COLORS = ['#0d9488', '#f59e0b', '#8b5cf6', '#e05252', '#3b82f6', '#ec4899', '#16a34a'];
 

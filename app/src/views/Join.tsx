@@ -47,7 +47,7 @@ export default function Join({
   };
 
   return (
-    <HeroBg image="/aramit/bg-join.webp" overlay="linear-gradient(170deg, rgba(19,60,50,0.55) 0%, rgba(15,80,70,0.5) 100%)">
+    <HeroBg image="/lomdim-aramit/bg-join.webp" overlay="linear-gradient(170deg, rgba(19,60,50,0.55) 0%, rgba(15,80,70,0.5) 100%)">
     <div
       style={{
         minHeight: '100vh',

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LETTERS } from '../data/letters';
+import { LETTERS, vocalize } from '../data/letters';
 import type { StudentSession, ProgressData } from '../lib/api';
 import { masteryFrom, masteryColor, masteryLabel } from '../lib/mastery';
 import { nav } from '../App';
@@ -42,7 +42,7 @@ export default function ProgressView({
                 borderTop: `6px solid ${masteryColor(m)}`,
               }}
             >
-              <div className="phrase-font" style={{ fontSize: l.ch.length > 6 ? 16 : 22 }}>{l.ch}</div>
+              <div className="phrase-font" style={{ fontSize: l.ch.length > 6 ? 17 : 23 }}>{l.voc ?? l.ch}</div>
               <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 2 }}>{l.name}</div>
               <div
                 style={{

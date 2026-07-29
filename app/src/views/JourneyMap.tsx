@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { UNITS } from '../data/units';
+import { vocalize } from '../data/letters';
 import { setGuestFreeNav, type StudentSession, type ProgressData } from '../lib/api';
 import { unitDoneCount, unitUnlocked, unitCompleted, overallPercent, allCompleted } from '../lib/progressUtil';
 import { soundEnabled, toggleSound } from '../lib/sound';
@@ -314,7 +315,7 @@ export default function JourneyMap({
                   <h3 style={{ fontSize: 19 }}>{i + 1}. {unit.title}</h3>
                   {unit.newLetters.length > 0 && unit.newLetters.length <= 4 && (
                     <span className="phrase-font" style={{ color: 'var(--teal)', fontSize: 22 }}>
-                      {unit.newLetters.join(' ')}
+                      {unit.newLetters.map(vocalize).join(' ')}
                     </span>
                   )}
                 </div>

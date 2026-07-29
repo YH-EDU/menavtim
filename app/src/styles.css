@@ -121,6 +121,46 @@ h1, h2, h3 { margin: 0; }
 }
 .float-up { animation: float-up 0.4s ease both; }
 
+/* מורפינג אות: היפוך קצר כשהאות מתחלפת */
+@keyframes morph-pop {
+  0% { transform: rotateY(0deg) scale(1); }
+  45% { transform: rotateY(90deg) scale(1.12); }
+  100% { transform: rotateY(0deg) scale(1); }
+}
+.morph-pop { animation: morph-pop 0.42s ease both; }
+
+/* סליידר חשיפת התרגום בסיפור */
+.gloss-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--green-soft), #eef2f7);
+  border: 2px solid #e2e8f0;
+  outline: none;
+  cursor: pointer;
+}
+.gloss-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--teal);
+  border: 3px solid #fff;
+  box-shadow: var(--shadow-lg);
+  cursor: grab;
+}
+.gloss-slider::-moz-range-thumb {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--teal);
+  border: 3px solid #fff;
+  box-shadow: var(--shadow-lg);
+  cursor: grab;
+}
+
 .trail-h-scroll {
   scrollbar-width: none;
   -ms-overflow-style: none;

@@ -18,6 +18,13 @@ const TYPE_COLORS: Record<string, string> = {
   order: '#16a34a',
   paint: '#e05252',
   quiz: '#d97706',
+  fillblank: '#0ea5e9',
+  mixed: '#7c3aed',
+  morph: '#f97316',
+  discover: '#0d9488',
+  annotate: '#dc2626',
+  truefalse: '#c026d3',
+  builder: '#0284c7',
 };
 
 export default function UnitView({
@@ -64,7 +71,7 @@ export default function UnitView({
               const info = LETTERS.find((x) => x.ch === l);
               return (
               <div key={l} className="card" style={{ padding: '10px 16px', display: 'flex', gap: 10, alignItems: 'baseline' }}>
-                <span className="phrase-font" style={{ fontSize: l.length > 4 ? 18 : 26, color: 'var(--teal-dark)' }}>{l}</span>
+                <span className="phrase-font" style={{ fontSize: l.length > 4 ? 19 : 26, color: 'var(--teal-dark)' }}>{info?.voc ?? l}</span>
                 <span style={{ fontSize: 15, color: 'var(--ink-soft)' }}>=</span>
                 <span style={{ fontSize: 18, fontWeight: 700 }}>{info?.name ?? l}</span>
               </div>

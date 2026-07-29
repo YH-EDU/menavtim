@@ -4,8 +4,13 @@ import { addLetterEvent } from '../lib/mastery';
 import { uniqueLetters } from '../data/letters';
 import { playCorrect, playWrong } from '../lib/sound';
 
-// התאמה: בוחרים מילה אחת ומניחים על המתאימה לה.
-// עובד בלחיצה-לחיצה (נוח גם למגע וגם לעכבר).
+// התאמה בשני טורים מקבילים: ארמית מימין, עברית משמאל.
+// אין סדר לחיצות — אפשר להתחיל מכל צד.
+// זוג שהותאם נכון מחליק אל אותה שורה בשני הטורים, כך שהקלפים נעמדים זה מול זה.
+
+const ROW_H = 56;
+const GAP = 10;
+const STEP = ROW_H + GAP;
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -16,6 +21,8 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+type Side = 'aramaic' | 'hebrew';
+
 export default function Match({
   activity,
   onFinish,
@@ -23,97 +30,123 @@ export default function Match({
   activity: MatchActivity;
   onFinish: (r: ActivityResult) => void;
 }) {
-  const shuffled = useMemo(() => shuffle(activity.pairs.map((p, i) => ({ ...p, i }))), [activity]);
-  const [selected, setSelected] = useState<number | null>(null); // index of source word
-  const [placed, setPlaced] = useState<Set<number>>(new Set());
-  const [mistakes, setMistakes] = useState(0);
-  const [events] = useState<LetterEvents>({});
-  const [wrongTarget, setWrongTarget] = useState<number | null>(null);
+  const pairs = activity.pairs;
+  const baseRight = useMemo(() => shuffle(pairs.map((_, i) => i)), [activity]);
+  const baseLeft = useMemo(() => shuffle(pairs.map((_, i) => i)), [activity]);
 
-  const tryPlace = (targetIdx: number) => {
-    if (selected === null || placed.has(targetIdx)) return;
-    if (selected === targetIdx) {
+  const [selected, setSelected] = useState<{ side: Side; i: number } | null>(null);
+  const [matched, setMatched] = useState<number[]>([]);
+  const [mistakes, setMistakes] = useState(0);
+  const [wrong, setWrong] = useState<{ side: Side; i: number } | null>(null);
+  const [events] = useState<LetterEvents>({});
+
+  const isMatched = (i: number) => matched.includes(i);
+
+  // הזוגות שהותאמו עולים לראש שני הטורים, באותו סדר — ולכן נעמדים זה מול זה
+  const rowOf = (base: number[], i: number) => {
+    const rest = base.filter((k) => !matched.includes(k));
+    return matched.includes(i) ? matched.indexOf(i) : matched.length + rest.indexOf(i);
+  };
+
+  const settle = (i: number, ok: boolean, side: Side) => {
+    if (ok) {
       playCorrect();
-      const np = new Set(placed).add(targetIdx);
-      setPlaced(np);
-      uniqueLetters(activity.pairs[targetIdx].rashi).forEach((l) => addLetterEvent(events, l, true));
+      uniqueLetters(pairs[i].rashi).forEach((l) => addLetterEvent(events, l, true));
+      const next = [...matched, i];
+      setMatched(next);
       setSelected(null);
-      if (np.size === activity.pairs.length) {
-        const max = activity.pairs.length;
-        const score = Math.max(1, max - mistakes);
-        setTimeout(() => onFinish({ score, max, letters: events }), 600);
+      if (next.length === pairs.length) {
+        const max = pairs.length;
+        setTimeout(() => onFinish({ score: Math.max(1, max - mistakes), max, letters: events }), 1000);
       }
     } else {
       playWrong();
       setMistakes((m) => m + 1);
-      uniqueLetters(activity.pairs[targetIdx].rashi).forEach((l) => addLetterEvent(events, l, false));
-      setWrongTarget(targetIdx);
-      setTimeout(() => setWrongTarget(null), 450);
+      uniqueLetters(pairs[i].rashi).forEach((l) => addLetterEvent(events, l, false));
+      setWrong({ side, i });
+      setTimeout(() => setWrong(null), 450);
     }
   };
 
+  const tap = (side: Side, i: number) => {
+    if (isMatched(i)) return;
+    if (!selected || selected.side === side) {
+      setSelected(selected && selected.side === side && selected.i === i ? null : { side, i });
+      return;
+    }
+    settle(i, selected.i === i, side);
+  };
+
+  const card = (side: Side, i: number) => {
+    const done = isMatched(i);
+    const active = selected?.side === side && selected.i === i;
+    const bad = wrong?.side === side && wrong.i === i;
+    const aramaic = side === 'aramaic';
+    const text = aramaic ? pairs[i].rashi : pairs[i].label ?? pairs[i].rashi;
+    return (
+      <button
+        key={i}
+        onClick={() => tap(side, i)}
+        className={`${aramaic ? 'phrase-font ' : ''}${bad ? 'shake' : ''}`}
+        disabled={done}
+        style={{
+          position: 'absolute',
+          insetInline: 0,
+          top: rowOf(aramaic ? baseRight : baseLeft, i) * STEP,
+          height: ROW_H,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '0 10px',
+          borderRadius: 14,
+          fontSize: aramaic ? 22 : 18,
+          fontWeight: 700,
+          lineHeight: 1.2,
+          background: done
+            ? 'var(--green-soft)'
+            : bad
+            ? 'var(--red-soft)'
+            : active
+            ? 'var(--teal)'
+            : 'linear-gradient(160deg,#fffdf5,#fdf6e3)',
+          color: done ? 'var(--green)' : active ? '#fff' : 'var(--ink)',
+          border: `2px solid ${done ? 'var(--green)' : bad ? 'var(--red)' : active ? 'var(--teal-dark)' : '#e7d9b0'}`,
+          boxShadow: active ? '0 6px 16px rgba(13,148,136,0.28)' : '0 2px 6px rgba(0,0,0,0.06)',
+          cursor: done ? 'default' : 'pointer',
+          transition: 'top 0.5s cubic-bezier(0.22,1,0.36,1), background 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.15s',
+          transform: active ? 'scale(1.04)' : 'none',
+          zIndex: active ? 2 : 1,
+        }}
+      >
+        {text}
+      </button>
+    );
+  };
+
+  const colHeight = pairs.length * STEP - GAP;
+
   return (
     <div>
-      <p style={{ textAlign: 'center', color: 'var(--ink-soft)', fontSize: 15 }}>
-        לחצו על מילה למעלה, ואז על ההתאמה שלה למטה
+      <p style={{ textAlign: 'center', color: 'var(--ink-soft)', fontSize: 15, marginBottom: 18 }}>
+        לחצו על קלף בטור אחד ואז על הקלף שמתאים לו בטור השני — לא משנה מאיזה צד תתחילו
       </p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginBottom: 24 }}>
-        {shuffled.map((p) =>
-          placed.has(p.i) ? null : (
-            <button
-              key={p.i}
-              onClick={() => setSelected(selected === p.i ? null : p.i)}
-              style={{
-                padding: '10px 20px',
-                borderRadius: 12,
-                fontSize: 19,
-                fontWeight: 700,
-                background: selected === p.i ? 'var(--teal)' : '#fff',
-                color: selected === p.i ? '#fff' : 'var(--ink)',
-                border: `2px solid ${selected === p.i ? 'var(--teal)' : '#e2e8f0'}`,
-                transition: 'all 0.15s',
-                transform: selected === p.i ? 'scale(1.07)' : 'none',
-              }}
-            >
-              {p.label ?? p.rashi}
-            </button>
-          )
-        )}
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 480, margin: '0 auto' }}>
-        {activity.pairs.map((p, i) => {
-          const isDone = placed.has(i);
-          return (
-            <button
-              key={i}
-              onClick={() => tryPlace(i)}
-              className={`phrase-font ${wrongTarget === i ? 'shake' : ''}`}
-              disabled={isDone}
-              style={{
-                padding: '12px 18px',
-                borderRadius: 14,
-                fontSize: 24,
-                fontWeight: 700,
-                textAlign: 'center',
-                background: isDone ? 'var(--green-soft)' : wrongTarget === i ? 'var(--red-soft)' : 'linear-gradient(160deg,#fffdf5,#fdf6e3)',
-                border: `2px solid ${isDone ? 'var(--green)' : '#e7d9b0'}`,
-                cursor: isDone ? 'default' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 14,
-                transition: 'all 0.2s',
-              }}
-            >
-              <span>{p.rashi}</span>
-              {isDone && (
-                <span style={{ fontFamily: 'Heebo', fontSize: 18, fontWeight: 700, color: 'var(--green)' }}>
-                  = {p.label ?? p.rashi} ✓
-                </span>
-              )}
-            </button>
-          );
-        })}
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 16,
+          maxWidth: 520,
+          margin: '0 auto',
+          direction: 'rtl',
+        }}
+      >
+        <div style={{ position: 'relative', height: colHeight }}>
+          {pairs.map((_, i) => card('aramaic', i))}
+        </div>
+        <div style={{ position: 'relative', height: colHeight }}>
+          {pairs.map((_, i) => card('hebrew', i))}
+        </div>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { QuizActivity, ActivityResult, LetterEvents } from '../data/types';
 import { addTextEvents, addLetterEvent } from '../lib/mastery';
 import { uniqueLetters } from '../data/letters';
-import { ProgressDots, PhraseCard } from './ui';
+import { ProgressDots, PhraseCard, MixedText } from './ui';
 import { playCorrect, playWrong } from '../lib/sound';
 
 export default function Quiz({
@@ -46,7 +46,9 @@ export default function Quiz({
   return (
     <div style={{ textAlign: 'center' }}>
       <ProgressDots total={activity.questions.length} done={idx} />
-      <p style={{ fontSize: 18, fontWeight: 500 }}>{q.prompt}</p>
+      <p style={{ fontWeight: 500, margin: '30px 0 16px' }}>
+        <MixedText text={q.prompt} highlight={q.highlight} reveal={chosen !== null} fontSize={22} />
+      </p>
       {q.rashiText && (
         <div key={idx} style={{ display: 'flex', justifyContent: 'center', margin: '14px 0 22px' }}>
           <PhraseCard text={q.rashiText} size={q.rashiText.length > 6 ? 40 : 58} />

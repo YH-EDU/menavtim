@@ -50,6 +50,14 @@ export const ListIcon = make(<><line x1="8" y1="6" x2="21" y2="6" /><line x1="8"
 export const TypeIcon = make(<><polyline points="4 7 4 4 20 4 20 7" /><line x1="9" y1="20" x2="15" y2="20" /><line x1="12" y1="4" x2="12" y2="20" /></>);
 export const School = make(<><path d="M14 22v-4a2 2 0 1 0-4 0v4" /><path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2" /><path d="M18 5v17" /><path d="m4 6 8-4 8 4" /><path d="M6 5v17" /><circle cx="12" cy="9" r="2" /></>);
 export const StarIcon = make(<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />);
+export const Blank = make(<><path d="M2 12h4" /><path d="M18 12h4" /><rect x="8" y="8" width="8" height="8" rx="2" strokeDasharray="3 3" /></>);
+export const Shuffle = make(<><path d="M16 3h5v5" /><path d="M4 20 21 3" /><path d="M21 16v5h-5" /><path d="m15 15 6 6" /><path d="m3 4 5 5" /></>);
+export const Sparkles = make(<><path d="M12 3v4" /><path d="M12 17v4" /><path d="M3 12h4" /><path d="M17 12h4" /><path d="m6.3 6.3 2.8 2.8" /><path d="m14.9 14.9 2.8 2.8" /><path d="m17.7 6.3-2.8 2.8" /><path d="m9.1 14.9-2.8 2.8" /></>);
+export const Target = make(<><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" /></>);
+export const Timer = make(<><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 2" /><path d="M9 2h6" /></>);
+export const Blocks = make(<><rect x="3" y="9" width="7" height="6" rx="1.5" /><rect x="14" y="9" width="7" height="6" rx="1.5" /><path d="M10 12h4" /></>);
+export const Tag = make(<><rect x="3" y="3.5" width="18" height="7" rx="2" /><path d="M8 10.5v3" /><path d="M16 10.5v3" /><path d="M4 20.5h16" /><path d="M8 17.5h8" /></>);
+export const Morph = make(<><path d="M21 8a9 9 0 0 0-15.5-4.5L3 6" /><path d="M3 3v3h3" /><path d="M3 16a9 9 0 0 0 15.5 4.5L21 18" /><path d="M21 21v-3h-3" /></>);
 export const Trophy = make(<><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></>);
 
 /** כוכב מלא/ריק לציוני פעילות */
@@ -104,4 +112,11 @@ export const ACTIVITY_ICONS: Record<string, ReturnType<typeof make>> = {
   order: ListOrdered,
   paint: Palette,
   quiz: HelpCircle,
+  fillblank: Blank,
+  mixed: Shuffle,
+  morph: Morph,
+  discover: Sparkles,
+  annotate: Tag,
+  truefalse: Timer,
+  builder: Blocks,
 };

@@ -6,6 +6,9 @@ import {
   type TeacherSession, type ClassInfo, type HeatmapStudent,
 } from '../lib/api';
 import { LETTERS } from '../data/letters';
+
+/** מפת החום מציגה רק מילים שיש בהן מה ללמוד — לא את הזהות לעברית */
+const HEAT_COLS = LETTERS.filter((l) => !l.same);
 import { masteryFrom, masteryColor, masteryLabel } from '../lib/mastery';
 import { totalActivities } from '../data/units';
 import { nav } from '../App';
@@ -360,10 +363,10 @@ function Heatmap({ teacher, cls }: { teacher: TeacherSession; cls: ClassInfo }) 
         <thead>
           <tr>
             <th style={{ textAlign: 'right', fontSize: 13, color: 'var(--ink-soft)', minWidth: 110 }}>תלמיד/ה</th>
-            {LETTERS.map((l) => (
+            {HEAT_COLS.map((l) => (
               <th key={l.ch} style={{ fontSize: 15, fontWeight: 400, padding: '0 1px' }}>
-                <div>{l.ch}</div>
-                <div className="phrase-font" style={{ fontSize: 17, color: 'var(--ink-soft)' }}>{l.ch}</div>
+                <div className="phrase-font" style={{ fontSize: 16 }}>{l.voc ?? l.ch}</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{l.name}</div>
               </th>
             ))}
             <th style={{ fontSize: 12, color: 'var(--ink-soft)' }}>פעילויות</th>
@@ -372,7 +375,7 @@ function Heatmap({ teacher, cls }: { teacher: TeacherSession; cls: ClassInfo }) 
         <tbody>
           <tr>
             <td style={{ fontWeight: 900, fontSize: 13.5, color: 'var(--teal-dark)' }}>כל הכיתה</td>
-            {LETTERS.map((l) => cell(classAvg[l.ch], `avg-${l.ch}`))}
+            {HEAT_COLS.map((l) => cell(classAvg[l.ch], `avg-${l.ch}`))}
             <td />
           </tr>
           {students.map((s) => (
@@ -380,7 +383,7 @@ function Heatmap({ teacher, cls }: { teacher: TeacherSession; cls: ClassInfo }) 
               <td style={{ fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap' }}>
                 {s.emoji} {s.nickname}
               </td>
-              {LETTERS.map((l) => cell(s.letters[l.ch], `${s.id}-${l.ch}`))}
+              {HEAT_COLS.map((l) => cell(s.letters[l.ch], `${s.id}-${l.ch}`))}
               <td style={{ textAlign: 'center', fontSize: 13, color: 'var(--ink-soft)' }}>
                 {s.activitiesDone}/{totalActivities()}
               </td>
@@ -395,12 +398,12 @@ function Heatmap({ teacher, cls }: { teacher: TeacherSession; cls: ClassInfo }) 
             {drill.activitiesDone} פעילויות הושלמו · נראה לאחרונה: {drill.lastSeen ? new Date(drill.lastSeen + 'Z').toLocaleString('he-IL') : '—'}
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {LETTERS.filter((l) => {
+            {HEAT_COLS.filter((l) => {
               const st = drill.letters[l.ch];
               return st && masteryFrom(st.c, st.w) < 55;
             }).map((l) => (
               <span key={l.ch} style={{ background: 'var(--red-soft)', color: 'var(--red)', borderRadius: 999, padding: '3px 12px', fontSize: 14, fontWeight: 700 }}>
-                {l.ch} — {l.name}
+                {l.voc ?? l.ch} — {l.name}
               </span>
             ))}
           </div>

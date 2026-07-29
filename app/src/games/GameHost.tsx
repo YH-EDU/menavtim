@@ -10,6 +10,13 @@ import Memory from './Memory';
 import Story from './Story';
 import Order from './Order';
 import Paint from './Paint';
+import FillInBlank from './FillInBlank';
+import MixedQuestion from './MixedQuestion';
+import Morphing from './Morphing';
+import Discover from './Discover';
+import Annotate from './Annotate';
+import TrueFalse from './TrueFalse';
+import SentenceBuilder from './SentenceBuilder';
 import { Stars, starsFor } from './ui';
 import { playWin } from '../lib/sound';
 
@@ -66,6 +73,13 @@ export default function GameHost({
       case 'story': return <Story activity={activity} onFinish={finish} />;
       case 'order': return <Order activity={activity} onFinish={finish} />;
       case 'paint': return <Paint activity={activity} onFinish={finish} />;
+      case 'fillblank': return <FillInBlank activity={activity} onFinish={finish} />;
+      case 'mixed': return <MixedQuestion activity={activity} onFinish={finish} />;
+      case 'morph': return <Morphing activity={activity} onFinish={finish} />;
+      case 'discover': return <Discover activity={activity} onFinish={finish} />;
+      case 'annotate': return <Annotate activity={activity} onFinish={finish} />;
+      case 'truefalse': return <TrueFalse activity={activity} onFinish={finish} />;
+      case 'builder': return <SentenceBuilder activity={activity} onFinish={finish} />;
     }
   };
 

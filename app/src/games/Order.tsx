@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import type { OrderActivity, ActivityResult, LetterEvents } from '../data/types';
 import { addLetterEvent } from '../lib/mastery';
+import { stripPunct } from '../data/letters';
 import { playCorrect, playWrong } from '../lib/sound';
 
 // סידור לפי סדר נתון: לוחצים על הפריטים לפי הסדר הנכון.
@@ -32,7 +33,7 @@ export default function Order({
     const expected = activity.items[nextIdx];
     if (ch === expected) {
       playCorrect();
-      addLetterEvent(events, ch, !erredThis ? true : false);
+      addLetterEvent(events, stripPunct(ch), !erredThis ? true : false);
       if (!erredThis) setFirstTry((f) => f + 1);
       setErredThis(false);
       const n = nextIdx + 1;
@@ -45,7 +46,7 @@ export default function Order({
       }
     } else {
       playWrong();
-      addLetterEvent(events, ch, false);
+      addLetterEvent(events, stripPunct(ch), false);
       setErredThis(true);
       setWrongCh(ch);
       setTimeout(() => setWrongCh(null), 400);
@@ -54,12 +55,22 @@ export default function Order({
 
   const placed = activity.items.slice(0, nextIdx);
   const remaining = pool.filter((ch) => !placed.includes(ch));
+  const showNext = activity.showNext !== false;
 
   return (
     <div style={{ textAlign: 'center' }}>
-      <p style={{ fontWeight: 700, fontSize: 17 }}>
-        הבא בתור: <span style={{ color: 'var(--teal)', fontSize: 22 }}>{nextIdx < activity.items.length ? activity.items[nextIdx] : '🎉'}</span>
-      </p>
+      {showNext ? (
+        <p style={{ fontWeight: 700, fontSize: 17 }}>
+          הבא בתור: <span style={{ color: 'var(--teal)', fontSize: 22 }}>{nextIdx < activity.items.length ? activity.items[nextIdx] : '🎉'}</span>
+        </p>
+      ) : (
+        <p style={{ fontWeight: 700, fontSize: 17 }}>
+          {activity.goal ?? 'סדרו לפי הסדר הנכון'}
+          <span style={{ color: 'var(--teal)', marginRight: 10 }}>
+            {nextIdx}/{activity.items.length}
+          </span>
+        </p>
+      )}
       {/* השורה המסודרת */}
       <div
         style={{
@@ -79,22 +90,23 @@ export default function Order({
         {placed.map((ch) => (
           <span
             key={ch}
-            className="phrase-font pop-in"
+            className="pop-in"
             style={{
               minWidth: 40,
-              height: 44,
-              padding: '0 8px',
+              padding: '3px 8px',
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 18,
-              fontWeight: 700,
               background: '#fff',
               borderRadius: 8,
               border: '2px solid var(--green)',
             }}
           >
-            {ch}
+            <span className="phrase-font" style={{ fontSize: 18, fontWeight: 700 }}>{ch}</span>
+            {activity.captions?.[ch] && (
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--green)' }}>{activity.captions[ch]}</span>
+            )}
           </span>
         ))}
         {placed.length === 0 && <span style={{ color: 'var(--ink-soft)', alignSelf: 'center' }}>כאן ייבנה הסדר שלכם...</span>}

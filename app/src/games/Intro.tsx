@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { IntroActivity, ActivityResult } from '../data/types';
-import { LETTERS } from '../data/letters';
+import { LETTERS, vocalize } from '../data/letters';
 import { playTap } from '../lib/sound';
 
 // כרטיסי היכרות: מילה בארמית, לחיצה חושפת תרגום + רמז
@@ -54,7 +54,7 @@ export default function Intro({
               {isFlipped ? (
                 <>
                   <span className="phrase-font" style={{ fontSize: ch.length > 4 ? 22 : 36, fontWeight: 800 }}>
-                    {ch}
+                    {vocalize(ch)}
                   </span>
                   <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--teal-dark)' }}>
                     = {info?.name ?? ch}
@@ -65,7 +65,7 @@ export default function Intro({
                 </>
               ) : (
                 <span className="phrase-font" style={{ fontSize: ch.length > 6 ? 22 : ch.length > 3 ? 32 : 48, fontWeight: 800 }}>
-                  {ch}
+                  {vocalize(ch)}
                 </span>
               )}
             </button>

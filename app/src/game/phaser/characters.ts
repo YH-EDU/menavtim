@@ -1,9 +1,10 @@
 /** Character catalog — CC0 sprite packs with walk animations. */
 
+import { asset } from '../../lib/basePath';
 import { ASSET } from './keys';
 
 export const LS_AVATAR = 'aramit_avatar';
-export const AVATAR_BASE = '/menavtim/avatars';
+export const AVATAR_BASE = asset('/avatars').replace(/\/$/, '');
 
 export type CharacterId =
   | 'misa'

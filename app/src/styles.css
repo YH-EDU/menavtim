@@ -1,9 +1,4 @@
-@font-face {
-  font-family: 'Heebo';
-  src: url('/menavtim/fonts/heebo-var.woff2') format('woff2');
-  font-weight: 100 900;
-  font-display: swap;
-}
+/* Heebo loaded via index.html @font-face (respects Vite base path) */
 
 :root {
   --ink: #1e293b;

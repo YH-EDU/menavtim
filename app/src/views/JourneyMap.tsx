@@ -202,7 +202,7 @@ export default function JourneyMap({
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 6 }}>
         <div>
           <h1 style={{ fontSize: 26 }}>
-            שלום, {session.nickname} {session.emoji}!
+            {session.emoji} {session.nickname}
           </h1>
           <p style={{ color: 'var(--ink-soft)', margin: '2px 0 0', fontSize: 14 }}>
             {isTeacherPreview

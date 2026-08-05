@@ -1,8 +1,9 @@
 import { UNITS } from '../data/units';
+import { asset } from './basePath';
 import { boardSize, type Pt } from './pathLayout';
 
 /** תמונת רקע אחת — מסע רציף לעומק (1024×1536) */
-export const JOURNEY_BG = '/menavtim/bg-journey-continuous.jpg';
+export const JOURNEY_BG = asset('/bg-journey-continuous.jpg');
 export const JOURNEY_BG_RATIO = 1536 / 1024;
 
 export const JOURNEY_CONTINUOUS = {

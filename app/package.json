@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:netlify": "node scripts/build-netlify.mjs",
     "preview": "vite preview",
     "build:avatars": "node scripts/build-avatar-atlases.mjs",
-    "deploy": "npm run build && node scripts/deploy-gh-pages.mjs"
+    "deploy": "npm run build && node scripts/deploy-gh-pages.mjs",
+    "deploy:netlify": "node scripts/deploy-netlify.mjs"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.3",

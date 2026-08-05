@@ -8,6 +8,7 @@ import { LS_FLY_STARS } from './StarHud';
 import { nav } from '../App';
 import { SoftPageShell } from '../ui/PageShell';
 import { FeedbackButton } from '../ui/Feedback';
+import { asset } from '../lib/basePath';
 
 export default function PlayView({
   unitId,
@@ -42,7 +43,7 @@ export default function PlayView({
 
   return (
     <SoftPageShell
-      image="/menavtim-baaramit/bg-activity-maze.jpg"
+      image={asset('/bg-activity-maze.jpg')}
       opacity={0.44}
       overlay="rgba(248, 245, 238, 0.58)"
       seed={activity.id}

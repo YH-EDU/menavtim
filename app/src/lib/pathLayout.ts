@@ -2,7 +2,7 @@ import { UNITS } from '../data/units';
 
 export interface Pt { x: number; y: number }
 
-export const BG = '/menavtim-baaramit/bg-journey-continuous.jpg';
+export const BG = '/menavtim/bg-journey-continuous.jpg';
 /** גובה÷רוחב של תמונת המסע (1024×1536) */
 export const BG_RATIO = 1536 / 1024;
 export const UNIT_COLORS = [

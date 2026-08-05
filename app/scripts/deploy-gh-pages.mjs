@@ -65,7 +65,7 @@ fs.writeFileSync(path.join(WORKTREE, '.nojekyll'), '');
 run('git add -A', WORKTREE);
 const status = execSync('git status --porcelain', { cwd: WORKTREE, encoding: 'utf8' });
 if (status.trim()) {
-  run('git commit -m "Deploy menavtim-baaramit to GitHub Pages"', WORKTREE);
+  run('git commit -m "Deploy menavtim to GitHub Pages"', WORKTREE);
   run('git push origin gh-pages', WORKTREE);
   console.log('\n✓ Deployed to gh-pages');
 } else {

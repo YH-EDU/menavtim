@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { joinClass, guestSession, type StudentSession } from '../lib/api';
 import { nav } from '../App';
 import { HeroBg } from '../ui/PageShell';
+import { asset } from '../lib/basePath';
 import {
   CHARACTERS,
   getCharacterDef,
@@ -104,7 +105,7 @@ export default function Join({
   };
 
   return (
-    <HeroBg image="/menavtim-baaramit/bg-join.webp" overlay="linear-gradient(170deg, rgba(19,60,50,0.55) 0%, rgba(15,80,70,0.5) 100%)">
+    <HeroBg image={asset('/bg-join.webp')} overlay="linear-gradient(170deg, rgba(19,60,50,0.55) 0%, rgba(15,80,70,0.5) 100%)">
     <div
       style={{
         minHeight: '100vh',

@@ -57,6 +57,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private readonly arriveDist = 8;
   hasMoved = false;
   dpad = { up: false, down: false, left: false, right: false };
+  autoRun = false;
+  private runAngleRad = Math.PI / 2;
 
   private fireSprite: Phaser.GameObjects.Sprite | null = null;
   private fireSprite2: Phaser.GameObjects.Sprite | null = null;
@@ -204,10 +206,35 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   setMoveTarget(x: number, y: number) {
     this.moveTarget = new Phaser.Math.Vector2(x, y);
+    this.stopAutoRun();
   }
 
   clearMoveTarget() {
     this.moveTarget = null;
+  }
+
+  facingToAngle(): number {
+    switch (this.facing) {
+      case 'up': return -Math.PI / 2;
+      case 'down': return Math.PI / 2;
+      case 'left': return Math.PI;
+      case 'right': return 0;
+    }
+  }
+
+  startAutoRun(angleRad?: number) {
+    this.autoRun = true;
+    this.runAngleRad = angleRad ?? this.facingToAngle();
+    this.moveTarget = null;
+    this.hasMoved = true;
+  }
+
+  stopAutoRun() {
+    this.autoRun = false;
+  }
+
+  steerAutoRun(deltaRad: number) {
+    this.runAngleRad += deltaRad;
   }
 
   private keyDown(dir: Facing): boolean {
@@ -361,6 +388,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     clearWinKeys();
     this.dpad.up = this.dpad.down = this.dpad.left = this.dpad.right = false;
     this.clearMoveTarget();
+    this.stopAutoRun();
     this.body.setVelocity(0);
     this.setIdlePose();
   }
@@ -547,10 +575,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (kbActive) {
       this.moveTarget = null;
+      this.stopAutoRun();
       if (input.x < 0) body.setVelocityX(-WALK_SPEED);
       else if (input.x > 0) body.setVelocityX(WALK_SPEED);
       if (input.y < 0) body.setVelocityY(-WALK_SPEED);
       else if (input.y > 0) body.setVelocityY(WALK_SPEED);
+    } else if (this.autoRun) {
+      body.setVelocity(
+        Math.cos(this.runAngleRad) * WALK_SPEED,
+        Math.sin(this.runAngleRad) * WALK_SPEED,
+      );
     } else if (this.moveTarget) {
       const dx = this.moveTarget.x - this.x;
       const dy = this.moveTarget.y - this.y;

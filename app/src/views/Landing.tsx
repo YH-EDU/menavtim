@@ -1,6 +1,7 @@
 import React from 'react';
 import { nav } from '../App';
 import { HeroBg } from '../ui/PageShell';
+import { asset } from '../lib/basePath';
 import type { StudentSession } from '../lib/api';
 
 export default function Landing({
@@ -11,7 +12,7 @@ export default function Landing({
   onLogout?: (to?: string) => void;
 }) {
   return (
-    <HeroBg image="/menavtim-baaramit/bg-landing-maze.jpg">
+    <HeroBg image={asset('/bg-landing-maze.jpg')}>
       <div
         style={{
           minHeight: '100vh',

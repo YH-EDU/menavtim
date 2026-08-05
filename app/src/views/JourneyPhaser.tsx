@@ -150,7 +150,11 @@ export default function JourneyPhaser({
 
     const onResize = () => {
 
-      game.scale.resize(window.innerWidth, window.innerHeight);
+      const w = window.innerWidth;
+
+      const h = window.innerHeight;
+
+      game.scale.resize(w, h);
 
     };
 
@@ -266,11 +270,21 @@ export default function JourneyPhaser({
 
         width: '100vw',
 
-        height: '100vh',
+        height: '100dvh',
+
+        minHeight: '-webkit-fill-available',
 
         overflow: 'hidden',
 
         touchAction: 'none',
+
+        paddingTop: 'env(safe-area-inset-top)',
+
+        paddingRight: 'env(safe-area-inset-right)',
+
+        paddingBottom: 'env(safe-area-inset-bottom)',
+
+        paddingLeft: 'env(safe-area-inset-left)',
 
       }}
 

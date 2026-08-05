@@ -3,7 +3,7 @@ import type { LetterEvents } from '../data/types';
 // שכבת תקשורת: מול השרת (PHP) כשהתלמיד מחובר לכיתה,
 // ומצב "אורח" (localStorage בלבד) כשמתרגלים בלי קוד כיתה.
 
-const API = '/menavtim-baaramit/api';
+const API = '/menavtim/api';
 
 export interface StudentSession {
   token: string;       // 'guest' במצב אורח

@@ -59,6 +59,7 @@ interface StationZone {
 }
 
 const SPAWN_GRACE_MS = 1800;
+const IS_TOUCH = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
 export class MainScene extends Phaser.Scene {
   private player!: Player;
@@ -78,6 +79,12 @@ export class MainScene extends Phaser.Scene {
   private pathCells!: Set<string>;
   private lastValidPos = { x: 0, y: 0 };
   private journeyPath!: JourneyPath;
+  private dpadButtons: Phaser.GameObjects.Text[] = [];
+  private touchPointerId: number | null = null;
+  private touchStartX = 0;
+  private touchStartY = 0;
+  private touchStartTime = 0;
+  private touchLastX = 0;
 
   constructor() {
     super(SCENE.main);
@@ -152,7 +159,11 @@ export class MainScene extends Phaser.Scene {
 
     this.physics.world.setBounds(0, 0, WORLD.width, WORLD.height);
     this.cameras.main.setBounds(0, 0, WORLD.width, WORLD.height);
-    this.cameras.main.setZoom(1.55);
+    const vw = this.scale.width;
+    const zoom = IS_TOUCH
+      ? Phaser.Math.Clamp(vw / 340, 1.12, 1.48)
+      : Phaser.Math.Clamp(vw / 520, 1.35, 1.55);
+    this.cameras.main.setZoom(zoom);
 
     const stationPositions = PHASER_MISSIONS.map((m, idx) => ({
       activityId: m.activityId,
@@ -211,12 +222,20 @@ export class MainScene extends Phaser.Scene {
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       this.ensureKeyboardFocus();
+      if (IS_TOUCH) return;
       if (!this.progress.freeNav) return;
       const world = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
       this.player.setMoveTarget(world.x, world.y);
     });
 
     this.createDpad();
+    if (IS_TOUCH) this.setupTouchControls();
+    this.scale.on('resize', () => {
+      this.repositionDpad();
+      const w = this.scale.width;
+      const z = Phaser.Math.Clamp(w / 340, 1.12, 1.48);
+      this.cameras.main.setZoom(z);
+    });
     this.updateCurrentIdx();
     this.updateHint();
 
@@ -439,13 +458,24 @@ export class MainScene extends Phaser.Scene {
   }
 
   private createDpad() {
+    this.dpadButtons.forEach((b) => b.destroy());
+    this.dpadButtons = [];
+
+    const isTouch = IS_TOUCH;
+    const pad = isTouch ? 18 : 12;
+    const gap = isTouch ? 46 : 34;
+    const fontSize = isTouch ? '26px' : '20px';
+    const safeBottom = isTouch ? 24 : 12;
+    const cx = pad + gap;
+    const cy = this.scale.height - safeBottom - gap * 2;
+
     const mkBtn = (x: number, y: number, label: string, dir: 'up' | 'down' | 'left' | 'right') => {
       const btn = this.add
         .text(x, y, label, {
-          fontSize: '20px',
+          fontSize,
           color: '#4a3416',
-          backgroundColor: 'rgba(255,254,247,0.92)',
-          padding: { x: 10, y: 6 },
+          backgroundColor: 'rgba(255,254,247,0.94)',
+          padding: isTouch ? { x: 14, y: 10 } : { x: 10, y: 6 },
         })
         .setScrollFactor(0)
         .setDepth(100)
@@ -454,6 +484,7 @@ export class MainScene extends Phaser.Scene {
       btn.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
         pointer.event.stopPropagation();
         this.ensureKeyboardFocus();
+        this.player.stopAutoRun();
         this.player.dpad[dir] = true;
         this.player.clearMoveTarget();
       });
@@ -463,14 +494,83 @@ export class MainScene extends Phaser.Scene {
       btn.on('pointerout', () => {
         this.player.dpad[dir] = false;
       });
+      this.dpadButtons.push(btn);
     };
 
-    const cx = 56;
-    const cy = this.scale.height - 88;
-    mkBtn(cx, cy - 34, '▲', 'up');
-    mkBtn(cx - 34, cy, '◀', 'left');
-    mkBtn(cx + 34, cy, '▶', 'right');
-    mkBtn(cx, cy + 34, '▼', 'down');
+    mkBtn(cx, cy - gap, '▲', 'up');
+    mkBtn(cx - gap, cy, '◀', 'left');
+    mkBtn(cx + gap, cy, '▶', 'right');
+    mkBtn(cx, cy + gap, '▼', 'down');
+  }
+
+  private repositionDpad() {
+    if (this.dpadButtons.length !== 4) return;
+    const pad = 18;
+    const gap = 46;
+    const safeBottom = 24;
+    const cx = pad + gap;
+    const cy = this.scale.height - safeBottom - gap * 2;
+    const positions = [
+      { x: cx, y: cy - gap },
+      { x: cx - gap, y: cy },
+      { x: cx + gap, y: cy },
+      { x: cx, y: cy + gap },
+    ];
+    this.dpadButtons.forEach((btn, i) => btn.setPosition(positions[i].x, positions[i].y));
+  }
+
+  private inDpadZone(x: number, y: number): boolean {
+    const zoneW = IS_TOUCH ? 160 : 120;
+    const zoneH = IS_TOUCH ? 180 : 140;
+    return x < zoneW && y > this.scale.height - zoneH;
+  }
+
+  private setupTouchControls() {
+    const TAP_MS = 280;
+    const TAP_DIST = 22;
+    const STEER_SENS = 0.014;
+
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (this.inDpadZone(pointer.x, pointer.y)) return;
+      this.touchPointerId = pointer.id;
+      this.touchStartX = this.touchLastX = pointer.x;
+      this.touchStartY = pointer.y;
+      this.touchStartTime = Date.now();
+    });
+
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (pointer.id !== this.touchPointerId) return;
+      if (this.inDpadZone(pointer.x, pointer.y)) return;
+
+      const dx = pointer.x - this.touchLastX;
+      this.touchLastX = pointer.x;
+      const totalDist = Math.hypot(pointer.x - this.touchStartX, pointer.y - this.touchStartY);
+
+      if (totalDist > TAP_DIST) {
+        if (!this.player.autoRun) {
+          this.player.startAutoRun(this.player.facingToAngle());
+        }
+        if (Math.abs(dx) > 1) {
+          this.player.steerAutoRun(-dx * STEER_SENS);
+        }
+      }
+    });
+
+    this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+      if (pointer.id !== this.touchPointerId) return;
+      this.touchPointerId = null;
+
+      const elapsed = Date.now() - this.touchStartTime;
+      const dist = Math.hypot(pointer.x - this.touchStartX, pointer.y - this.touchStartY);
+
+      if (elapsed < TAP_MS && dist < TAP_DIST) {
+        this.player.stopAutoRun();
+        this.player.clearMoveTarget();
+        this.player.body.setVelocity(0);
+      } else if (dist >= TAP_DIST && !this.player.autoRun) {
+        this.player.startAutoRun(this.player.facingToAngle());
+      }
+    });
   }
 
   update(_time: number, delta: number) {
@@ -529,7 +629,15 @@ export class MainScene extends Phaser.Scene {
   private updateHint() {
     const free = this.progress.freeNav;
     const next = this.stations.find((s) => s.unlocked && !s.completed);
-    if (free) {
+    if (IS_TOUCH) {
+      this.hintText.setText(
+        free
+          ? '📱 החליקו לרוץ · ימינה/שמאלה לסיבוב · הקשה לעצירה · או D-pad'
+          : next
+            ? `▶ ${next.idx + 1}. ${next.label} — החליקו לרוץ אל התחנה`
+            : '🏆 סיימתם את כל המסע!',
+      );
+    } else if (free) {
       this.hintText.setText('🔓 חצים / WASD · לחיצה לתנועה · לחיצה על תחנה לפתיחה');
     } else if (next) {
       this.hintText.setText(`▶ ${next.idx + 1}. ${next.label} — הלכו אל התחנה הזוהרת`);

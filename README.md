@@ -4,7 +4,9 @@
 
 A playful journey for Hebrew speakers learning **Aramaic** — kids navigate stations along an Israel-themed path, from vineyard to Beit Midrash.
 
-**Live demo:** [https://yosefyotam-glitch.github.io/menavtim-baaramit/](https://yosefyotam-glitch.github.io/menavtim-baaramit/)
+**Live demo:** [https://yosefyotam-glitch.github.io/menavtim/](https://yosefyotam-glitch.github.io/menavtim/)
+
+> **הערה על הכתובת:** השם `yosefyotam-glitch` בכתובת הוא שם חשבון GitHub — לא ניתן להסירו ב-GitHub Pages חינמי. לנתיב קצר יותר (למשל `menavtim.com`) נדרש **דומיין פרטי**.
 
 ---
 
@@ -27,6 +29,12 @@ Based on the game engine by [Chepti Ben Artzi](https://chepti.com) (Rashi script
 - **מפת מסע (Phaser)** — שביל ארץ־ישראל: כרם → גשר → טרסות → **בית מדרש** (יעד סופי).
 - **46 תחנות** לאורך 14 יחידות לימוד, מסודרות לפי סדר.
 - השחקן מנוע בחצים / מגע, נכנס לתחנה כשהוא לידה, ומשחק פעילות (חידון, זיכרון, סיפור, ועוד).
+
+### שליטה במובייל · Mobile controls
+
+- **החלקה** — הדמות רצה; החלקה קלה ימינה/שמאלה מסובבת כיוון.
+- **הקשה** — עצירה.
+- **D-pad וירטואלי** — כפתורי כיוון בפינה השמאלית-תחתונה (אפשרות נוספת נפוצה, נשארת זמינה).
 
 ### תחנות · Stations
 
@@ -93,7 +101,7 @@ npm install
 npm run dev
 ```
 
-פתחו [http://localhost:5173/menavtim-baaramit/](http://localhost:5173/menavtim-baaramit/) — ה-`base` ב-Vite הוא `/menavtim-baaramit/`.
+פתחו [http://localhost:5173/menavtim/](http://localhost:5173/menavtim/) — ה-`base` ב-Vite הוא `/menavtim/`.
 
 ### API מורים (אופציונלי)
 
@@ -123,7 +131,7 @@ npm run deploy
 2. מעתיק את `app/dist/` לענף `gh-pages`
 3. דוחף ל-`origin gh-pages`
 
-**URL חי:** `https://<username>.github.io/menavtim-baaramit/`
+**URL חי:** `https://<username>.github.io/menavtim/`
 
 ---
 
@@ -144,7 +152,7 @@ mathgame/
 ```
 
 - **ניתוב:** hash-based (`#/map`, `#/play/...`) — עובד ב-GitHub Pages ללא הגדרות שרת.
-- **base path:** `/menavtim-baaramit/` — חייב להתאים ב-`vite.config.ts` ובכל נתיבי `public/`.
+- **base path:** `/menavtim/` — חייב להתאים ב-`vite.config.ts` ובכל נתיבי `public/`.
 - **מפת Phaser:** `journeyMap.ts` בונה שביל, קירות, בית מדרש; `MainScene.ts` מצייר ומנהל אינטראקציה.
 - **Overlay React:** תחנות ומדליה מוצגות כ-HTML מעל קanvas Phaser (`PhaserStationOverlay`).
 

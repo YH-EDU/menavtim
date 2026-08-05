@@ -50,6 +50,8 @@ export function createJourneyGame(opts: JourneyGameOptions): Phaser.Game {
     scale: {
       mode: Phaser.Scale.RESIZE,
       autoCenter: Phaser.Scale.CENTER_BOTH,
+      width: window.innerWidth,
+      height: window.innerHeight,
     },
     scene: [BootScene, MainScene],
   });

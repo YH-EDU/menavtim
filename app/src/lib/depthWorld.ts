@@ -26,12 +26,12 @@ export interface DepthStageMeta {
   activityIds: string[];
 }
 
-const BASE = '/menavtim-baaramit/depth';
+const BASE = '/menavtim/depth';
 
 /** תמונת עולם אחת — כרם/חיטה דרך הגשר ועד זיתים וטרסות (1024×2992) */
 export const DEPTH_WORLD: DepthWorld = {
   image: `${BASE}/world.jpg`,
-  fallback: '/menavtim-baaramit/bg-journey-continuous.jpg',
+  fallback: '/menavtim/bg-journey-continuous.jpg',
   width: 1024,
   height: 2992,
   ratio: 2992 / 1024,

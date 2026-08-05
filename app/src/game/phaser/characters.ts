@@ -3,7 +3,7 @@
 import { ASSET } from './keys';
 
 export const LS_AVATAR = 'aramit_avatar';
-export const AVATAR_BASE = '/menavtim-baaramit/avatars';
+export const AVATAR_BASE = '/menavtim/avatars';
 
 export type CharacterId =
   | 'misa'

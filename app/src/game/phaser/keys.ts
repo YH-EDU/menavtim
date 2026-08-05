@@ -7,8 +7,8 @@ export const ASSET = {
   mapTileset: 'map-tileset',
   mapTilesetName: 'map-solid-colors',
   playerAtlas: 'player-atlas',
-  playerAtlasImage: '/menavtim-baaramit/phaser-rpg/atlas/atlas.png',
-  playerAtlasJson: '/menavtim-baaramit/phaser-rpg/atlas/atlas.json',
+  playerAtlasImage: '/menavtim/phaser-rpg/atlas/atlas.png',
+  playerAtlasJson: '/menavtim/phaser-rpg/atlas/atlas.json',
 } as const;
 
 export const LAYER = {

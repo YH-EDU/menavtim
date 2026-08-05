@@ -13,6 +13,7 @@ import { masteryFrom, masteryColor, masteryLabel } from '../lib/mastery';
 import { totalActivities } from '../data/units';
 import { nav } from '../App';
 import { SoftPageShell, HeroBg } from '../ui/PageShell';
+import { asset } from '../lib/basePath';
 import { FeedbackButton, SiteCredit } from '../ui/Feedback';
 
 function classJoinUrl(code: string): string {
@@ -63,7 +64,7 @@ function TeacherAuth({ onAuth }: { onAuth: (t: TeacherSession) => void }) {
   };
 
   return (
-    <HeroBg image="/menavtim-baaramit/bg-cottage.webp" overlay="linear-gradient(170deg, rgba(30,41,59,0.72) 0%, rgba(51,65,85,0.65) 100%)">
+    <HeroBg image={asset('/bg-cottage.webp')} overlay="linear-gradient(170deg, rgba(30,41,59,0.72) 0%, rgba(51,65,85,0.65) 100%)">
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <form className="card pop-in" onSubmit={submit} style={{ width: '100%', maxWidth: 400, background: 'rgba(255,255,255,0.95)' }}>
         <div style={{ textAlign: 'center' }}>

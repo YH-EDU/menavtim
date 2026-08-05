@@ -549,6 +549,19 @@ export class MainScene extends Phaser.Scene {
   private setupTouchControls() {
     const DRAG_THRESHOLD = 14;
 
+    const endTouch = (wasDrag: boolean) => {
+      this.touchPointerId = null;
+      if (!wasDrag) {
+        if (this.player.autoRun) {
+          this.player.stopAutoRun();
+          this.player.body.setVelocity(0);
+        } else {
+          this.player.startAutoRun();
+        }
+      }
+      this.touchDragging = false;
+    };
+
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (this.inUiChromeZone(pointer.x, pointer.y)) return;
       this.touchPointerId = pointer.id;
@@ -572,29 +585,17 @@ export class MainScene extends Phaser.Scene {
 
     this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
       if (pointer.id !== this.touchPointerId) return;
-      this.touchPointerId = null;
-
-      if (this.touchDragging) {
-        this.player.stopAutoRun();
-        this.player.body.setVelocity(0);
-      }
-      this.touchDragging = false;
+      endTouch(this.touchDragging);
     });
 
     this.input.on('pointerupoutside', (pointer: Phaser.Input.Pointer) => {
       if (pointer.id !== this.touchPointerId) return;
-      this.touchPointerId = null;
-      this.player.stopAutoRun();
-      this.player.body.setVelocity(0);
-      this.touchDragging = false;
+      endTouch(this.touchDragging);
     });
 
     this.input.on('pointercancel', (pointer: Phaser.Input.Pointer) => {
       if (pointer.id !== this.touchPointerId) return;
-      this.touchPointerId = null;
-      this.player.stopAutoRun();
-      this.player.body.setVelocity(0);
-      this.touchDragging = false;
+      endTouch(this.touchDragging);
     });
   }
 
@@ -663,9 +664,9 @@ export class MainScene extends Phaser.Scene {
     if (isTouchDevice()) {
       this.hintText.setText(
         free
-          ? '📱 גררו/החליקו לכיוון הריצה · שחררו לעצירה'
+          ? '📱 הקישו להתחיל/לעצור · גררו לכיוון'
           : next
-            ? `▶ ${next.idx + 1}. ${next.label} — גררו לכיוון התחנה`
+            ? `▶ ${next.idx + 1}. ${next.label} — הקישו לריצה · גררו לכיוון`
             : '🏆 סיימתם את כל המסע!',
       );
     } else if (free) {

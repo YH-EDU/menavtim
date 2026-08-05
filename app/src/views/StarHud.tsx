@@ -35,13 +35,10 @@ function HudStarIcon({ pulse }: { pulse: boolean }) {
           </feMerge>
         </filter>
       </defs>
-      <circle cx="18" cy="18" r="16" fill="rgba(255,213,79,0.18)" />
       <polygon
         points="18,4 21.6,13.2 31.5,14.2 24,20.8 26.2,30.5 18,25.5 9.8,30.5 12,20.8 4.5,14.2 14.4,13.2"
         fill="url(#hudStarGrad)"
-        stroke="#b8860b"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
+        stroke="none"
         filter="url(#hudStarGlow)"
       />
       <polygon
@@ -127,14 +124,9 @@ export default function StarHud({
               }),
           display: 'flex',
           alignItems: 'center',
-          gap: 8,
+          gap: 6,
           direction: 'rtl',
           pointerEvents: 'none',
-          background: embedded ? 'rgba(255, 254, 247, 0.94)' : undefined,
-          border: embedded ? '3px solid rgba(125, 82, 38, 0.85)' : undefined,
-          borderRadius: embedded ? 999 : undefined,
-          padding: embedded ? '5px 14px 6px' : undefined,
-          boxShadow: embedded ? '0 4px 10px rgba(30, 70, 20, 0.35)' : undefined,
         }}
       >
         <div
@@ -150,7 +142,7 @@ export default function StarHud({
             fontWeight: 900,
             color: '#4a3416',
             lineHeight: 1,
-            textShadow: '0 1px 0 rgba(255,255,255,0.85)',
+            textShadow: '0 1px 2px rgba(255,255,255,0.9), 0 0 8px rgba(255,213,79,0.45)',
             minWidth: 28,
           }}
         >

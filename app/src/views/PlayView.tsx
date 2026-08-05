@@ -3,6 +3,8 @@ import { UNITS } from '../data/units';
 import GameHost from '../games/GameHost';
 import { reportAttempt, type StudentSession } from '../lib/api';
 import type { ActivityResult } from '../data/types';
+import { starsFor } from '../games/ui';
+import { LS_FLY_STARS } from './StarHud';
 import { nav } from '../App';
 import { SoftPageShell } from '../ui/PageShell';
 import { FeedbackButton } from '../ui/Feedback';
@@ -32,13 +34,19 @@ export default function PlayView({
     } catch {
       // גם אם הדיווח נכשל — לא חוסמים את הילד
     }
+    sessionStorage.setItem(LS_FLY_STARS, String(starsFor(r.score, r.max)));
     onReported();
     sessionStorage.setItem('aramit_focus_act', activity.id);
     nav('/map');
   };
 
   return (
-    <SoftPageShell seed={activity.id}>
+    <SoftPageShell
+      image="/menavtim-baaramit/bg-activity-maze.jpg"
+      opacity={0.44}
+      overlay="rgba(248, 245, 238, 0.58)"
+      seed={activity.id}
+    >
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '20px 16px 60px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
           <button

@@ -3,10 +3,12 @@ import confetti from 'canvas-confetti';
 import { UNITS } from '../data/units';
 import { vocalize } from '../data/letters';
 import { setGuestFreeNav, type StudentSession, type ProgressData } from '../lib/api';
-import { unitDoneCount, unitUnlocked, unitCompleted, overallPercent, allCompleted } from '../lib/progressUtil';
+import { unitDoneCount, unitUnlocked, unitCompleted, allCompleted, overallPercent } from '../lib/progressUtil';
+import { computeJourneyTotals } from '../lib/journeyTotals';
 import { soundEnabled, toggleSound } from '../lib/sound';
 import { TypeIcon, Volume2, VolumeX, ListIcon, Users, School, Unlock } from '../ui/icons';
-import JourneyTrail from './JourneyTrail';
+import JourneyPhaser from './JourneyPhaser';
+import StarHud from './StarHud';
 import { SoftPageShell } from '../ui/PageShell';
 import { FeedbackButton } from '../ui/Feedback';
 import { nav } from '../App';
@@ -25,13 +27,13 @@ export default function JourneyMap({
   onLogout: (to?: string) => void;
   onSessionChange: (s: StudentSession) => void;
 }) {
-  const pct = overallPercent(progress);
+  const totals = computeJourneyTotals(progress);
   const finished = allCompleted(progress);
+  const pct = overallPercent(progress);
   const celebrated = useRef(false);
-  const [view, setView] = useState<MapView>(() =>
-    localStorage.getItem(LS_VIEW) === 'list' ? 'list' : 'trail'
-  );
+  const [view, setView] = useState<MapView>('trail');
   const [sound, setSound] = useState(soundEnabled());
+  const [avatarPicker, setAvatarPicker] = useState(false);
 
   const switchView = (v: MapView) => {
     setView(v);
@@ -86,22 +88,15 @@ export default function JourneyMap({
   if (view === 'trail') {
     return (
       <div style={{ position: 'relative' }}>
-        <JourneyTrail progress={progress} />
+        <JourneyPhaser
+          progress={progress}
+          forcePicker={avatarPicker}
+          onPickerClosed={() => setAvatarPicker(false)}
+        />
 
-        {/* פס התקדמות דק צמוד לראש המסך */}
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 8, background: 'rgba(255,255,255,0.4)', zIndex: 10 }}>
-          <div
-            style={{
-              width: `${pct}%`,
-              height: '100%',
-              background: 'linear-gradient(90deg, var(--gold), #f3c53d)',
-              transition: 'width 0.6s ease',
-              borderRadius: '0 999px 999px 0',
-            }}
-          />
-        </div>
+        <StarHud progress={progress} />
 
-        {/* שלום + אחוז — מוצמד לפינה הימנית העליונה */}
+        {/* שלום — מוצמד לפינה הימנית העליונה */}
         <div
           style={{
             position: 'fixed',
@@ -121,7 +116,7 @@ export default function JourneyMap({
           </div>
           <div style={{ fontSize: 12, color: 'var(--ink-soft)', fontWeight: 700 }}>
             {isTeacherPreview ? 'תצוגת מורה' : session.className ? `כיתת ${session.className}` : 'תרגול חופשי'}
-            {' '}· {pct}%
+            {' '}· {pct}% מהמסע
           </div>
         </div>
 
@@ -130,6 +125,7 @@ export default function JourneyMap({
           {fab(<TypeIcon size={21} />, 'המילים שלי', () => nav('/progress'))}
           {fab(sound ? <Volume2 size={21} /> : <VolumeX size={21} />, sound ? 'השתקת צלילים' : 'הפעלת צלילים', () => setSound(toggleSound()))}
           {fab(<ListIcon size={21} />, 'תצוגת רשימה', () => switchView('list'))}
+          {fab(<span style={{ fontSize: 20 }}>🎭</span>, 'החלפת דמות', () => setAvatarPicker(true))}
           {isTeacherPreview
             ? fab(<School size={21} />, 'חזרה ללוח המורה', () => onLogout('/teacher'))
             : fab(<Users size={21} />, 'החלפת משתמש — במחשב משותף כל תלמיד נכנס עם השם והאימוג\'י שלו', () => onLogout())}
@@ -214,7 +210,7 @@ export default function JourneyMap({
               : session.className
                 ? `כיתת ${session.className}`
                 : 'תרגול חופשי'}
-            {' '}· הושלמו {pct}% מהמסע
+            {' '}· ⭐ {totals.stars} / {totals.maxStars} כוכבים
             {progress.freeNav && !isTeacherPreview ? ' · 🔓 מסלול חופשי' : ''}
           </p>
         </div>
@@ -249,17 +245,28 @@ export default function JourneyMap({
         </div>
       </header>
 
-      {/* פס התקדמות כללי */}
-      <div style={{ background: '#e2e8f0', borderRadius: 999, height: 14, overflow: 'hidden', marginBottom: 26 }}>
-        <div
-          style={{
-            width: `${pct}%`,
-            height: '100%',
-            borderRadius: 999,
-            background: 'linear-gradient(90deg, var(--teal), #14b8a6)',
-            transition: 'width 0.6s ease',
-          }}
-        />
+      {/* סיכום כוכבים */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 12,
+          marginBottom: 26,
+          padding: '12px 18px',
+          background: 'rgba(255,254,247,0.96)',
+          border: '2px solid rgba(125,82,38,0.55)',
+          borderRadius: 16,
+        }}
+      >
+        <span style={{ fontSize: 32 }}>⭐</span>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 24, fontWeight: 900, color: '#4a3416' }}>
+            {totals.stars}
+            <span style={{ fontSize: 15, color: '#7a6548', marginRight: 6 }}>/ {totals.maxStars}</span>
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--ink-soft)', fontWeight: 700 }}>כוכבים שנאספו במסע</div>
+        </div>
       </div>
 
       {finished && (

@@ -2,7 +2,7 @@ import React from 'react';
 
 const FEEDBACK_MAIL = 'chepti@gmail.com';
 
-export function feedbackMailto(subject = 'משוב — לומדים ארמית') {
+export function feedbackMailto(subject = 'משוב — מנווטים בארמית') {
   return `mailto:${FEEDBACK_MAIL}?subject=${encodeURIComponent(subject)}`;
 }
 

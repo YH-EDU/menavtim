@@ -2,11 +2,66 @@ import React, { useState } from 'react';
 import { joinClass, guestSession, type StudentSession } from '../lib/api';
 import { nav } from '../App';
 import { HeroBg } from '../ui/PageShell';
+import {
+  CHARACTERS,
+  getCharacterDef,
+  saveSelectedAvatar,
+  type CharacterId,
+} from '../game/phaser/characters';
 
-// הזהות של תלמיד = שם + אימוג'י. האימוג'י הוא "סיסמה קטנה":
-// בכניסה הבאה חייבים לבחור את אותו אימוג'י — כך כמה תלמידים חולקים מחשב בבטחה.
-
-export const EMOJIS = ['🦁', '🐬', '🦄', '🚀', '⚽', '🎨', '🌈', '🍉', '🐱', '🦋', '🌟', '🤖', '🎸', '🐢', '👑', '🍕'];
+function CharacterPicker({
+  picked,
+  onPick,
+}: {
+  picked: CharacterId | null;
+  onPick: (id: CharacterId) => void;
+}) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))',
+        gap: 8,
+        marginTop: 4,
+      }}
+    >
+      {CHARACTERS.map((c) => {
+        const selected = picked === c.id;
+        return (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => onPick(c.id)}
+            style={{
+              border: selected ? '3px solid var(--teal)' : '2px solid #e2e8f0',
+              borderRadius: 14,
+              background: selected ? 'var(--teal-soft)' : '#fff',
+              padding: '10px 6px 8px',
+              cursor: 'pointer',
+              transform: selected ? 'scale(1.05)' : 'none',
+              transition: 'all 0.12s',
+              textAlign: 'center',
+            }}
+          >
+            <div
+              style={{
+                fontSize: 68,
+                lineHeight: 1,
+                marginBottom: 6,
+                filter: selected ? 'drop-shadow(0 4px 8px rgba(0,0,0,0.15))' : 'none',
+              }}
+            >
+              {c.emoji}
+            </div>
+            <div style={{ fontSize: 13.5, fontWeight: 800, color: '#4a3416', marginTop: 2 }}>
+              {c.nameHe}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function Join({
   onJoined,
@@ -19,17 +74,19 @@ export default function Join({
   const linkCode = initialCode.replace(/\s+/g, '').toUpperCase();
   const [code, setCode] = useState(linkCode);
   const [nick, setNick] = useState('');
-  const [emoji, setEmoji] = useState('');
+  const [character, setCharacter] = useState<CharacterId | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
-  const codeFromLink = linkCode.length > 0;
+  const codeFromLink = linkCode.length > 0 && !isGuest;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr('');
     if (!nick.trim()) { setErr('כתבו שם או כינוי'); return; }
-    if (!emoji) { setErr('בחרו אימוג\'י — הוא הסימן הסודי שלכם לכניסה הבאה'); return; }
+    if (!character) { setErr('בחרו דמות למסע'); return; }
+    const emoji = getCharacterDef(character).emoji;
+    saveSelectedAvatar(character);
     if (isGuest) {
       onJoined(guestSession(nick.trim(), emoji));
       return;
@@ -47,25 +104,25 @@ export default function Join({
   };
 
   return (
-    <HeroBg image="/lomdim-aramit/bg-join.webp" overlay="linear-gradient(170deg, rgba(19,60,50,0.55) 0%, rgba(15,80,70,0.5) 100%)">
+    <HeroBg image="/menavtim-baaramit/bg-join.webp" overlay="linear-gradient(170deg, rgba(19,60,50,0.55) 0%, rgba(15,80,70,0.5) 100%)">
     <div
       style={{
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 24,
+        padding: '24px 16px',
       }}
     >
-      <form className="card pop-in" onSubmit={submit} style={{ width: '100%', maxWidth: 430, textAlign: 'center', background: 'rgba(255,255,255,0.94)' }}>
+      <form className="card pop-in" onSubmit={submit} style={{ width: '100%', maxWidth: 520, textAlign: 'center', background: 'rgba(255,255,255,0.94)' }}>
         <div style={{ fontSize: 44 }}>{isGuest ? '🧭' : '🎒'}</div>
         <h2 style={{ margin: '6px 0 4px' }}>{isGuest ? 'תרגול חופשי' : 'הצטרפות לכיתה'}</h2>
         <p style={{ color: 'var(--ink-soft)', fontSize: 15, marginTop: 0 }}>
           {isGuest
-            ? 'ההתקדמות נשמרת על המכשיר הזה, לפי השם והאימוג\'י שתבחרו'
+            ? 'בחרו שם ודמות — והמסע מתחיל (ההתקדמות נשמרת על המכשיר)'
             : codeFromLink
-              ? 'בחרו שם ואימוג\'י — והמסע מתחיל (הקוד כבר מולא מהקישור)'
-              : 'הכניסו את קוד הכיתה שקיבלתם מהמורה, ובחרו שם ואימוג\'י'}
+              ? 'בחרו שם ודמות — והמסע מתחיל (הקוד כבר מולא מהקישור)'
+              : 'הכניסו קוד כיתה, ובחרו שם ודמות למסע'}
         </p>
         {!isGuest && codeFromLink && (
           <div
@@ -107,32 +164,10 @@ export default function Join({
           maxLength={30}
         />
         <p style={{ fontSize: 14.5, fontWeight: 700, margin: '14px 0 8px' }}>
-          בחרו אימוג'י — זה הסימן הסודי שלכם 🤫
-          <br />
-          <span style={{ fontWeight: 400, color: 'var(--ink-soft)', fontSize: 13 }}>
-            בכניסה הבאה תצטרכו לבחור את אותו אימוג'י בדיוק, אז תזכרו אותו!
-          </span>
+          בחרו דמות למסע 🎭
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 6 }}>
-          {EMOJIS.map((em) => (
-            <button
-              key={em}
-              type="button"
-              onClick={() => setEmoji(em)}
-              style={{
-                fontSize: 24,
-                padding: '6px 0',
-                borderRadius: 10,
-                border: emoji === em ? '3px solid var(--teal)' : '2px solid #e2e8f0',
-                background: emoji === em ? 'var(--teal-soft)' : '#fff',
-                transform: emoji === em ? 'scale(1.12)' : 'none',
-                transition: 'all 0.12s',
-              }}
-            >
-              {em}
-            </button>
-          ))}
-        </div>
+        <CharacterPicker picked={character} onPick={setCharacter} />
+
         {err && <p className="err">{err}</p>}
         <button className="btn" style={{ width: '100%', marginTop: 16 }} disabled={busy}>
           {busy ? 'רגע...' : 'יוצאים למסע! 🚀'}

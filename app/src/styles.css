@@ -1,6 +1,6 @@
 @font-face {
   font-family: 'Heebo';
-  src: url('/lomdim-aramit/fonts/heebo-var.woff2') format('woff2');
+  src: url('/menavtim-baaramit/fonts/heebo-var.woff2') format('woff2');
   font-weight: 100 900;
   font-display: swap;
 }
@@ -237,6 +237,247 @@ h1, h2, h3 { margin: 0; }
 .pill:hover { border-color: var(--teal); color: var(--teal-dark); background: var(--teal-soft); }
 
 @keyframes trail-pulse {
-  0%, 100% { box-shadow: 0 0 0 6px rgba(15, 118, 110, 0.28), 0 3px 8px rgba(90, 62, 20, 0.4); }
-  50% { box-shadow: 0 0 0 13px rgba(15, 118, 110, 0.1), 0 3px 8px rgba(90, 62, 20, 0.4); }
+  0%, 100% {
+    box-shadow: 0 0 0 6px rgba(15, 118, 110, 0.35), 0 6px 16px rgba(20, 60, 20, 0.45);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 16px rgba(245, 158, 11, 0.35), 0 8px 20px rgba(20, 60, 20, 0.5);
+    transform: scale(1.08);
+  }
+}
+
+.trail-node-current button {
+  animation: trail-pulse 1.4s ease-in-out infinite !important;
+}
+
+/* ─── מסע עומק (JourneyDepth) ─── */
+.journey-depth {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: #6faf4a;
+}
+
+.journey-depth-viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  outline: none;
+}
+
+.journey-depth-viewport:focus-visible {
+  box-shadow: inset 0 0 0 3px rgba(245, 158, 11, 0.55);
+}
+
+.journey-depth-world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+  transition: transform 0.78s cubic-bezier(0.33, 1, 0.38, 1);
+}
+
+.journey-depth-world-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+  pointer-events: none;
+}
+
+.journey-depth-sr-nav {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  z-index: 4;
+}
+
+.journey-depth-chevron {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  pointer-events: none;
+  animation: depth-chevron-fade 4.2s ease forwards;
+}
+
+.journey-depth-chevron-forward {
+  bottom: 18%;
+}
+
+.journey-depth-chevron-back {
+  top: 22%;
+}
+
+.journey-depth-chevron-icon {
+  display: block;
+  font-size: 28px;
+  line-height: 1;
+  color: rgba(255, 252, 235, 0.82);
+  text-shadow: 0 2px 8px rgba(30, 50, 15, 0.55), 0 0 18px rgba(255, 220, 140, 0.35);
+  filter: drop-shadow(0 1px 2px rgba(60, 40, 10, 0.4));
+}
+
+@keyframes depth-chevron-fade {
+  0%, 18% { opacity: 0.85; transform: translateX(-50%) translateY(0); }
+  55% { opacity: 0.45; }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+}
+
+.journey-depth-chevron-back .journey-depth-chevron-icon {
+  animation: depth-chevron-bob-back 2s ease-in-out infinite;
+}
+
+.journey-depth-chevron-forward .journey-depth-chevron-icon {
+  animation: depth-chevron-bob-fwd 2s ease-in-out infinite;
+}
+
+@keyframes depth-chevron-bob-fwd {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes depth-chevron-bob-back {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
+}
+
+.journey-depth-caption {
+  position: absolute;
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  text-align: center;
+  direction: rtl;
+  background: rgba(255, 254, 247, 0.88);
+  border: 2.5px solid rgba(125, 82, 38, 0.65);
+  border-radius: 16px;
+  padding: 8px 20px;
+  box-shadow: 0 4px 14px rgba(20, 60, 20, 0.28);
+  pointer-events: none;
+  max-width: min(92vw, 420px);
+}
+
+.journey-depth-caption-title {
+  font-size: 15px;
+  font-weight: 900;
+  color: #3f2a12;
+}
+
+.journey-depth-caption-sub {
+  font-size: 13px;
+  font-weight: 700;
+  color: #6b4f26;
+  margin-top: 2px;
+}
+
+.journey-depth-caption-steps {
+  font-size: 11px;
+  font-weight: 700;
+  color: #8a7355;
+  margin-top: 3px;
+}
+
+.journey-depth-done {
+  position: absolute;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9;
+  background: rgba(255, 254, 247, 0.96);
+  border: 3px solid rgba(125, 82, 38, 0.8);
+  border-radius: 18px;
+  padding: 14px 22px;
+  text-align: center;
+  direction: rtl;
+  box-shadow: 0 8px 22px rgba(20, 60, 20, 0.35);
+  max-width: min(420px, 88vw);
+}
+
+@keyframes depth-station-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(125, 82, 38, 0.25), 0 6px 14px rgba(20, 60, 20, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(125, 82, 38, 0.18), 0 8px 18px rgba(20, 60, 20, 0.5);
+  }
+}
+
+.depth-station-pulse-ring {
+  position: absolute;
+  inset: -14px;
+  border-radius: 50%;
+  border: 3px solid;
+  opacity: 0.55;
+  animation: depth-station-ring 1.8s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes depth-station-ring {
+  0% { transform: scale(0.85); opacity: 0.65; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+@keyframes star-hud-fly {
+  0% {
+    left: var(--from-x);
+    top: var(--from-y);
+    transform: translate(-50%, -50%) scale(1.25);
+    opacity: 1;
+  }
+  100% {
+    left: var(--to-x);
+    top: var(--to-y);
+    transform: translate(-50%, -50%) scale(0.35);
+    opacity: 0.15;
+  }
+}
+
+.star-hud-fly {
+  position: fixed;
+  z-index: 30;
+  font-size: 30px;
+  pointer-events: none;
+  animation: star-hud-fly 0.78s cubic-bezier(0.22, 0.85, 0.35, 1) forwards;
+}
+
+@keyframes star-hud-pulse-kf {
+  0%, 100% { transform: scale(1); }
+  45% { transform: scale(1.2); }
+}
+
+.star-hud-pulse {
+  animation: star-hud-pulse-kf 0.55s ease-out;
+}
+
+@keyframes star-hud-icon-shimmer {
+  0%, 100% { transform: rotate(0deg) scale(1); filter: drop-shadow(0 2px 4px rgba(180,120,0,0.35)); }
+  50% { transform: rotate(6deg) scale(1.06); filter: drop-shadow(0 0 10px rgba(255,213,79,0.65)); }
+}
+
+.star-hud-icon-idle {
+  animation: star-hud-icon-shimmer 3.2s ease-in-out infinite;
+}
+
+.star-hud-icon-pulse {
+  animation: star-hud-pulse-kf 0.55s ease-out, star-hud-icon-shimmer 3.2s ease-in-out infinite;
+}
+
+.star-hud-count-pulse {
+  animation: star-hud-pulse-kf 0.55s ease-out;
+}
+
+.depth-station-current button {
+  animation: trail-pulse 1.4s ease-in-out infinite !important;
 }

@@ -82,15 +82,27 @@ export default function App() {
         onJoined={(s) => { setSession(s); nav('/map'); }}
       />
     );
+  } else if (route === '' || route === 'landing') {
+    view = <Landing session={session} onLogout={logout} />;
   } else if (!session) {
-    view = <Landing />;
-  } else if (route === 'map' || route === '') {
+    view = <Landing session={null} onLogout={logout} />;
+  } else if (route === 'map') {
     view = (
       <JourneyMap
         session={session}
         progress={progress}
         onLogout={logout}
-        onSessionChange={(s) => { setSession(s); }}
+        onSessionChange={async (s) => {
+          setSession(s);
+          try {
+            setProgress(await fetchProgress(s));
+          } catch {
+            setProgress((p) => ({
+              ...p,
+              freeNav: s.token === 'teacher-preview' ? true : !!s.freeNav,
+            }));
+          }
+        }}
       />
     );
   } else if (route === 'unit' && parts[1]) {
@@ -107,7 +119,7 @@ export default function App() {
   } else if (route === 'progress') {
     view = <ProgressView session={session} progress={progress} />;
   } else {
-    view = <Landing />;
+    view = <Landing session={session} onLogout={logout} />;
   }
 
   return <div style={{ minHeight: '100vh' }}>{view}</div>;

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { QuizActivity, ActivityResult, LetterEvents } from '../data/types';
 import { addTextEvents, addLetterEvent } from '../lib/mastery';
 import { uniqueLetters } from '../data/letters';
+import { shuffleOptionsWithCorrect } from '../lib/shuffleOptions';
 import { ProgressDots, PhraseCard, MixedText } from './ui';
 import { playCorrect, playWrong } from '../lib/sound';
 
@@ -18,12 +19,21 @@ export default function Quiz({
   const [events] = useState<LetterEvents>({});
   const [shakeKey, setShakeKey] = useState(0);
 
+  const shuffledQuestions = useMemo(
+    () =>
+      activity.questions.map((q, qi) =>
+        shuffleOptionsWithCorrect(q.options, q.correct, qi + activity.id.length * 7),
+      ),
+    [activity],
+  );
+
   const q = activity.questions[idx];
+  const display = shuffledQuestions[idx];
   const done = idx >= activity.questions.length;
 
   const choose = (i: number) => {
     if (chosen !== null) return;
-    const ok = i === q.correct;
+    const ok = i === display.correct;
     setChosen(i);
     if (ok) playCorrect();
     else playWrong();
@@ -56,14 +66,14 @@ export default function Quiz({
       )}
       <div
         key={shakeKey ? `s${shakeKey}` : `q${idx}`}
-        className={chosen !== null && chosen !== q.correct ? 'shake' : ''}
+        className={chosen !== null && chosen !== display.correct ? 'shake' : ''}
         style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center' }}
       >
-        {q.options.map((opt, i) => {
+        {display.options.map((opt, i) => {
           let bg = '#fff';
           let border = '#e2e8f0';
           if (chosen !== null) {
-            if (i === q.correct) { bg = 'var(--green-soft)'; border = 'var(--green)'; }
+            if (i === display.correct) { bg = 'var(--green-soft)'; border = 'var(--green)'; }
             else if (i === chosen) { bg = 'var(--red-soft)'; border = 'var(--red)'; }
           }
           return (
@@ -86,12 +96,12 @@ export default function Quiz({
           );
         })}
       </div>
-      {chosen !== null && chosen !== q.correct && (
+      {chosen !== null && chosen !== display.correct && (
         <p className="float-up" style={{ color: 'var(--red)', fontWeight: 700 }}>
-          התשובה הנכונה: {q.options[q.correct]}
+          התשובה הנכונה: {display.options[display.correct]}
         </p>
       )}
-      {chosen !== null && chosen === q.correct && (
+      {chosen !== null && chosen === display.correct && (
         <p className="float-up" style={{ color: 'var(--green)', fontWeight: 700 }}>יפה מאוד! 🎉</p>
       )}
     </div>

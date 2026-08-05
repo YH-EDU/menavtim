@@ -2,9 +2,9 @@ import { UNITS } from '../data/units';
 
 export interface Pt { x: number; y: number }
 
-export const BG = '/lomdim-aramit/bg-journey.webp';
-export const BG_TINY = '/lomdim-aramit/bg-journey-tiny.webp';
-export const BG_RATIO = 2413 / 1200;
+export const BG = '/menavtim-baaramit/bg-journey-continuous.jpg';
+/** גובה÷רוחב של תמונת המסע (1024×1536) */
+export const BG_RATIO = 1536 / 1024;
 export const UNIT_COLORS = [
   '#0d9488', '#f59e0b', '#8b5cf6', '#e05252', '#3b82f6',
   '#ec4899', '#16a34a', '#a16207', '#0284c7', '#c026d3',
@@ -12,61 +12,61 @@ export const UNIT_COLORS = [
 ];
 
 /** גרסה — מתעלמים משמירות ישנות אם שינינו את ברירת המחדל בקוד */
-export const LS_PATH = 'aramit_station_pos_v7';
+export const LS_PATH = 'aramit_station_pos_v8_eretz';
 
-/** 46 תחנות — מספר הפעילויות במסע הארמית, פרוסות לאורך השביל */
+/** 46 תחנות לאורך שביל ארץ־ישראל (כרם → גשר → טרסות → בית מדרש) */
 export const STATION_POS: Pt[] = [
-  { x: 50.2, y: 97.1 }, // 1
-  { x: 52.9, y: 94.1 }, // 2
-  { x: 49.4, y: 92.6 }, // 3
-  { x: 45.6, y: 91.2 }, // 4
-  { x: 41.9, y: 89.7 }, // 5
-  { x: 38.1, y: 88.2 }, // 6
-  { x: 34.8, y: 85.9 }, // 7
-  { x: 35.7, y: 83.9 }, // 8
-  { x: 39.3, y: 82.2 }, // 9
-  { x: 43.0, y: 80.6 }, // 10
-  { x: 46.7, y: 79.1 }, // 11
-  { x: 50.4, y: 77.4 }, // 12
-  { x: 50.7, y: 75.9 }, // 13
-  { x: 46.8, y: 74.6 }, // 14
-  { x: 43.2, y: 72.9 }, // 15
-  { x: 40.6, y: 70.8 }, // 16
-  { x: 44.3, y: 69.2 }, // 17
-  { x: 48.1, y: 68.0 }, // 18
-  { x: 52.0, y: 67.0 }, // 19
-  { x: 56.0, y: 66.3 }, // 20
-  { x: 60.0, y: 66.0 }, // 21
-  { x: 64.0, y: 65.7 }, // 22
-  { x: 67.9, y: 64.9 }, // 23
-  { x: 71.8, y: 63.6 }, // 24
-  { x: 68.3, y: 62.6 }, // 25
-  { x: 64.4, y: 61.6 }, // 26
-  { x: 60.5, y: 60.7 }, // 27
-  { x: 56.6, y: 59.9 }, // 28
-  { x: 52.6, y: 59.1 }, // 29
-  { x: 54.9, y: 57.2 }, // 30
-  { x: 53.3, y: 55.9 }, // 31
-  { x: 49.4, y: 55.1 }, // 32
-  { x: 47.4, y: 54.0 }, // 33
-  { x: 51.0, y: 52.0 }, // 34
-  { x: 48.2, y: 49.2 }, // 35
-  { x: 44.3, y: 48.1 }, // 36
-  { x: 40.4, y: 47.1 }, // 37
-  { x: 43.4, y: 45.9 }, // 38
-  { x: 47.3, y: 44.7 }, // 39
-  { x: 51.1, y: 43.5 }, // 40
-  { x: 55.0, y: 42.3 }, // 41
-  { x: 57.6, y: 39.6 }, // 42
-  { x: 61.1, y: 37.7 }, // 43
-  { x: 63.8, y: 35.6 }, // 44
-  { x: 64.6, y: 31.9 }, // 45
-  { x: 66.7, y: 28.5 }, // 46
+  { x: 50.0, y: 97.5 }, // 1
+  { x: 50.1, y: 95.1 }, // 2
+  { x: 49.9, y: 92.7 }, // 3
+  { x: 49.4, y: 90.3 }, // 4
+  { x: 48.5, y: 88.1 }, // 5
+  { x: 47.4, y: 85.9 }, // 6
+  { x: 46.4, y: 83.7 }, // 7
+  { x: 45.5, y: 81.4 }, // 8  גשר
+  { x: 46.7, y: 79.3 }, // 9
+  { x: 48.0, y: 77.2 }, // 10
+  { x: 49.6, y: 75.4 }, // 11
+  { x: 51.3, y: 73.7 }, // 12
+  { x: 53.2, y: 72.2 }, // 13
+  { x: 54.9, y: 70.4 }, // 14
+  { x: 56.4, y: 68.6 }, // 15
+  { x: 55.5, y: 66.4 }, // 16
+  { x: 53.8, y: 64.7 }, // 17
+  { x: 51.9, y: 63.3 }, // 18
+  { x: 49.9, y: 61.8 }, // 19
+  { x: 47.9, y: 60.4 }, // 20
+  { x: 46.4, y: 58.5 }, // 21
+  { x: 46.1, y: 56.6 }, // 22
+  { x: 47.4, y: 54.6 }, // 23
+  { x: 49.4, y: 53.1 }, // 24
+  { x: 51.4, y: 51.7 }, // 25
+  { x: 53.4, y: 50.3 }, // 26
+  { x: 55.2, y: 48.7 }, // 27
+  { x: 56.7, y: 46.8 }, // 28
+  { x: 55.9, y: 44.9 }, // 29
+  { x: 54.3, y: 43.0 }, // 30
+  { x: 52.4, y: 41.6 }, // 31
+  { x: 50.5, y: 40.1 }, // 32
+  { x: 48.6, y: 38.6 }, // 33
+  { x: 49.8, y: 36.6 }, // 34
+  { x: 51.4, y: 34.8 }, // 35
+  { x: 53.2, y: 33.2 }, // 36
+  { x: 54.8, y: 31.4 }, // 37
+  { x: 55.7, y: 29.5 }, // 38
+  { x: 54.3, y: 27.5 }, // 39
+  { x: 52.6, y: 25.8 }, // 40
+  { x: 51.2, y: 24.1 }, // 41
+  { x: 52.3, y: 22.0 }, // 42
+  { x: 53.4, y: 19.8 }, // 43
+  { x: 53.7, y: 17.6 }, // 44
+  { x: 52.9, y: 15.3 }, // 45
+  { x: 52.0, y: 13.0 }, // 46
 ];
 
-export const START_POS: Pt = { x: 50.2, y: 98.6 };
-export const TROPHY_POS: Pt = { x: 66.7, y: 26.0 };
-export const CLOUD_COVER: Pt = { x: 58.8, y: 16.2 };
+export const START_POS: Pt = { x: 50.0, y: 99.0 };
+export const TROPHY_POS: Pt = { x: 52.0, y: 9.5 };
+export const CLOUD_COVER: Pt = { x: 70.0, y: 8.0 };
 
 export function stationCount(): number {
   return UNITS.reduce((n, u) => n + u.activities.length, 0);
@@ -99,7 +99,7 @@ export function clearStationPositions(): void {
 }
 
 /** מרכז אופקי משוער של השביל על התמונה (%) — למיקוד במובייל */
-export const PATH_FOCUS_X = 52;
+export const PATH_FOCUS_X = 50;
 
 export interface BoardSize {
   w: number;
@@ -109,25 +109,33 @@ export interface BoardSize {
   scrollLeft: number;
 }
 
-export function boardSize(): BoardSize {
+export function boardSize(opts?: {
+  stationCount?: number;
+  bgRatio?: number;
+  focusX?: number;
+}): BoardSize {
   const viewW = Math.max(320, window.innerWidth);
   const compact = viewW < 720;
+  const ratio = opts?.bgRatio ?? BG_RATIO;
+  const nStations = opts?.stationCount ?? stationCount();
+  const focusX = opts?.focusX ?? PATH_FOCUS_X;
 
   let w: number;
   if (compact) {
-    const nGaps = Math.max(1, stationCount() - 1);
-    const spanY = 0.66;
-    const targetGap = 50;
+    const nGaps = Math.max(1, nStations - 1);
+    const spanY = 0.55;
+    const targetGap = nStations <= 4 ? 90 : 50;
     const minH = Math.round((nGaps * targetGap) / spanY);
-    const fromGaps = Math.round(minH / BG_RATIO);
-    w = Math.min(1180, Math.max(980, fromGaps, Math.round(viewW * 2.55)));
+    const fromGaps = Math.round(minH / ratio);
+    w = Math.min(1180, Math.max(nStations <= 4 ? viewW : 980, fromGaps, Math.round(viewW * (nStations <= 4 ? 1.15 : 2.55))));
   } else {
-    w = viewW;
+    // במקטע קצר — התמונה נכנסת לרוחב המסך בלי זום מוגזם
+    w = Math.min(viewW, Math.round(viewW * (nStations <= 4 ? 1 : 1)));
   }
 
-  const h = Math.round(w * BG_RATIO);
+  const h = Math.round(w * ratio);
   const scrollLeft = compact
-    ? Math.max(0, Math.min(w - viewW, w * (PATH_FOCUS_X / 100) - viewW / 2))
+    ? Math.max(0, Math.min(w - viewW, w * (focusX / 100) - viewW / 2))
     : 0;
 
   return { w, h, viewW, compact, scrollLeft };

@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import type { StoryActivity, ActivityResult, LetterEvents } from '../data/types';
 import { addLetterEvent } from '../lib/mastery';
 import { stripPunct } from '../data/letters';
+import { shuffleOptionsWithCorrect } from '../lib/shuffleOptions';
 import { ProgressDots, GlossWord, tokenizeMixed } from './ui';
 import { playCorrect, playTap, playWrong } from '../lib/sound';
 
@@ -45,6 +46,13 @@ export default function Story({
   const revealedTotal = manual.size;
 
   const questions = activity.questions ?? [];
+  const shuffledQuestions = useMemo(
+    () =>
+      questions.map((q, qi) =>
+        shuffleOptionsWithCorrect(q.options, q.correct, qi + activity.id.length * 11),
+      ),
+    [questions, activity.id],
+  );
 
   const finishReading = () => {
     if (questions.length > 0) {
@@ -60,9 +68,10 @@ export default function Story({
 
   if (phase === 'quiz') {
     const q = questions[qIdx];
+    const display = shuffledQuestions[qIdx];
     const choose = (i: number) => {
       if (chosen !== null) return;
-      const ok = i === q.correct;
+      const ok = i === display.correct;
       setChosen(i);
       if (ok) playCorrect();
       else playWrong();
@@ -83,18 +92,18 @@ export default function Story({
         <ProgressDots total={questions.length} done={qIdx} />
         <p style={{ fontSize: 19, fontWeight: 700 }}>{q.prompt}</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 460, margin: '0 auto' }}>
-          {q.options.map((opt, i) => {
+          {display.options.map((opt, i) => {
             let bg = '#fff';
             let border = '#e2e8f0';
             if (chosen !== null) {
-              if (i === q.correct) { bg = 'var(--green-soft)'; border = 'var(--green)'; }
+              if (i === display.correct) { bg = 'var(--green-soft)'; border = 'var(--green)'; }
               else if (i === chosen) { bg = 'var(--red-soft)'; border = 'var(--red)'; }
             }
             return (
               <button
                 key={i}
                 onClick={() => choose(i)}
-                className={chosen === i && i !== q.correct ? 'shake' : ''}
+                className={chosen === i && i !== display.correct ? 'shake' : ''}
                 style={{
                   background: bg,
                   border: `2px solid ${border}`,

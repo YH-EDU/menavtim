@@ -59,7 +59,11 @@ interface StationZone {
 }
 
 const SPAWN_GRACE_MS = 1800;
-const IS_TOUCH = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
+function isTouchDevice(): boolean {
+  if (typeof window === 'undefined') return false;
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+}
 
 export class MainScene extends Phaser.Scene {
   private player!: Player;
@@ -83,8 +87,7 @@ export class MainScene extends Phaser.Scene {
   private touchPointerId: number | null = null;
   private touchStartX = 0;
   private touchStartY = 0;
-  private touchStartTime = 0;
-  private touchLastX = 0;
+  private touchDragging = false;
 
   constructor() {
     super(SCENE.main);
@@ -160,7 +163,8 @@ export class MainScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, WORLD.width, WORLD.height);
     this.cameras.main.setBounds(0, 0, WORLD.width, WORLD.height);
     const vw = this.scale.width;
-    const zoom = IS_TOUCH
+    const touch = isTouchDevice();
+    const zoom = touch
       ? Phaser.Math.Clamp(vw / 340, 1.12, 1.48)
       : Phaser.Math.Clamp(vw / 520, 1.35, 1.55);
     this.cameras.main.setZoom(zoom);
@@ -209,9 +213,9 @@ export class MainScene extends Phaser.Scene {
     });
 
     this.hintText = this.add
-      .text(this.scale.width / 2, this.scale.height - 28, '', {
+      .text(this.scale.width / 2, this.scale.height - (isTouchDevice() ? 56 : 28), '', {
         fontFamily: 'Arial, sans-serif',
-        fontSize: '14px',
+        fontSize: isTouchDevice() ? '13px' : '14px',
         color: '#fff6dc',
         backgroundColor: 'rgba(60,40,20,0.72)',
         padding: { x: 12, y: 6 },
@@ -222,19 +226,25 @@ export class MainScene extends Phaser.Scene {
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       this.ensureKeyboardFocus();
-      if (IS_TOUCH) return;
+      if (isTouchDevice()) return;
       if (!this.progress.freeNav) return;
       const world = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
       this.player.setMoveTarget(world.x, world.y);
     });
 
-    this.createDpad();
-    if (IS_TOUCH) this.setupTouchControls();
+    if (isTouchDevice()) {
+      this.setupTouchControls();
+    } else {
+      this.createDpad();
+    }
     this.scale.on('resize', () => {
-      this.repositionDpad();
+      if (!isTouchDevice()) this.repositionDpad();
       const w = this.scale.width;
-      const z = Phaser.Math.Clamp(w / 340, 1.12, 1.48);
+      const z = isTouchDevice()
+        ? Phaser.Math.Clamp(w / 340, 1.12, 1.48)
+        : Phaser.Math.Clamp(w / 520, 1.35, 1.55);
       this.cameras.main.setZoom(z);
+      this.repositionHint();
     });
     this.updateCurrentIdx();
     this.updateHint();
@@ -461,11 +471,10 @@ export class MainScene extends Phaser.Scene {
     this.dpadButtons.forEach((b) => b.destroy());
     this.dpadButtons = [];
 
-    const isTouch = IS_TOUCH;
-    const pad = isTouch ? 18 : 12;
-    const gap = isTouch ? 46 : 34;
-    const fontSize = isTouch ? '26px' : '20px';
-    const safeBottom = isTouch ? 24 : 12;
+    const pad = 12;
+    const gap = 34;
+    const fontSize = '20px';
+    const safeBottom = 12;
     const cx = pad + gap;
     const cy = this.scale.height - safeBottom - gap * 2;
 
@@ -475,7 +484,7 @@ export class MainScene extends Phaser.Scene {
           fontSize,
           color: '#4a3416',
           backgroundColor: 'rgba(255,254,247,0.94)',
-          padding: isTouch ? { x: 14, y: 10 } : { x: 10, y: 6 },
+          padding: { x: 10, y: 6 },
         })
         .setScrollFactor(0)
         .setDepth(100)
@@ -505,9 +514,9 @@ export class MainScene extends Phaser.Scene {
 
   private repositionDpad() {
     if (this.dpadButtons.length !== 4) return;
-    const pad = 18;
-    const gap = 46;
-    const safeBottom = 24;
+    const pad = 12;
+    const gap = 34;
+    const safeBottom = 12;
     const cx = pad + gap;
     const cy = this.scale.height - safeBottom - gap * 2;
     const positions = [
@@ -519,40 +528,45 @@ export class MainScene extends Phaser.Scene {
     this.dpadButtons.forEach((btn, i) => btn.setPosition(positions[i].x, positions[i].y));
   }
 
-  private inDpadZone(x: number, y: number): boolean {
-    const zoneW = IS_TOUCH ? 160 : 120;
-    const zoneH = IS_TOUCH ? 180 : 140;
-    return x < zoneW && y > this.scale.height - zoneH;
+  /** Reserve top/side chrome for React HUD buttons — movement swipes ignored here. */
+  private inUiChromeZone(x: number, y: number): boolean {
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const topBand = 118;
+    const sidePad = 12;
+    const fabSize = 46;
+    const fabGap = 8;
+    const fabCols = 5;
+    const leftFabW = sidePad + fabCols * fabSize + (fabCols - 1) * fabGap + 16;
+    const rightHudW = Math.min(w * 0.62, 280);
+    if (y < topBand && x < leftFabW) return true;
+    if (y < topBand + 56 && x > w - rightHudW - sidePad) return true;
+    if (y > h - 72 && x < 220) return true;
+    if (y > h - 72 && x > w - 120) return true;
+    return false;
   }
 
   private setupTouchControls() {
-    const TAP_MS = 280;
-    const TAP_DIST = 22;
-    const STEER_SENS = 0.014;
+    const DRAG_THRESHOLD = 14;
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      if (this.inDpadZone(pointer.x, pointer.y)) return;
+      if (this.inUiChromeZone(pointer.x, pointer.y)) return;
       this.touchPointerId = pointer.id;
-      this.touchStartX = this.touchLastX = pointer.x;
+      this.touchStartX = pointer.x;
       this.touchStartY = pointer.y;
-      this.touchStartTime = Date.now();
+      this.touchDragging = false;
     });
 
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
       if (pointer.id !== this.touchPointerId) return;
-      if (this.inDpadZone(pointer.x, pointer.y)) return;
 
-      const dx = pointer.x - this.touchLastX;
-      this.touchLastX = pointer.x;
-      const totalDist = Math.hypot(pointer.x - this.touchStartX, pointer.y - this.touchStartY);
+      const dx = pointer.x - this.touchStartX;
+      const dy = pointer.y - this.touchStartY;
+      const dist = Math.hypot(dx, dy);
 
-      if (totalDist > TAP_DIST) {
-        if (!this.player.autoRun) {
-          this.player.startAutoRun(this.player.facingToAngle());
-        }
-        if (Math.abs(dx) > 1) {
-          this.player.steerAutoRun(-dx * STEER_SENS);
-        }
+      if (dist >= DRAG_THRESHOLD) {
+        this.touchDragging = true;
+        this.player.setRunDirection(dx, dy);
       }
     });
 
@@ -560,17 +574,34 @@ export class MainScene extends Phaser.Scene {
       if (pointer.id !== this.touchPointerId) return;
       this.touchPointerId = null;
 
-      const elapsed = Date.now() - this.touchStartTime;
-      const dist = Math.hypot(pointer.x - this.touchStartX, pointer.y - this.touchStartY);
-
-      if (elapsed < TAP_MS && dist < TAP_DIST) {
+      if (this.touchDragging) {
         this.player.stopAutoRun();
-        this.player.clearMoveTarget();
         this.player.body.setVelocity(0);
-      } else if (dist >= TAP_DIST && !this.player.autoRun) {
-        this.player.startAutoRun(this.player.facingToAngle());
       }
+      this.touchDragging = false;
     });
+
+    this.input.on('pointerupoutside', (pointer: Phaser.Input.Pointer) => {
+      if (pointer.id !== this.touchPointerId) return;
+      this.touchPointerId = null;
+      this.player.stopAutoRun();
+      this.player.body.setVelocity(0);
+      this.touchDragging = false;
+    });
+
+    this.input.on('pointercancel', (pointer: Phaser.Input.Pointer) => {
+      if (pointer.id !== this.touchPointerId) return;
+      this.touchPointerId = null;
+      this.player.stopAutoRun();
+      this.player.body.setVelocity(0);
+      this.touchDragging = false;
+    });
+  }
+
+  private repositionHint() {
+    if (!this.hintText) return;
+    const bottomInset = isTouchDevice() ? 56 : 28;
+    this.hintText.setY(this.scale.height - bottomInset);
   }
 
   update(_time: number, delta: number) {
@@ -629,12 +660,12 @@ export class MainScene extends Phaser.Scene {
   private updateHint() {
     const free = this.progress.freeNav;
     const next = this.stations.find((s) => s.unlocked && !s.completed);
-    if (IS_TOUCH) {
+    if (isTouchDevice()) {
       this.hintText.setText(
         free
-          ? '📱 החליקו לרוץ · ימינה/שמאלה לסיבוב · הקשה לעצירה · או D-pad'
+          ? '📱 גררו/החליקו לכיוון הריצה · שחררו לעצירה'
           : next
-            ? `▶ ${next.idx + 1}. ${next.label} — החליקו לרוץ אל התחנה`
+            ? `▶ ${next.idx + 1}. ${next.label} — גררו לכיוון התחנה`
             : '🏆 סיימתם את כל המסע!',
       );
     } else if (free) {

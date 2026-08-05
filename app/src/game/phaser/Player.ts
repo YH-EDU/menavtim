@@ -237,6 +237,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.runAngleRad += deltaRad;
   }
 
+  /** Set continuous run direction from a drag/swipe vector (screen space, y-down). */
+  setRunDirection(dx: number, dy: number) {
+    if (dx === 0 && dy === 0) return;
+    this.autoRun = true;
+    this.runAngleRad = Math.atan2(dy, dx);
+    this.moveTarget = null;
+    this.hasMoved = true;
+  }
+
   private keyDown(dir: Facing): boolean {
     const c = this.cursors;
     const phaser =

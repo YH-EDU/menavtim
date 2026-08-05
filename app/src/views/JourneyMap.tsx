@@ -94,34 +94,53 @@ export default function JourneyMap({
           onPickerClosed={() => setAvatarPicker(false)}
         />
 
-        <StarHud progress={progress} />
-
-        {/* שלום — מוצמד לפינה הימנית העליונה */}
+        {/* שם + כוכבים — מוצמד לפינה הימנית העליונה; הכוכב מתחת לשם ולאחוזים */}
         <div
           style={{
             position: 'fixed',
-            top: 16,
-            right: 12,
-            zIndex: 10,
-            background: 'rgba(255, 254, 247, 0.94)',
-            border: '3px solid rgba(125, 82, 38, 0.85)',
-            borderRadius: 999,
-            padding: '7px 18px',
-            boxShadow: '0 4px 10px rgba(30, 70, 20, 0.35)',
+            top: 'calc(16px + env(safe-area-inset-top, 0px))',
+            right: 'calc(12px + env(safe-area-inset-right, 0px))',
+            zIndex: 12,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: 6,
             maxWidth: '58vw',
+            pointerEvents: 'none',
           }}
         >
-          <div style={{ fontSize: 16.5, fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {session.emoji} {session.nickname}
+          <div
+            style={{
+              background: 'rgba(255, 254, 247, 0.94)',
+              border: '3px solid rgba(125, 82, 38, 0.85)',
+              borderRadius: 999,
+              padding: '7px 18px',
+              boxShadow: '0 4px 10px rgba(30, 70, 20, 0.35)',
+              pointerEvents: 'auto',
+            }}
+          >
+            <div style={{ fontSize: 16.5, fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {session.emoji} {session.nickname}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--ink-soft)', fontWeight: 700 }}>
+              {isTeacherPreview ? 'תצוגת מורה' : session.className ? `כיתת ${session.className}` : 'תרגול חופשי'}
+              {' '}· {pct}% מהמסע
+            </div>
           </div>
-          <div style={{ fontSize: 12, color: 'var(--ink-soft)', fontWeight: 700 }}>
-            {isTeacherPreview ? 'תצוגת מורה' : session.className ? `כיתת ${session.className}` : 'תרגול חופשי'}
-            {' '}· {pct}% מהמסע
-          </div>
+          <StarHud progress={progress} embedded />
         </div>
 
         {/* כפתורי פעולה — מוצמדים לפינה השמאלית העליונה */}
-        <div style={{ position: 'fixed', top: 16, left: 12, zIndex: 10, display: 'flex', gap: 8 }}>
+        <div
+          style={{
+            position: 'fixed',
+            top: 'calc(16px + env(safe-area-inset-top, 0px))',
+            left: 'calc(12px + env(safe-area-inset-left, 0px))',
+            zIndex: 10,
+            display: 'flex',
+            gap: 8,
+          }}
+        >
           {fab(<TypeIcon size={21} />, 'המילים שלי', () => nav('/progress'))}
           {fab(sound ? <Volume2 size={21} /> : <VolumeX size={21} />, sound ? 'השתקת צלילים' : 'הפעלת צלילים', () => setSound(toggleSound()))}
           {fab(<ListIcon size={21} />, 'תצוגת רשימה', () => switchView('list'))}

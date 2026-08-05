@@ -14,7 +14,18 @@ const DIST = path.join(APP, 'dist');
 const WORKTREE = path.join(REPO, '.gh-pages-worktree');
 
 function run(cmd, cwd = REPO) {
-  execSync(cmd, { cwd, stdio: 'inherit', shell: true });
+  execSync(cmd, {
+    cwd,
+    stdio: 'inherit',
+    shell: true,
+    env: {
+      ...process.env,
+      GIT_AUTHOR_NAME: process.env.GIT_AUTHOR_NAME || 'MathGame',
+      GIT_AUTHOR_EMAIL: process.env.GIT_AUTHOR_EMAIL || 'mathgame@local.dev',
+      GIT_COMMITTER_NAME: process.env.GIT_COMMITTER_NAME || 'MathGame',
+      GIT_COMMITTER_EMAIL: process.env.GIT_COMMITTER_EMAIL || 'mathgame@local.dev',
+    },
+  });
 }
 
 if (!fs.existsSync(DIST)) {

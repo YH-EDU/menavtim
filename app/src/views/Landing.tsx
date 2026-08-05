@@ -57,22 +57,10 @@ export default function Landing({
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, width: '100%', maxWidth: 360 }}>
-          {session && (
-            <button
-              className="btn gold"
-              style={{ fontSize: 20, padding: '16px 24px', fontWeight: 900 }}
-              onClick={() => nav('/map')}
-            >
-              המשך למסע 🗺️
-            </button>
-          )}
           <button
             className="btn gold"
             style={{ fontSize: 20, padding: '16px 24px', fontWeight: 900, whiteSpace: 'nowrap' }}
-            onClick={() => {
-              if (session) onLogout?.('/');
-              nav('/join/guest');
-            }}
+            onClick={() => nav(session ? '/map' : '/join/guest')}
           >
             🎮 התחילו לשחק!
           </button>

@@ -170,6 +170,10 @@ export interface JourneyPath {
 
   grassPlazas: PlazaRect[];
 
+  /** Gray path + green fence strip through a grass plaza (e.g. maze entrance). */
+
+  pavedCorridors: PlazaRect[];
+
 }
 
 
@@ -585,6 +589,72 @@ function ensureMazeGateFence(
     }
 
   }
+
+}
+
+
+
+/** Orderly 2-tile corridor through a grass plaza — gray path, symmetrical green fence. */
+
+function addEntranceApproachCorridor(
+
+  pathCells: Set<string>,
+
+  wallCells: Set<string>,
+
+  hiddenWallCells: Set<string>,
+
+  gateTx: number,
+
+  lane: Lane,
+
+  plaza: PlazaRect,
+
+): PlazaRect {
+
+  const txA = gateTx;
+
+  const txB = gateTx + lane;
+
+  const leftWallTx = Math.min(txA, txB) - 1;
+
+  const rightWallTx = Math.max(txA, txB) + 1;
+
+
+
+  for (let ty = plaza.minTy; ty <= plaza.maxTy; ty++) {
+
+    addPathTile(pathCells, txA, ty);
+
+    addPathTile(pathCells, txB, ty);
+
+    for (const tx of [leftWallTx, rightWallTx]) {
+
+      if (tx < 1 || tx >= MAP_WIDTH - 1 || ty < 1 || ty >= MAP_HEIGHT - 1) continue;
+
+      const k = key(tx, ty);
+
+      wallCells.add(k);
+
+      hiddenWallCells.delete(k);
+
+    }
+
+  }
+
+
+
+  return {
+
+    minTx: leftWallTx,
+
+    maxTx: rightWallTx,
+
+    minTy: plaza.minTy,
+
+    maxTy: plaza.maxTy,
+
+  };
 
 }
 
@@ -1122,6 +1192,22 @@ export function buildJourneyPath(
 
   const wallCells = buildWallCells(pathCells, buildingZone, openPlazas);
 
+  const entranceCorridor = addEntranceApproachCorridor(
+
+    pathCells,
+
+    wallCells,
+
+    hiddenWallCells,
+
+    mazeEntrance.tx,
+
+    spawnLane,
+
+    entrancePlaza,
+
+  );
+
   ensureMazeGateFence(pathCells, wallCells, hiddenWallCells, mazeEntrance.tx, mazeEntrance.ty, spawnLane);
 
   ensureMazeGateFence(pathCells, wallCells, hiddenWallCells, mazeExit.tx, mazeExit.ty, 1);
@@ -1163,6 +1249,8 @@ export function buildJourneyPath(
     goalMarker,
 
     grassPlazas: [entrancePlaza],
+
+    pavedCorridors: [entranceCorridor],
 
   };
 

@@ -145,7 +145,15 @@ export class MainScene extends Phaser.Scene {
     this.worldLayer.setCollision([tileGid(TILE.path)], false, true);
     this.worldLayer.setVisible(false);
 
-    drawSolidColorMap(this, journey.pathCells, journey.wallCells, 1, journey.hiddenWallCells, journey.grassPlazas);
+    drawSolidColorMap(
+      this,
+      journey.pathCells,
+      journey.wallCells,
+      1,
+      journey.hiddenWallCells,
+      journey.grassPlazas,
+      journey.pavedCorridors,
+    );
 
     this.pathCells = journey.pathCells;
 

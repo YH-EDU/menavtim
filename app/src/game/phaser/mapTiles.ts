@@ -58,6 +58,13 @@ function isInsideGrassPlaza(tx: number, ty: number, grassPlazas?: PlazaRect[]): 
   );
 }
 
+function isInsidePavedCorridor(tx: number, ty: number, pavedCorridors?: PlazaRect[]): boolean {
+  if (!pavedCorridors?.length) return false;
+  return pavedCorridors.some(
+    (p) => tx >= p.minTx && tx <= p.maxTx && ty >= p.minTy && ty <= p.maxTy,
+  );
+}
+
 /** Reliable solid-color map draw — avoids tileset/GID rendering quirks in Phaser 4. */
 export function drawSolidColorMap(
   scene: Phaser.Scene,
@@ -66,6 +73,7 @@ export function drawSolidColorMap(
   depth = 1,
   hiddenWallCells?: Set<string>,
   grassPlazas?: PlazaRect[],
+  pavedCorridors?: PlazaRect[],
 ): Phaser.GameObjects.Graphics {
   const gfx = scene.add.graphics().setDepth(depth);
 
@@ -73,7 +81,9 @@ export function drawSolidColorMap(
     for (let tx = 0; tx < MAP_WIDTH; tx++) {
       const cell = `${tx},${ty}`;
       const isHidden = hiddenWallCells?.has(cell);
-      const onGrass = isInsideGrassPlaza(tx, ty, grassPlazas);
+      const onGrass =
+        isInsideGrassPlaza(tx, ty, grassPlazas) &&
+        !isInsidePavedCorridor(tx, ty, pavedCorridors);
       const idx = tileIndexForCell(tx, ty, pathCells, wallCells, hiddenWallCells);
       const color =
         onGrass

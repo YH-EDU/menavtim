@@ -79,29 +79,47 @@ export default function Landing() {
           </button>
         </div>
 
-        <p
+        <div
+          aria-label="ייחוסים"
           style={{
-            color: 'rgba(255,255,255,0.88)',
-            fontSize: 14,
-            marginTop: 44,
-            marginBottom: 6,
-            textShadow: '0 1px 6px rgba(0,0,0,0.4)',
-            fontWeight: 700,
+            position: 'fixed',
+            left: 'max(12px, env(safe-area-inset-left))',
+            bottom: 'max(12px, env(safe-area-inset-bottom))',
+            zIndex: 10,
+            maxWidth: 'min(300px, calc(100vw - 24px))',
+            padding: '8px 10px',
+            borderRadius: 8,
+            background: 'rgba(0,0,0,0.38)',
+            backdropFilter: 'blur(4px)',
+            textAlign: 'right',
+            pointerEvents: 'none',
           }}
         >
-          משחק זה נוצר על ידי יותם חדד
-        </p>
-        <p
-          style={{
-            color: 'rgba(255,255,255,0.82)',
-            fontSize: 13,
-            marginTop: 0,
-            textShadow: '0 1px 6px rgba(0,0,0,0.4)',
-            fontWeight: 600,
-          }}
-        >
-          מבוסס על מנוע המשחקים של חפציה בן ארצי
-        </p>
+          <p
+            style={{
+              color: 'rgba(255,255,255,0.92)',
+              fontSize: 13,
+              margin: '0 0 4px',
+              lineHeight: 1.45,
+              textShadow: '0 1px 4px rgba(0,0,0,0.55), 0 0 1px rgba(0,0,0,0.8)',
+              fontWeight: 700,
+            }}
+          >
+            משחק זה נוצר על ידי יותם חדד
+          </p>
+          <p
+            style={{
+              color: 'rgba(255,255,255,0.85)',
+              fontSize: 12,
+              margin: 0,
+              lineHeight: 1.45,
+              textShadow: '0 1px 4px rgba(0,0,0,0.55), 0 0 1px rgba(0,0,0,0.8)',
+              fontWeight: 600,
+            }}
+          >
+            מבוסס על מנוע המשחקים של חפציה בן ארצי
+          </p>
+        </div>
       </div>
     </HeroBg>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import type { Activity, ActivityResult } from '../data/types';
 import Intro from './Intro';
@@ -19,6 +19,9 @@ import TrueFalse from './TrueFalse';
 import SentenceBuilder from './SentenceBuilder';
 import { Stars, starsFor } from './ui';
 import { playWin } from '../lib/sound';
+import { cancelSpeech, toggleTts, ttsEnabled } from '../lib/tts';
+import { SpeechProvider } from './SpeechContext';
+import { Volume2, VolumeX } from '../ui/icons';
 
 export default function GameHost({
   activity,
@@ -28,8 +31,12 @@ export default function GameHost({
   onDone: (r: ActivityResult) => void;
 }) {
   const [result, setResult] = useState<ActivityResult | null>(null);
+  const [ttsOn, setTtsOn] = useState(ttsEnabled());
+
+  useEffect(() => () => cancelSpeech(), []);
 
   const finish = (r: ActivityResult) => {
+    cancelSpeech();
     setResult(r);
     playWin();
     const stars = starsFor(r.score, r.max);
@@ -84,14 +91,45 @@ export default function GameHost({
   };
 
   return (
-    <div className="float-up">
-      <div style={{ textAlign: 'center', marginBottom: 18 }}>
-        <h2 style={{ fontSize: 24 }}>{activity.title}</h2>
-        <p style={{ color: 'var(--ink-soft)', fontSize: 16, maxWidth: 560, margin: '8px auto 0', lineHeight: 1.6 }}>
-          {activity.instructions}
-        </p>
+    <SpeechProvider
+      key={activity.id}
+      activityId={activity.id}
+      instructions={activity.instructions}
+      ttsOn={ttsOn}
+    >
+      <div className="float-up">
+        <div style={{ textAlign: 'center', marginBottom: 18, position: 'relative' }}>
+          <button
+            type="button"
+            className="btn small"
+            aria-pressed={ttsOn}
+            aria-label={ttsOn ? 'כיבוי הקראה אוטומטית' : 'הפעלת הקראה אוטומטית'}
+            title={ttsOn ? 'הקראה פעילה' : 'הקראה כבויה'}
+            onClick={() => setTtsOn(toggleTts())}
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              background: ttsOn ? 'var(--teal-soft)' : '#fff',
+              color: ttsOn ? 'var(--teal-dark)' : 'var(--ink-soft)',
+              border: `2px solid ${ttsOn ? 'var(--teal)' : '#e2e8f0'}`,
+              boxShadow: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontWeight: 700,
+            }}
+          >
+            {ttsOn ? <Volume2 size={18} /> : <VolumeX size={18} />}
+            הקראה
+          </button>
+          <h2 style={{ fontSize: 24 }}>{activity.title}</h2>
+          <p style={{ color: 'var(--ink-soft)', fontSize: 16, maxWidth: 560, margin: '8px auto 0', lineHeight: 1.6 }}>
+            {activity.instructions}
+          </p>
+        </div>
+        {game()}
       </div>
-      {game()}
-    </div>
+    </SpeechProvider>
   );
 }

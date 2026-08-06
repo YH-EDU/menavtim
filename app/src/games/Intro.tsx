@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { IntroActivity, ActivityResult } from '../data/types';
 import { LETTERS, vocalize } from '../data/letters';
 import { playTap } from '../lib/sound';
+import { useSpeechText } from './SpeechContext';
 
 // כרטיסי היכרות: מילה בארמית, לחיצה חושפת תרגום + רמז
 
@@ -20,6 +21,8 @@ export default function Intro({
   };
 
   const allSeen = flipped.size >= activity.letters.length;
+
+  useSpeechText(null);
 
   return (
     <div>

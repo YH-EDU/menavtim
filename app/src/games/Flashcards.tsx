@@ -4,6 +4,7 @@ import { addLetterEvent } from '../lib/mastery';
 import { hebrewLetters, uniqueLetters } from '../data/letters';
 import { ProgressDots, PhraseCard } from './ui';
 import { playCorrect, playWrong } from '../lib/sound';
+import { useSpeechText } from './SpeechContext';
 
 function normalize(s: string): string {
   return s.replace(/\s+/g, ' ').trim();
@@ -41,6 +42,8 @@ export default function Flashcards({
 
   const card = activity.cards[idx];
   const expected = card.answer ?? card.text;
+
+  useSpeechText(card.text);
 
   const check = () => {
     if (state !== 'typing' || !input.trim()) return;

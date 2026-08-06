@@ -3,6 +3,7 @@ import type { WordSearchActivity, ActivityResult, LetterEvents } from '../data/t
 import { addLetterEvent } from '../lib/mastery';
 import { uniqueLetters } from '../data/letters';
 import { playCorrect, playWrong } from '../lib/sound';
+import { useSpeechText } from './SpeechContext';
 
 // תפזורת מילים בארמית.
 // מצב רגיל: מילים אופקיות נקראות מימין לשמאל, אנכיות מלמעלה למטה.
@@ -87,6 +88,8 @@ export default function WordSearch({
   const [hover, setHover] = useState<[number, number] | null>(null);
   const [flash, setFlash] = useState<'good' | 'bad' | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
+
+  useSpeechText(null);
 
   const key = (r: number, c: number) => `${r},${c}`;
 

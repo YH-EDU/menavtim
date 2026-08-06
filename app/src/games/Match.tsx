@@ -3,6 +3,7 @@ import type { MatchActivity, ActivityResult, LetterEvents } from '../data/types'
 import { addLetterEvent } from '../lib/mastery';
 import { uniqueLetters } from '../data/letters';
 import { playCorrect, playWrong } from '../lib/sound';
+import { useSpeechText } from './SpeechContext';
 
 // התאמה בשני טורים מקבילים: ארמית מימין, עברית משמאל.
 // אין סדר לחיצות — אפשר להתחיל מכל צד.
@@ -39,6 +40,8 @@ export default function Match({
   const [mistakes, setMistakes] = useState(0);
   const [wrong, setWrong] = useState<{ side: Side; i: number } | null>(null);
   const [events] = useState<LetterEvents>({});
+
+  useSpeechText(null);
 
   const isMatched = (i: number) => matched.includes(i);
 

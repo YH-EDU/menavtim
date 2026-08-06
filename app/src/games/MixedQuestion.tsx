@@ -4,6 +4,7 @@ import { addLetterEvent } from '../lib/mastery';
 import { stripPunct } from '../data/letters';
 import { ProgressDots, MixedText, tokenizeMixed } from './ui';
 import { playCorrect, playWrong } from '../lib/sound';
+import { useSpeechText } from './SpeechContext';
 
 // שאלה בשפה מעורבת: משפט עברי עם מילים ארמיות מודגשות.
 // אחרי התשובה נחשף התרגום מעל כל מילה ארמית — משוב מיידי בהקשר.
@@ -34,6 +35,8 @@ export default function MixedQuestion({
   const q = activity.questions[idx];
   const options = useMemo(() => shuffle(q.options, idx + 3), [q, idx]);
   const solved = chosen === q.correctAnswer;
+
+  useSpeechText(q.question);
 
   const choose = (opt: string) => {
     if (chosen !== null) return;

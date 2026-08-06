@@ -5,6 +5,7 @@ import { addLetterEvent } from '../lib/mastery';
 import { glossFor, stripPunct } from '../data/letters';
 import { ProgressDots } from './ui';
 import { playCorrect, playWrong } from '../lib/sound';
+import { useSpeechText } from './SpeechContext';
 
 // השלמת תרגום: מעל כל מילה ארמית יש משבצת ריקה, ומתחת למשפט בנק פתקים בעברית.
 // אפשר לגרור פתק אל משבצת, או ללחוץ על פתק ואז על משבצת — מה שנוח יותר.
@@ -57,6 +58,8 @@ export default function Annotate({
   const [hoverSlot, setHoverSlot] = useState<number | null>(null);
 
   const item = activity.sentences[idx];
+
+  useSpeechText(item.sentence);
 
   const { tokens, slots, bank } = useMemo(() => {
     const forced = item.words?.map(stripPunct);

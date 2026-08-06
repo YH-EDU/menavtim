@@ -4,6 +4,7 @@ import { addLetterEvent } from '../lib/mastery';
 import { stripPunct } from '../data/letters';
 import { ProgressDots } from './ui';
 import { playCorrect, playWrong } from '../lib/sound';
+import { useSpeechText } from './SpeechContext';
 
 // אימון שטף: טענה קצרה, נכון או לא נכון, עם שעון.
 // המטרה כאן היא מהירות שליפה — לא ידע חדש.
@@ -27,6 +28,8 @@ export default function TrueFalse({
   const locked = useRef(false);
 
   const item = activity.items[idx];
+
+  useSpeechText(item.claim);
 
   const settle = (result: Outcome) => {
     if (locked.current) return;

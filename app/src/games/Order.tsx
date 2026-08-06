@@ -3,6 +3,7 @@ import type { OrderActivity, ActivityResult, LetterEvents } from '../data/types'
 import { addLetterEvent } from '../lib/mastery';
 import { stripPunct } from '../data/letters';
 import { playCorrect, playWrong } from '../lib/sound';
+import { useSpeechText } from './SpeechContext';
 
 // סידור לפי סדר נתון: לוחצים על הפריטים לפי הסדר הנכון.
 
@@ -28,6 +29,8 @@ export default function Order({
   const [erredThis, setErredThis] = useState(false);
   const [wrongCh, setWrongCh] = useState<string | null>(null);
   const [events] = useState<LetterEvents>({});
+
+  useSpeechText(activity.goal ?? null);
 
   const clickLetter = (ch: string) => {
     const expected = activity.items[nextIdx];

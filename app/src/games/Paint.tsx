@@ -3,6 +3,7 @@ import type { PaintActivity, ActivityResult, LetterEvents } from '../data/types'
 import { addLetterEvent } from '../lib/mastery';
 import { stripPunct } from '../data/letters';
 import { playCorrect, playTap, playWrong } from '../lib/sound';
+import { useSpeechText } from './SpeechContext';
 
 // מוזאיקה ארמית: במקרא מילים ארמיות בלי תרגום, ובכל משבצת מילה עברית.
 // בוחרים מילה ארמית כמכחול, וצובעים את כל המשבצות שהמשמעות שלהן מתאימה לה.
@@ -21,6 +22,8 @@ export default function Paint({
   const [badCell, setBadCell] = useState<string | null>(null);
   const [mistakes, setMistakes] = useState(0);
   const [events] = useState<LetterEvents>({});
+
+  useSpeechText(null);
 
   const total = useMemo(
     () => grid.reduce((n, row) => n + row.filter((c) => c !== null).length, 0),

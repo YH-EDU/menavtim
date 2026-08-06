@@ -4,6 +4,7 @@ import { addLetterEvent } from '../lib/mastery';
 import { stripPunct } from '../data/letters';
 import { ProgressDots } from './ui';
 import { playCorrect, playTap, playWrong } from '../lib/sound';
+import { useSpeechText } from './SpeechContext';
 
 // בניית משפט: לוחצים על המילים הארמיות לפי הסדר הנכון.
 // הרחבה של רעיון הסידור הקיים — הפעם ברמת המשפט ולא ברמת הפריט הבודד.
@@ -40,6 +41,8 @@ export default function SentenceBuilder({
     [sentence, idx]
   );
   const done = placed.length === sentence.words.length;
+
+  useSpeechText(`בנו את המשפט: ${sentence.translation}`);
 
   const click = (bankIdx: number) => {
     if (done || placed.includes(bankIdx)) return;

@@ -3,6 +3,7 @@ import type { MemoryActivity, ActivityResult, LetterEvents } from '../data/types
 import { addLetterEvent } from '../lib/mastery';
 import { uniqueLetters } from '../data/letters';
 import { playCorrect, playTap, playWrong } from '../lib/sound';
+import { useSpeechText } from './SpeechContext';
 
 // זיכרון בשני טורים מקבילים: ארמית מימין, עברית משמאל, והכול הפוך.
 // חושפים קלף מכל צד; זוג נכון מחליק אל אותה שורה בשני הטורים ונשאר גלוי,
@@ -40,6 +41,8 @@ export default function Memory({
   const [moves, setMoves] = useState(0);
   const [lock, setLock] = useState(false);
   const [events] = useState<LetterEvents>({});
+
+  useSpeechText(null);
 
   const isMatched = (i: number) => matched.includes(i);
   const openOn = (side: Side) => flipped.find((f) => f.side === side);

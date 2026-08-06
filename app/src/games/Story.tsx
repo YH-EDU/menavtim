@@ -5,6 +5,7 @@ import { stripPunct } from '../data/letters';
 import { shuffleOptionsWithCorrect } from '../lib/shuffleOptions';
 import { ProgressDots, GlossWord, tokenizeMixed } from './ui';
 import { playCorrect, playTap, playWrong } from '../lib/sound';
+import { useSpeechText } from './SpeechContext';
 
 // קריאה רציפה: הטקסט מעורב עברית־ארמית ונשאר במקומו.
 // לחיצה על מילה ארמית חושפת את התרגום שלה מעליה, בלי שהמשפט מתחלף.
@@ -53,6 +54,9 @@ export default function Story({
       ),
     [questions, activity.id],
   );
+
+  const quizPrompt = phase === 'quiz' && questions[qIdx] ? questions[qIdx].prompt : null;
+  useSpeechText(quizPrompt);
 
   const finishReading = () => {
     if (questions.length > 0) {

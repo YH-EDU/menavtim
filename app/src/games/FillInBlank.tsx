@@ -4,6 +4,7 @@ import { addLetterEvent, addTextEvents } from '../lib/mastery';
 import { stripPunct } from '../data/letters';
 import { ProgressDots } from './ui';
 import { playCorrect, playWrong } from '../lib/sound';
+import { useSpeechText } from './SpeechContext';
 
 // השלמת מילה ארמית לתוך משפט עברי — הלב של הלימוד בהקשר.
 
@@ -57,6 +58,8 @@ export default function FillInBlank({
   };
 
   const [before, after] = q.sentence.split('___');
+
+  useSpeechText(`${before}…${after}`);
 
   return (
     <div style={{ textAlign: 'center' }}>

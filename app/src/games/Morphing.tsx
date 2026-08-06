@@ -4,6 +4,7 @@ import { addLetterEvent } from '../lib/mastery';
 import { ARAMAIC_GLOSS } from '../data/letters';
 import { ProgressDots } from './ui';
 import { playCorrect, playTap, playWrong } from '../lib/sound';
+import { useSpeechText } from './SpeechContext';
 
 // מורפינג אותיות: הופכים מילה עברית למילה ארמית בלחיצות.
 // שלבי השינוי מחושבים אוטומטית (מרחק עריכה) — כל שינוי הוא "משבצת" שאפשר ללחוץ עליה.
@@ -71,6 +72,8 @@ export default function Morphing({
   const word = activity.words[idx];
   const ops = useMemo(() => morphOps(word.baseWord, word.targetWord), [word]);
   const pending = ops.reduce((acc, op, i) => (op.kind !== 'keep' && !applied.has(i) ? acc + 1 : acc), 0);
+
+  useSpeechText(`${word.instruction}. המילה: ${word.baseWord}`);
   const complete = pending === 0;
 
   const advance = (firstTry: boolean) => {

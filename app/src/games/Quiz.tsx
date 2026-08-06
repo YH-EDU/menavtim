@@ -5,6 +5,7 @@ import { uniqueLetters } from '../data/letters';
 import { shuffleOptionsWithCorrect } from '../lib/shuffleOptions';
 import { ProgressDots, PhraseCard, MixedText } from './ui';
 import { playCorrect, playWrong } from '../lib/sound';
+import { useSpeechText } from './SpeechContext';
 
 export default function Quiz({
   activity,
@@ -30,6 +31,10 @@ export default function Quiz({
   const q = activity.questions[idx];
   const display = shuffledQuestions[idx];
   const done = idx >= activity.questions.length;
+
+  useSpeechText(
+    done ? null : [q.prompt, q.rashiText].filter(Boolean).join('. '),
+  );
 
   const choose = (i: number) => {
     if (chosen !== null) return;

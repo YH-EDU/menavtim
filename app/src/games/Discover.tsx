@@ -4,6 +4,7 @@ import { addLetterEvent } from '../lib/mastery';
 import { stripPunct } from '../data/letters';
 import { ProgressDots, MixedText } from './ui';
 import { playCorrect, playWrong } from '../lib/sound';
+import { useSpeechText } from './SpeechContext';
 
 // שלב הגילוי — הלב הפדגוגי של המשחק.
 // המילה הארמית מופיעה בתוך משפט עברי פשוט, בלי תרגום.
@@ -37,6 +38,8 @@ export default function Discover({
   const key = stripPunct(item.word);
   const options = useMemo(() => shuffle(item.options, idx + 3), [item, idx]);
   const solved = chosen === item.meaning;
+
+  useSpeechText(`${item.sentence} לפי המשפט, מה פירוש ${item.word}?`);
 
   const answer = (opt: string) => {
     if (chosen !== null) return;

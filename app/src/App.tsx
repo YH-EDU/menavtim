@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { loadSession, saveSession, fetchProgress, isCompleteSession, type StudentSession, type ProgressData } from './lib/api';
+import { loadSession, clearActiveSession, fetchProgress, isCompleteSession, type StudentSession, type ProgressData } from './lib/api';
 import Landing from './views/Landing';
 import Join from './views/Join';
 import JourneyMap from './views/JourneyMap';
@@ -56,7 +56,7 @@ export default function App() {
     refreshProgress();
   }, [refreshProgress]);
 
-  // סנכרון סשן מ-localStorage (למשל תצוגת מורה שנפתחת מלוח המורה)
+  // סנכרון סשן מ-sessionStorage (למשל תצוגת מורה שנפתחת מלוח המורה)
   useEffect(() => {
     const sync = () => {
       const s = loadSession();
@@ -71,6 +71,15 @@ export default function App() {
   const joinTail = parts[1] || '';
   const isGuestJoin = route === 'join' && joinTail === 'guest';
   const needsSession = route === 'map' || route === 'unit' || route === 'play' || route === 'progress';
+  const isLanding = route === '' || route === 'landing';
+
+  // מסך הבית = אין סשן פעיל — חובה הרשמה מחדש (התקדמות נשמרת לפי שם+אימוג')
+  useEffect(() => {
+    if (isLanding) {
+      clearActiveSession();
+      setSession(null);
+    }
+  }, [isLanding]);
 
   useEffect(() => {
     if (needsSession && !isCompleteSession(session)) {
@@ -79,7 +88,7 @@ export default function App() {
   }, [needsSession, session]);
 
   const logout = (to = '/') => {
-    saveSession(null);
+    clearActiveSession();
     setSession(null);
     nav(to);
   };
@@ -98,9 +107,9 @@ export default function App() {
       />
     );
   } else if (route === '' || route === 'landing') {
-    view = <Landing session={session} onLogout={logout} />;
+    view = <Landing />;
   } else if (!isCompleteSession(session)) {
-    view = needsSession ? null : <Landing session={null} onLogout={logout} />;
+    view = needsSession ? null : <Landing />;
   } else if (route === 'map') {
     view = (
       <JourneyMap
@@ -134,7 +143,7 @@ export default function App() {
   } else if (route === 'progress') {
     view = <ProgressView session={session} progress={progress} />;
   } else {
-    view = <Landing session={session} onLogout={logout} />;
+    view = <Landing />;
   }
 
   return <div style={{ minHeight: '100vh' }}>{view}</div>;

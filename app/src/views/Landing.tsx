@@ -2,15 +2,7 @@ import React from 'react';
 import { nav } from '../App';
 import { HeroBg } from '../ui/PageShell';
 import { asset } from '../lib/basePath';
-import { isCompleteSession, type StudentSession } from '../lib/api';
-
-export default function Landing({
-  session,
-  onLogout,
-}: {
-  session?: StudentSession | null;
-  onLogout?: (to?: string) => void;
-}) {
+export default function Landing() {
   return (
     <HeroBg
       image={asset('/bg-landing-maze.jpg')}
@@ -60,7 +52,7 @@ export default function Landing({
           <button
             className="btn gold"
             style={{ fontSize: 20, padding: '16px 24px', fontWeight: 900, whiteSpace: 'nowrap' }}
-            onClick={() => nav(isCompleteSession(session) ? '/map' : '/join/guest')}
+            onClick={() => nav('/join/guest')}
           >
             🎮 התחילו לשחק!
           </button>
@@ -74,10 +66,7 @@ export default function Landing({
               border: '2px solid rgba(255,255,255,0.7)',
               backdropFilter: 'blur(6px)',
             }}
-            onClick={() => {
-              if (session) onLogout?.('/');
-              nav('/join');
-            }}
+            onClick={() => nav('/join')}
           >
             🏫 יש לי קוד כיתה
           </button>

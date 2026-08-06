@@ -22,7 +22,8 @@ export interface ProgressData {
   freeNav?: boolean;
 }
 
-const LS_SESSION = 'aramit_session';
+const SS_SESSION = 'aramit_session';
+const LS_SESSION_LEGACY = 'aramit_session'; // הוסר — סשן פעיל רק ב-sessionStorage
 const LS_GUEST_REGISTRY = 'aramit_guest_registry';
 const LS_GUEST_MIGRATED = 'aramit_guest_migrated_v2';
 
@@ -140,13 +141,22 @@ function registerGuestIdentity(nickname: string, emoji: string): void {
   saveGuestRegistry(reg);
 }
 
+/** סשן פעיל (מחובר) — sessionStorage בלבד; נמחק בסגירת לשונית/דפדפן */
 export function loadSession(): StudentSession | null {
   try {
-    const raw = localStorage.getItem(LS_SESSION);
+    localStorage.removeItem(LS_SESSION_LEGACY);
+  } catch { /* ignore */ }
+  try {
+    const raw = sessionStorage.getItem(SS_SESSION);
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
+}
+
+/** מנקה את הסשן הפעיל — ההתקדמות לפי שם+אימוג'י נשארת ב-localStorage */
+export function clearActiveSession(): void {
+  saveSession(null);
 }
 
 /** סשן תקין — שם ואימוג'י (דמות) חובה לפני כניסה למסע */
@@ -155,8 +165,8 @@ export function isCompleteSession(s: StudentSession | null | undefined): s is St
 }
 
 export function saveSession(s: StudentSession | null): void {
-  if (s) localStorage.setItem(LS_SESSION, JSON.stringify(s));
-  else localStorage.removeItem(LS_SESSION);
+  if (s) sessionStorage.setItem(SS_SESSION, JSON.stringify(s));
+  else sessionStorage.removeItem(SS_SESSION);
 }
 
 async function post<T>(path: string, body: unknown, token?: string): Promise<T> {

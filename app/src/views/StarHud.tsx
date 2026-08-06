@@ -68,9 +68,17 @@ export default function StarHud({
 
   const iconTarget = () => {
     const icon = iconRef.current?.getBoundingClientRect();
+    if (icon && icon.width > 0) {
+      return { x: icon.left + icon.width / 2, y: icon.top + icon.height / 2 };
+    }
+    const root = document.documentElement;
+    const rtl = root.dir === 'rtl' || getComputedStyle(root).direction === 'rtl';
+    const inset = rtl
+      ? Math.max(8, Number.parseFloat(getComputedStyle(root).getPropertyValue('env(safe-area-inset-right)')) || 0)
+      : Math.max(8, Number.parseFloat(getComputedStyle(root).getPropertyValue('env(safe-area-inset-left)')) || 0);
     return {
-      x: icon ? icon.left + icon.width / 2 : window.innerWidth - 48,
-      y: icon ? icon.top + icon.height / 2 : 33,
+      x: rtl ? window.innerWidth - inset - 18 : inset + 18,
+      y: 88,
     };
   };
 
@@ -78,28 +86,33 @@ export default function StarHud({
     const pending = Number(sessionStorage.getItem(LS_FLY_STARS) || '0');
     if (pending > 0) {
       sessionStorage.removeItem(LS_FLY_STARS);
-      const target = iconTarget();
-      const fromX = window.innerWidth * 0.5;
-      const fromY = window.innerHeight * 0.42;
 
-      const batch: FlyingStar[] = Array.from({ length: pending }, () => ({
-        id: flyId.current++,
-        fromX,
-        fromY,
-        toX: target.x,
-        toY: target.y,
-      }));
-      setFlying((prev) => [...prev, ...batch]);
+      const launch = () => {
+        const target = iconTarget();
+        const fromX = window.innerWidth * 0.5;
+        const fromY = window.innerHeight * 0.42;
 
-      window.setTimeout(() => {
-        setDisplayStars(totals.stars);
-        setPulse(true);
-        window.setTimeout(() => setPulse(false), 700);
-      }, 520);
+        const batch: FlyingStar[] = Array.from({ length: pending }, (_, i) => ({
+          id: flyId.current++,
+          fromX: fromX + (i - (pending - 1) / 2) * 14,
+          fromY: fromY + (i % 2) * 10,
+          toX: target.x,
+          toY: target.y,
+        }));
+        setFlying((prev) => [...prev, ...batch]);
 
-      window.setTimeout(() => {
-        setFlying((prev) => prev.filter((s) => !batch.some((b) => b.id === s.id)));
-      }, 900);
+        window.setTimeout(() => {
+          setDisplayStars(totals.stars);
+          setPulse(true);
+          window.setTimeout(() => setPulse(false), 700);
+        }, 520);
+
+        window.setTimeout(() => {
+          setFlying((prev) => prev.filter((s) => !batch.some((b) => b.id === s.id)));
+        }, 900);
+      };
+
+      requestAnimationFrame(() => requestAnimationFrame(launch));
     } else if (totals.stars !== prevStars.current) {
       setDisplayStars(totals.stars);
       if (totals.stars > prevStars.current) {
@@ -125,9 +138,10 @@ export default function StarHud({
           display: 'flex',
           alignItems: 'center',
           gap: 6,
-          direction: 'rtl',
           pointerEvents: 'none',
-          ...(embedded ? { justifyContent: 'flex-end', paddingInlineEnd: 2 } : {}),
+          ...(embedded
+            ? { direction: 'ltr', justifyContent: 'flex-end', width: '100%' }
+            : { direction: 'rtl' }),
         }}
       >
         <div

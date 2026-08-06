@@ -94,18 +94,18 @@ export default function JourneyMap({
           onPickerClosed={() => setAvatarPicker(false)}
         />
 
-        {/* שם + כוכבים — מוצמד לפינה הימנית העליונה; הכוכב מתחת לשם ולאחוזים */}
+        {/* שם + כוכבים — עמודה אחת מוצמדת לקצה המסך (ימין); הכוכב מתחת לתג השם */}
         <div
           style={{
             position: 'fixed',
-            top: 'calc(16px + env(safe-area-inset-top, 0px))',
-            right: 'calc(12px + env(safe-area-inset-right, 0px))',
+            top: 'max(12px, env(safe-area-inset-top, 0px))',
+            insetInlineStart: 'max(8px, env(safe-area-inset-right, 0px))',
             zIndex: 12,
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'flex-end',
-            gap: 0,
-            maxWidth: '58vw',
+            alignItems: 'start',
+            gap: 6,
+            maxWidth: 'min(58vw, calc(100vw - 16px))',
             pointerEvents: 'none',
           }}
         >
@@ -117,6 +117,7 @@ export default function JourneyMap({
               padding: '7px 18px',
               boxShadow: '0 4px 10px rgba(30, 70, 20, 0.35)',
               pointerEvents: 'auto',
+              maxWidth: '100%',
             }}
           >
             <div style={{ fontSize: 16.5, fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -127,18 +128,7 @@ export default function JourneyMap({
               {' '}· {pct}% מהמסע
             </div>
           </div>
-          <div
-            style={{
-              alignSelf: 'stretch',
-              display: 'flex',
-              justifyContent: 'flex-end',
-              marginTop: 16,
-              transform: 'translateX(22px)',
-              paddingBottom: 2,
-            }}
-          >
-            <StarHud progress={progress} embedded />
-          </div>
+          <StarHud progress={progress} embedded />
         </div>
 
         {/* כפתורי פעולה — מוצמדים לפינה השמאלית העליונה */}

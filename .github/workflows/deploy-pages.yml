@@ -42,14 +42,8 @@ jobs:
         run: rm -rf app/dist/avatars/_downloads
 
       - name: Add deploy stamp
-        run: node -e "
-          const fs=require('fs');
-          const p='app/dist/index.html';
-          let h=fs.readFileSync(p,'utf8');
-          h=h.replace(/<meta name=\"deploy\"[^>]*>\\s*/i,'');
-          h=h.replace(/<meta name=\"viewport\"/i,'<meta name=\"deploy\" content=\"'+new Date().toISOString()+'\" />\\n    <meta name=\"viewport\"');
-          fs.writeFileSync(p,h);
-        "
+        run: node scripts/stamp-deploy-html.mjs
+        working-directory: app
 
       - uses: actions/upload-pages-artifact@v3
         with:

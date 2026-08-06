@@ -142,15 +142,15 @@ export const CHARACTERS: CharacterDef[] = [
   },
   {
     id: 'rocket',
-    nameHe: 'רקטה',
-    emoji: '🚀',
+    nameHe: 'חללית',
+    emoji: '🛸',
     mode: 'rocket',
     textureKey: 'avatar-rocket-ship',
     scale: 0.55,
     body: { w: 26, h: 34, ox: 23, oy: 24 },
     origin: { x: 0.5, y: 0.55 },
     preview: `${PREV}/rocket.png`,
-    taglineHe: 'רקטה כחולה עם להבות — צאו לחלל!',
+    taglineHe: 'חללית כחולה עם להבות — צאו לחלל!',
   },
 ];
 

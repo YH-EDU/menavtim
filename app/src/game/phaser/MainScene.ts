@@ -157,7 +157,6 @@ export class MainScene extends Phaser.Scene {
 
     this.pathCells = journey.pathCells;
 
-    this.drawMazeGate(journey.mazeEntrance, 1);
     this.drawMazeGate(journey.mazeExit, 1);
     this.drawGoalMarker(journey.goalMarker);
 

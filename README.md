@@ -60,7 +60,7 @@ Based on the game engine by [Chepti Ben Artzi](https://chepti.com) (Rashi script
 
 ### דמויות · Characters
 
-8 דמויות לבחירה (אביר, חנה, שועל, נמר, רובוט, חד־קרן, מכונית, רקטה) — ראו קרדיטים למטה.
+8 דמויות לבחירה (אביר, חנה, שועל, נמר, רובוט, חד־קרן, מכונית, חללית) — ראו קרדיטים למטה.
 
 **חשוב:** דמות המשחק (אביר/חנה וכו') נפרדת מ**סימן המזהה** (אימוג'י) — האימוג'י + השם שומרים את ההתקדמות; הדמות היא רק איך השחקן נראה על המפה.
 
@@ -226,7 +226,7 @@ mathgame/
 | רובוט | Kenney Toon Characters 1 | CC0 |
 | חד־קרן | LPC Horse Extended (bluecarrot16) | CC-BY / GPL / OGA-BY |
 | מכונית | Kenney Racing Pack | CC0 |
-| רקטה | Kenney Space Shooter Redux | CC0 |
+| חללית | Kenney Space Shooter Redux | CC0 |
 
 פירוט מלא: `app/public/avatars/README.md`
 

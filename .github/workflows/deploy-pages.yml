@@ -1,0 +1,59 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - '.github/workflows/deploy-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install and build
+        working-directory: app
+        run: |
+          npm ci
+          npm run build
+
+      - name: Strip dev-only avatar archives
+        run: rm -rf app/dist/avatars/_downloads
+
+      - name: Add deploy stamp
+        run: node -e "
+          const fs=require('fs');
+          const p='app/dist/index.html';
+          let h=fs.readFileSync(p,'utf8');
+          h=h.replace(/<meta name=\"deploy\"[^>]*>\\s*/i,'');
+          h=h.replace(/<meta name=\"viewport\"/i,'<meta name=\"deploy\" content=\"'+new Date().toISOString()+'\" />\\n    <meta name=\"viewport\"');
+          fs.writeFileSync(p,h);
+        "
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/dist
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

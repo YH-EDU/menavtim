@@ -49,10 +49,13 @@ for (const entry of fs.readdirSync(WORKTREE)) {
   fs.rmSync(path.join(WORKTREE, entry), { recursive: true, force: true });
 }
 
-// Copy dist → worktree root
+// Copy dist → worktree root (skip dev-only avatar source archives)
+const SKIP_DIRS = new Set(['_downloads']);
+
 function copyDir(src, dest) {
   fs.mkdirSync(dest, { recursive: true });
   for (const name of fs.readdirSync(src)) {
+    if (SKIP_DIRS.has(name)) continue;
     const s = path.join(src, name);
     const d = path.join(dest, name);
     if (fs.statSync(s).isDirectory()) copyDir(s, d);
@@ -61,6 +64,19 @@ function copyDir(src, dest) {
 }
 copyDir(DIST, WORKTREE);
 fs.writeFileSync(path.join(WORKTREE, '.nojekyll'), '');
+
+// Cache-bust marker + ensure HTML references the bundle we just copied
+const indexPath = path.join(WORKTREE, 'index.html');
+if (fs.existsSync(indexPath)) {
+  const stamp = new Date().toISOString();
+  let html = fs.readFileSync(indexPath, 'utf8');
+  html = html.replace(/<meta name="deploy"[^>]*>\s*/i, '');
+  html = html.replace(
+    /<meta name="viewport"/i,
+    `<meta name="deploy" content="${stamp}" />\n    <meta name="viewport"`,
+  );
+  fs.writeFileSync(indexPath, html);
+}
 
 run('git add -A', WORKTREE);
 const status = execSync('git status --porcelain', { cwd: WORKTREE, encoding: 'utf8' });

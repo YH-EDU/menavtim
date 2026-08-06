@@ -58,7 +58,7 @@ export const CHARACTERS: CharacterDef[] = [
     textureKey: 'avatar-knight',
     atlas: { png: `${ATLAS}/knight/atlas.png`, json: `${ATLAS}/knight/atlas.json` },
     scale: 0.72,
-    body: { w: 16, h: 22, ox: 12, oy: 42 },
+    body: { w: 14, h: 20, ox: 9, oy: 14 },
     origin: { x: 0.5, y: 0.92 },
     preview: `${PREV}/knight.png`,
     taglineHe: 'אביר אמיץ עם חרב ומגן — קדימה!',
@@ -95,8 +95,8 @@ export const CHARACTERS: CharacterDef[] = [
     mode: 'fourDir',
     textureKey: 'avatar-cat',
     atlas: { png: `${ATLAS}/cat/atlas.png`, json: `${ATLAS}/cat/atlas.json` },
-    scale: 1.28,
-    body: { w: 18, h: 24, ox: 7, oy: 16 },
+    scale: 1.58,
+    body: { w: 20, h: 26, ox: 6, oy: 14 },
     origin: { x: 0.5, y: 0.88 },
     preview: `${PREV}/cat.png`,
     taglineHe: 'נמר חמוד עם נקודות — מייאו!',
@@ -219,8 +219,8 @@ export const MISA = {
   walkPrefix: { down: 'misa-front-walk.', up: 'misa-back-walk.', left: 'misa-left-walk.', right: 'misa-right-walk.' },
 } as const;
 
-/** Knight reuses right-facing frames with flipX for left. */
-export const KNIGHT_FLIP_LEFT = true;
+/** Knight has dedicated left-facing frames (Shield Maiden atlas). */
+export const KNIGHT_FLIP_LEFT = false;
 
 /** fourDir atlas frame helpers */
 export function fourDirIdleFrame(dir: string): string {

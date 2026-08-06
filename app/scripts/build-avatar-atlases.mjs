@@ -85,20 +85,57 @@ function gridAtlas(name, pngSrc, cellW, cellH, layout) {
   writeAtlas(path.join(OUT, name), 'atlas.png', frames, { w: cols * cellW, h: rows * cellH });
 }
 
-/** Hero Knight — male warrior, 40×64 cells, 4 walk frames × 3 dirs (left = flip right) */
+/** Shield Maiden — Sevarihk / OGA, 128×256, 32×64 cells, 4 frames × 4 dirs (אביר) */
 function knightAtlas() {
   gridAtlas(
     'knight',
-    path.join(DL, 'heroKnight/player_full_animation.png'),
-    40,
+    path.join(DL, 'shieldMaiden/npc-nordic-shieldmaiden1.png'),
+    32,
     64,
     [
       { dir: 'down', row: 0, frames: 4, idle: true, idleCol: 0 },
-      { dir: 'right', row: 1, frames: 4, idle: true, idleCol: 0 },
-      { dir: 'up', row: 2, frames: 4, idle: true, idleCol: 0 },
       { dir: 'left', row: 1, frames: 4, idle: true, idleCol: 0 },
+      { dir: 'right', row: 2, frames: 4, idle: true, idleCol: 0 },
+      { dir: 'up', row: 3, frames: 4, idle: true, idleCol: 0 },
     ],
   );
+  trimKnightPonytail(path.join(OUT, 'knight/atlas.png'), 32, 64);
+}
+
+/** Hide ponytail/bun on shield maiden frames — subtle edit, keeps familiar look. */
+function trimKnightPonytail(atlasPng, cellW, cellH) {
+  runPs(`
+Add-Type -AssemblyName System.Drawing
+$img = [System.Drawing.Bitmap]::FromFile('${atlasPng.replace(/'/g, "''")}')
+$g = [System.Drawing.Graphics]::FromImage($img)
+$g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::None
+$hair = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 92, 58, 32))
+$helm = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 140, 148, 158))
+$spots = @(
+  @(11, 2, 10, 7), @(9, 3, 12, 6), @(13, 1, 8, 5)
+)
+$cols = [Math]::Max(1, [int][Math]::Floor($img.Width / ${cellW}))
+$rows = [Math]::Max(1, [int][Math]::Floor($img.Height / ${cellH}))
+for ($row = 0; $row -lt $rows; $row++) {
+  for ($col = 0; $col -lt $cols; $col++) {
+    $baseX = $col * ${cellW}
+    $baseY = $row * ${cellH}
+    foreach ($s in $spots) {
+      $sx = $baseX + $s[0]
+      $sy = $baseY + $s[1]
+      $sw = $s[2]
+      $sh = $s[3]
+      if ($sx + $sw -ge $img.Width -or $sy + $sh -ge $img.Height) { continue }
+      $brush = if ($row -eq 3) { $hair } else { $helm }
+      $g.FillRectangle($brush, $sx, $sy, $sw, $sh)
+    }
+  }
+}
+$tmp = '${atlasPng.replace(/'/g, "''")}.tmp.png'
+$img.Save($tmp, [System.Drawing.Imaging.ImageFormat]::Png)
+$hair.Dispose(); $helm.Dispose(); $g.Dispose(); $img.Dispose()
+Move-Item -Force $tmp '${atlasPng.replace(/'/g, "''")}'
+`);
 }
 
 function starlingToPhaser(name, xmlPath, pngSrc) {
@@ -173,20 +210,22 @@ function catAtlas() {
     { dir: 'down', row: 2, frames: 3, idle: true, idleCol: 1 },
     { dir: 'left', row: 3, frames: 3, idle: true, idleCol: 1 },
   ]);
-  addLeopardSpots(path.join(OUT, 'cat/atlas.png'), 32, 48);
+  addLeopardLook(path.join(OUT, 'cat/atlas.png'), 32, 48);
 }
 
-/** Paint leopard-like spots onto the orange cat atlas (נמר). */
-function addLeopardSpots(atlasPng, cellW, cellH) {
+/** Warm tint + stronger leopard spots for נמר. */
+function addLeopardLook(atlasPng, cellW, cellH) {
   runPs(`
 Add-Type -AssemblyName System.Drawing
 $img = [System.Drawing.Bitmap]::FromFile('${atlasPng.replace(/'/g, "''")}')
 $g = [System.Drawing.Graphics]::FromImage($img)
 $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::None
-$brush = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(180, 45, 30, 15))
+$spot = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(210, 35, 22, 10))
+$spot2 = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(170, 55, 35, 18))
 $spots = @(
-  @(10,18,5,4), @(20,16,4,3), @(14,26,5,4), @(22,28,3,3), @(8,24,3,3),
-  @(12,20,4,3), @(18,22,5,4), @(24,18,3,3), @(16,30,4,3)
+  @(8,14,6,5), @(18,12,5,4), @(12,22,6,5), @(22,24,4,4), @(6,20,4,4),
+  @(14,16,5,4), @(20,18,6,5), @(24,14,4,3), @(10,28,5,4), @(16,26,4,3),
+  @(22,30,3,3), @(8,24,3,3)
 )
 $cols = [Math]::Max(1, [int][Math]::Floor($img.Width / ${cellW}))
 $rows = [Math]::Max(1, [int][Math]::Floor($img.Height / ${cellH}))
@@ -194,6 +233,19 @@ for ($row = 0; $row -lt $rows; $row++) {
   for ($col = 0; $col -lt $cols; $col++) {
     $baseX = $col * ${cellW}
     $baseY = $row * ${cellH}
+    for ($py = 0; $py -lt ${cellH}; $py++) {
+      for ($px = 0; $px -lt ${cellW}; $px++) {
+        $x = $baseX + $px
+        $y = $baseY + $py
+        $p = $img.GetPixel($x, $y)
+        if ($p.A -lt 40) { continue }
+        $r = [Math]::Min(255, [int]($p.R * 0.88 + 42))
+        $gr = [Math]::Min(255, [int]($p.G * 0.82 + 28))
+        $b = [Math]::Max(0, [int]($p.B * 0.72 - 8))
+        $img.SetPixel($x, $y, [System.Drawing.Color]::FromArgb($p.A, $r, $gr, $b))
+      }
+    }
+    $i = 0
     foreach ($s in $spots) {
       $sx = $baseX + $s[0]
       $sy = $baseY + $s[1]
@@ -202,13 +254,15 @@ for ($row = 0; $row -lt $rows; $row++) {
       if ($sx + $sw -ge $img.Width -or $sy + $sh -ge $img.Height) { continue }
       $p = $img.GetPixel([Math]::Min($sx + 1, $img.Width - 1), [Math]::Min($sy + 1, $img.Height - 1))
       if ($p.A -lt 40) { continue }
+      $brush = if (($i % 3) -eq 0) { $spot2 } else { $spot }
       $g.FillEllipse($brush, $sx, $sy, $sw, $sh)
+      $i++
     }
   }
 }
 $tmp = '${atlasPng.replace(/'/g, "''")}.tmp.png'
 $img.Save($tmp, [System.Drawing.Imaging.ImageFormat]::Png)
-$brush.Dispose(); $g.Dispose(); $img.Dispose()
+$spot.Dispose(); $spot2.Dispose(); $g.Dispose(); $img.Dispose()
 Move-Item -Force $tmp '${atlasPng.replace(/'/g, "''")}'
 `);
 }

@@ -536,6 +536,60 @@ function addExitPlaza(pathCells: Set<string>, anchorTx: number, anchorTy: number
 
 
 
+/** Visible fence posts flanking maze gates — open plazas skip auto wall generation. */
+
+function ensureMazeGateFence(
+
+  pathCells: Set<string>,
+
+  wallCells: Set<string>,
+
+  hiddenWallCells: Set<string>,
+
+  gateTx: number,
+
+  gateTy: number,
+
+  lane: Lane,
+
+): void {
+
+  const txA = gateTx;
+
+  const txB = gateTx + lane;
+
+  const leftTx = Math.min(txA, txB) - 1;
+
+  const rightTx = Math.max(txA, txB) + 1;
+
+
+
+  for (let dy = -1; dy <= 2; dy++) {
+
+    const ty = gateTy + dy;
+
+    if (ty < 1 || ty >= MAP_HEIGHT - 1) continue;
+
+    for (const tx of [leftTx, rightTx]) {
+
+      if (tx < 1 || tx >= MAP_WIDTH - 1) continue;
+
+      const k = key(tx, ty);
+
+      if (pathCells.has(k)) continue;
+
+      wallCells.add(k);
+
+      hiddenWallCells.delete(k);
+
+    }
+
+  }
+
+}
+
+
+
 /** Invisible collision ring just outside an open plaza (no green fence tiles). */
 
 function addInvisiblePlazaBoundary(
@@ -1067,6 +1121,10 @@ export function buildJourneyPath(
 
 
   const wallCells = buildWallCells(pathCells, buildingZone, openPlazas);
+
+  ensureMazeGateFence(pathCells, wallCells, hiddenWallCells, mazeEntrance.tx, mazeEntrance.ty, spawnLane);
+
+  ensureMazeGateFence(pathCells, wallCells, hiddenWallCells, mazeExit.tx, mazeExit.ty, 1);
 
   sealMapEdges(pathCells, wallCells);
 

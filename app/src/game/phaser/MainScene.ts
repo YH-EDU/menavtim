@@ -149,7 +149,8 @@ export class MainScene extends Phaser.Scene {
 
     this.pathCells = journey.pathCells;
 
-    this.drawMazeEntrance(journey.mazeExit);
+    this.drawMazeGate(journey.mazeEntrance, 1);
+    this.drawMazeGate(journey.mazeExit, 1);
     this.drawGoalMarker(journey.goalMarker);
 
     this.goalMarker = journey.goalMarker;
@@ -255,22 +256,27 @@ export class MainScene extends Phaser.Scene {
     this.onSceneActive();
   }
 
-  private drawMazeEntrance(entrance: { px: number; py: number }) {
+  /** Tile-aligned fence posts at maze gates — matches corridor fence elsewhere. */
+  private drawMazeGate(gate: { tx: number; ty: number }, lane: 1 | -1) {
     const gfx = this.add.graphics().setDepth(3);
-    const w = TILE_SIZE * 2.4;
-    const h = TILE_SIZE * 1.1;
-    const x = entrance.px - w / 2;
-    const y = entrance.py - h / 2;
+    const txA = gate.tx;
+    const txB = gate.tx + lane;
+    const leftPathTx = Math.min(txA, txB);
+    const rightPathTx = Math.max(txA, txB);
+    const gateW = (rightPathTx - leftPathTx + 1) * TILE_SIZE;
+    const x = leftPathTx * TILE_SIZE;
+    const y = (gate.ty - 1) * TILE_SIZE;
+    const postH = TILE_SIZE * 2.5;
 
-    gfx.fillStyle(COLORS.wallDark, 0.85);
-    gfx.fillRect(x - TILE_SIZE * 0.35, y, TILE_SIZE * 0.35, h);
-    gfx.fillRect(x + w, y, TILE_SIZE * 0.35, h);
-    gfx.fillStyle(COLORS.wall, 0.9);
-    gfx.fillRect(x - TILE_SIZE * 0.35, y - TILE_SIZE * 0.2, TILE_SIZE * 0.35, TILE_SIZE * 0.25);
-    gfx.fillRect(x + w, y - TILE_SIZE * 0.2, TILE_SIZE * 0.35, TILE_SIZE * 0.25);
+    gfx.fillStyle(COLORS.wallDark, 1);
+    gfx.fillRect(x - TILE_SIZE, y, TILE_SIZE, postH);
+    gfx.fillRect(x + gateW, y, TILE_SIZE, postH);
+    gfx.fillStyle(COLORS.wall, 1);
+    gfx.fillRect(x - TILE_SIZE, y - TILE_SIZE * 0.18, TILE_SIZE, TILE_SIZE * 0.22);
+    gfx.fillRect(x + gateW, y - TILE_SIZE * 0.18, TILE_SIZE, TILE_SIZE * 0.22);
 
-    gfx.lineStyle(3, COLORS.goalAccent, 0.75);
-    gfx.strokeRect(x - 2, y - 2, w + 4, h + 2);
+    gfx.fillStyle(COLORS.goalAccent, 0.88);
+    gfx.fillRect(x - TILE_SIZE + 2, y - TILE_SIZE * 0.14, gateW + TILE_SIZE * 2 - 4, TILE_SIZE * 0.16);
   }
 
   private drawGoalMarker(marker: GoalMarker) {

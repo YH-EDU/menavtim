@@ -6,7 +6,9 @@ A playful journey for Hebrew speakers learning **Aramaic** — kids navigate sta
 
 **Live demo:** [https://yosefyotam-glitch.github.io/menavtim/](https://yosefyotam-glitch.github.io/menavtim/)
 
-> **הערה על הכתובת:** השם `yosefyotam-glitch` בכתובת הוא שם חשבון GitHub — לא ניתן להסירו ב-GitHub Pages חינמי. לנתיב קצר יותר (למשל `menavtim.com`) נדרש **דומיין פרטי**.
+**Netlify (כתובת נקייה):** פריסה מוכנה (`npm run deploy:netlify`) — ממתינה להגדרת דומיין/חשבון Netlify.
+
+> **הערה על הכתובת:** השם `yosefyotam-glitch` בכתובת GitHub Pages הוא שם חשבון GitHub — לא ניתן לשנותו דרך הקוד. שינוי שם משתמש GitHub אפשרי רק ידנית על ידי בעל החשבון (ולא לשם כמו `Y.H`, שאינו תקין ב-GitHub). לנתיב קצר יותר (למשל `menavtim.com`) נדרש **דומיין פרטי** או Netlify.
 
 ---
 
@@ -58,7 +60,38 @@ Based on the game engine by [Chepti Ben Artzi](https://chepti.com) (Rashi script
 
 ### דמויות · Characters
 
-8 דמויות לבחירה (מיסה, אבירה, שועל, חתול, רובוט, סוס, מכונית, רקטה) — ראו קרדיטים למטה.
+8 דמויות לבחירה (אביר, חנה, שועל, נמר, רובוט, חד־קרן, מכונית, רקטה) — ראו קרדיטים למטה.
+
+---
+
+## מנועים ופעילויות — ייחוס מקור · Engines & activities attribution
+
+הטבלה מסווגת לפי הקוד בפרויקט: מנועי הפעילויות המקוריים של [חפציה בן ארצי](https://chepti.com) (מסע כתב רש״י) לעומת מה שנוסף או הורחב ב**מנווטים בארמית**.
+
+| מנוע / פעילות | מקור | הערות |
+|---------------|------|--------|
+| **Quiz** (חידון) | מקורי של חפציה | אותה מכניקת ליבה |
+| **Flashcards** (כרטיסיות) | מקורי של חפציה | |
+| **Match** (התאמה) | מקורי של חפציה | |
+| **Memory** (זיכרון) | מבוסס+מורחב | מנוע חפציה, עיצוב/תוכן ארמית מחודש |
+| **WordSearch** (תפזורת) | מקורי של חפציה | |
+| **Story** (סיפור) | מקורי של חפציה | |
+| **Order** (סידור) | מקורי של חפציה | |
+| **Paint** (ציור) | מבוסס+מורחב | מנוע חפציה, שיפורים למסע ארמית |
+| **Intro** (הקדמה) | מקורי של חפציה | |
+| **Discover** (גילוי) | פיתוח חדש במנווטים | סוג פעילות חדש — לא היה במנוע רש״י |
+| **Annotate** (הערה/תיוג) | פיתוח חדש במנווטים | סוג פעילות חדש |
+| **FillInBlank** (השלמת משפט) | פיתוח חדש במנווטים | |
+| **MixedQuestion** (שאלות מעורבות) | פיתוח חדש במנווטים | |
+| **Morph** (שינוי צורה) | פיתוח חדש במנווטים | |
+| **TrueFalse** (נכון/לא נכון) | פיתוח חדש במנווטים | |
+| **SentenceBuilder** (בניית משפט) | פיתוח חדש במנווטים | |
+| **מפת מסע Phaser** | פיתוח חדש במנווטים | מבוך, תחנות, בית מדרש — לא היה במקור |
+| **בחירת דמויות / avatars** | פיתוח חדש במנווטים | 8 דמויות עם אנימציה |
+| **HUD כוכבים / מדליה** | פיתוח חדש במנווטים | |
+| **רישום אורח / כיתה** | פיתוח חדש במנווטים | |
+| **שליטה במגע (swipe-to-run)** | פיתוח חדש במנווטים | |
+| **Teacher API + SQLite** | מבוסס+מורחב | מורש ממערכת LMS של רש״י, מותאם לארמית |
 
 ---
 
@@ -172,12 +205,12 @@ mathgame/
 
 | דמות | מקור | רישיון |
 |------|------|--------|
-| מיסה | Phaser RPG / Tuxemon sample atlas | bundled |
-| אבירה | Animated Shield Maiden (Sevarihk) | CC-BY 4.0 |
+| חנה (מיסה) | Phaser RPG / Tuxemon sample atlas | bundled |
+| אביר | Animated Shield Maiden (Sevarihk) | CC-BY 4.0 |
 | שועל | Fox Wolf Pack Rework | OGA-BY 3.0+ |
-| חתול | [LPC] Cats Rework (bluecarrot16) | CC-BY / GPL / OGA-BY |
+| נמר | [LPC] Cats Rework (bluecarrot16) — עם נקודות נמר | CC-BY / GPL / OGA-BY |
 | רובוט | Kenney Toon Characters 1 | CC0 |
-| סוס | LPC Horse Extended (bluecarrot16) | CC-BY / GPL / OGA-BY |
+| חד־קרן | LPC Horse Extended (bluecarrot16) | CC-BY / GPL / OGA-BY |
 | מכונית | Kenney Racing Pack | CC0 |
 | רקטה | Kenney Space Shooter Redux | CC0 |
 

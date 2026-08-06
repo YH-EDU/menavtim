@@ -99,41 +99,38 @@ function knightAtlas() {
       { dir: 'up', row: 3, frames: 4, idle: true, idleCol: 0 },
     ],
   );
-  trimKnightPonytail(path.join(OUT, 'knight/atlas.png'), 32, 64);
+  addSoftKnightCap(path.join(OUT, 'knight/atlas.png'), 32, 64);
 }
 
-/** Hide ponytail/bun on shield maiden frames — subtle edit, keeps familiar look. */
-function trimKnightPonytail(atlasPng, cellW, cellH) {
+/** Soft round hood over bun — gentle cap, not a boxy helmet (אביר). */
+function addSoftKnightCap(atlasPng, cellW, cellH) {
   runPs(`
 Add-Type -AssemblyName System.Drawing
 $img = [System.Drawing.Bitmap]::FromFile('${atlasPng.replace(/'/g, "''")}')
 $g = [System.Drawing.Graphics]::FromImage($img)
-$g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::None
+$g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
 $hair = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 92, 58, 32))
-$helm = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 140, 148, 158))
-$spots = @(
-  @(11, 2, 10, 7), @(9, 3, 12, 6), @(13, 1, 8, 5)
-)
+$hood = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 118, 88, 58))
+$hoodEdge = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 96, 68, 42))
 $cols = [Math]::Max(1, [int][Math]::Floor($img.Width / ${cellW}))
 $rows = [Math]::Max(1, [int][Math]::Floor($img.Height / ${cellH}))
 for ($row = 0; $row -lt $rows; $row++) {
   for ($col = 0; $col -lt $cols; $col++) {
     $baseX = $col * ${cellW}
     $baseY = $row * ${cellH}
-    foreach ($s in $spots) {
-      $sx = $baseX + $s[0]
-      $sy = $baseY + $s[1]
-      $sw = $s[2]
-      $sh = $s[3]
-      if ($sx + $sw -ge $img.Width -or $sy + $sh -ge $img.Height) { continue }
-      $brush = if ($row -eq 3) { $hair } else { $helm }
-      $g.FillRectangle($brush, $sx, $sy, $sw, $sh)
+    if ($row -eq 3) {
+      $g.FillEllipse($hair, $baseX + 10, $baseY + 0, 12, 10)
+      $g.FillEllipse($hair, $baseX + 8, $baseY + 6, 16, 12)
+      continue
     }
+    $g.FillEllipse($hood, $baseX + 7, $baseY + 0, 18, 14)
+    $g.FillEllipse($hoodEdge, $baseX + 9, $baseY + 8, 14, 8)
+    $g.FillEllipse($hood, $baseX + 10, $baseY + 2, 12, 10)
   }
 }
 $tmp = '${atlasPng.replace(/'/g, "''")}.tmp.png'
 $img.Save($tmp, [System.Drawing.Imaging.ImageFormat]::Png)
-$hair.Dispose(); $helm.Dispose(); $g.Dispose(); $img.Dispose()
+$hair.Dispose(); $hood.Dispose(); $hoodEdge.Dispose(); $g.Dispose(); $img.Dispose()
 Move-Item -Force $tmp '${atlasPng.replace(/'/g, "''")}'
 `);
 }
@@ -210,61 +207,6 @@ function catAtlas() {
     { dir: 'down', row: 2, frames: 3, idle: true, idleCol: 1 },
     { dir: 'left', row: 3, frames: 3, idle: true, idleCol: 1 },
   ]);
-  addLeopardLook(path.join(OUT, 'cat/atlas.png'), 32, 48);
-}
-
-/** Warm tint + stronger leopard spots for נמר. */
-function addLeopardLook(atlasPng, cellW, cellH) {
-  runPs(`
-Add-Type -AssemblyName System.Drawing
-$img = [System.Drawing.Bitmap]::FromFile('${atlasPng.replace(/'/g, "''")}')
-$g = [System.Drawing.Graphics]::FromImage($img)
-$g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::None
-$spot = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(210, 35, 22, 10))
-$spot2 = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(170, 55, 35, 18))
-$spots = @(
-  @(8,14,6,5), @(18,12,5,4), @(12,22,6,5), @(22,24,4,4), @(6,20,4,4),
-  @(14,16,5,4), @(20,18,6,5), @(24,14,4,3), @(10,28,5,4), @(16,26,4,3),
-  @(22,30,3,3), @(8,24,3,3)
-)
-$cols = [Math]::Max(1, [int][Math]::Floor($img.Width / ${cellW}))
-$rows = [Math]::Max(1, [int][Math]::Floor($img.Height / ${cellH}))
-for ($row = 0; $row -lt $rows; $row++) {
-  for ($col = 0; $col -lt $cols; $col++) {
-    $baseX = $col * ${cellW}
-    $baseY = $row * ${cellH}
-    for ($py = 0; $py -lt ${cellH}; $py++) {
-      for ($px = 0; $px -lt ${cellW}; $px++) {
-        $x = $baseX + $px
-        $y = $baseY + $py
-        $p = $img.GetPixel($x, $y)
-        if ($p.A -lt 40) { continue }
-        $r = [Math]::Min(255, [int]($p.R * 0.88 + 42))
-        $gr = [Math]::Min(255, [int]($p.G * 0.82 + 28))
-        $b = [Math]::Max(0, [int]($p.B * 0.72 - 8))
-        $img.SetPixel($x, $y, [System.Drawing.Color]::FromArgb($p.A, $r, $gr, $b))
-      }
-    }
-    $i = 0
-    foreach ($s in $spots) {
-      $sx = $baseX + $s[0]
-      $sy = $baseY + $s[1]
-      $sw = $s[2]
-      $sh = $s[3]
-      if ($sx + $sw -ge $img.Width -or $sy + $sh -ge $img.Height) { continue }
-      $p = $img.GetPixel([Math]::Min($sx + 1, $img.Width - 1), [Math]::Min($sy + 1, $img.Height - 1))
-      if ($p.A -lt 40) { continue }
-      $brush = if (($i % 3) -eq 0) { $spot2 } else { $spot }
-      $g.FillEllipse($brush, $sx, $sy, $sw, $sh)
-      $i++
-    }
-  }
-}
-$tmp = '${atlasPng.replace(/'/g, "''")}.tmp.png'
-$img.Save($tmp, [System.Drawing.Imaging.ImageFormat]::Png)
-$spot.Dispose(); $spot2.Dispose(); $g.Dispose(); $img.Dispose()
-Move-Item -Force $tmp '${atlasPng.replace(/'/g, "''")}'
-`);
 }
 
 function rocketAssets() {

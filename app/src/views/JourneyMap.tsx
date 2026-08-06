@@ -104,7 +104,7 @@ export default function JourneyMap({
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'flex-end',
-            gap: 6,
+            gap: 0,
             maxWidth: '58vw',
             pointerEvents: 'none',
           }}
@@ -129,9 +129,12 @@ export default function JourneyMap({
           </div>
           <div
             style={{
-              alignSelf: 'flex-end',
-              marginInlineEnd: -10,
-              marginTop: 2,
+              alignSelf: 'stretch',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              marginTop: 16,
+              transform: 'translateX(22px)',
+              paddingBottom: 2,
             }}
           >
             <StarHud progress={progress} embedded />

@@ -99,7 +99,7 @@ export const CHARACTERS: CharacterDef[] = [
     body: { w: 20, h: 26, ox: 6, oy: 14 },
     origin: { x: 0.5, y: 0.88 },
     preview: `${PREV}/cat.png`,
-    taglineHe: 'נמר חמוד עם נקודות — מייאו!',
+    taglineHe: 'חתול חמוד וגדול — מייאו!',
   },
   {
     id: 'robot',

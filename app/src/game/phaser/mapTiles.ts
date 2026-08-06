@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 
-import { COLORS, MAP_HEIGHT, MAP_WIDTH, TILE, TILE_SIZE } from './journeyMap';
+import { COLORS, MAP_HEIGHT, MAP_WIDTH, TILE, TILE_SIZE, type PlazaRect } from './journeyMap';
 
 /** Generate a 3-tile solid-color tileset texture (path, wall, background). */
 export function generateMapTileset(scene: Phaser.Scene, key: string): void {
@@ -51,6 +51,13 @@ export function isBlockingCell(
   return wallCells.has(cell) || !!hiddenWallCells?.has(cell);
 }
 
+function isInsideGrassPlaza(tx: number, ty: number, grassPlazas?: PlazaRect[]): boolean {
+  if (!grassPlazas?.length) return false;
+  return grassPlazas.some(
+    (p) => tx >= p.minTx && tx <= p.maxTx && ty >= p.minTy && ty <= p.maxTy,
+  );
+}
+
 /** Reliable solid-color map draw — avoids tileset/GID rendering quirks in Phaser 4. */
 export function drawSolidColorMap(
   scene: Phaser.Scene,
@@ -58,6 +65,7 @@ export function drawSolidColorMap(
   wallCells: Set<string>,
   depth = 1,
   hiddenWallCells?: Set<string>,
+  grassPlazas?: PlazaRect[],
 ): Phaser.GameObjects.Graphics {
   const gfx = scene.add.graphics().setDepth(depth);
 
@@ -65,13 +73,16 @@ export function drawSolidColorMap(
     for (let tx = 0; tx < MAP_WIDTH; tx++) {
       const cell = `${tx},${ty}`;
       const isHidden = hiddenWallCells?.has(cell);
+      const onGrass = isInsideGrassPlaza(tx, ty, grassPlazas);
       const idx = tileIndexForCell(tx, ty, pathCells, wallCells, hiddenWallCells);
       const color =
-        idx === TILE.path
-          ? COLORS.path
-          : idx === TILE.wall && !isHidden
-            ? COLORS.wall
-            : COLORS.background;
+        onGrass
+          ? COLORS.background
+          : idx === TILE.path
+            ? COLORS.path
+            : idx === TILE.wall && !isHidden
+              ? COLORS.wall
+              : COLORS.background;
       gfx.fillStyle(color, 1);
       gfx.fillRect(tx * TILE_SIZE, ty * TILE_SIZE, TILE_SIZE, TILE_SIZE);
     }

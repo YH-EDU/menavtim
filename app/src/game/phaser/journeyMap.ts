@@ -166,6 +166,10 @@ export interface JourneyPath {
 
   goalMarker: GoalMarker;
 
+  /** Walkable plazas drawn as open grass (not gray path). */
+
+  grassPlazas: PlazaRect[];
+
 }
 
 
@@ -358,15 +362,15 @@ const WAYPOINTS: { tx: number; ty: number; lane?: Lane }[] = [
 
   { tx: 30, ty: 26, lane: -1 },
 
-  { tx: 22, ty: 26, lane: -1 },
+  { tx: 22, ty: 24, lane: -1 },
 
-  { tx: 22, ty: 22, lane: -1 },
+  { tx: 22, ty: 20, lane: -1 },
 
-  { tx: 22, ty: 16, lane: 1 },
+  { tx: 22, ty: 14, lane: 1 },
 
-  { tx: 22, ty: 10, lane: 1 },
+  { tx: 22, ty: 8, lane: 1 },
 
-  { tx: 22, ty: 6, lane: 1 },
+  { tx: 22, ty: 4, lane: 1 },
 
 ];
 
@@ -454,7 +458,25 @@ function buildPathCells(): Set<string> {
 
 
 
-/** Open gray plaza at journey start — walkable before the maze entrance. */
+/** Widen the maze→exit-plaza choke so large avatars (horse) can pass. */
+
+function widenMazeExitGap(pathCells: Set<string>): void {
+
+  for (const ty of [20, 21, 22]) {
+
+    for (const tx of [21, 22, 23, 24]) {
+
+      addPathTile(pathCells, tx, ty);
+
+    }
+
+  }
+
+}
+
+
+
+/** Open grass plaza at journey start — walkable, blends with background. */
 
 function addEntrancePlaza(pathCells: Set<string>, anchorTx: number, anchorTy: number): PlazaRect {
 
@@ -484,13 +506,13 @@ function addEntrancePlaza(pathCells: Set<string>, anchorTx: number, anchorTy: nu
 
 
 
-/** Large open plaza after the maze — gray floor, no visible fence ring. */
+/** Open plaza after the maze — gray floor, no visible fence ring. */
 
 function addExitPlaza(pathCells: Set<string>, anchorTx: number, anchorTy: number): PlazaRect {
 
-  for (let dy = -6; dy <= 9; dy++) {
+  for (let dy = -4; dy <= 5; dy++) {
 
-    for (let dx = -7; dx <= 7; dx++) {
+    for (let dx = -5; dx <= 5; dx++) {
 
       addPathTile(pathCells, anchorTx + dx, anchorTy + dy);
 
@@ -500,13 +522,13 @@ function addExitPlaza(pathCells: Set<string>, anchorTx: number, anchorTy: number
 
   return {
 
-    minTx: anchorTx - 7,
+    minTx: anchorTx - 5,
 
-    maxTx: anchorTx + 7,
+    maxTx: anchorTx + 5,
 
-    minTy: anchorTy - 6,
+    minTy: anchorTy - 4,
 
-    maxTy: anchorTy + 9,
+    maxTy: anchorTy + 5,
 
   };
 
@@ -934,9 +956,11 @@ export function buildJourneyPath(
 
 
 
-  const exitAnchor = { tx: 22, ty: 10 };
+  const exitAnchor = { tx: 22, ty: 8 };
 
   const exitPlaza = addExitPlaza(pathCells, exitAnchor.tx, exitAnchor.ty);
+
+  widenMazeExitGap(pathCells);
 
 
 
@@ -1008,7 +1032,7 @@ export function buildJourneyPath(
 
   const mazeEntrance = corridorCenterPoint(spawnAnchor.tx, spawnAnchor.ty - 1, spawnLane, 'v');
 
-  const mazeExit = corridorCenterPoint(22, 16, 1, 'v');
+  const mazeExit = corridorCenterPoint(22, 14, 1, 'v');
 
 
 
@@ -1079,6 +1103,8 @@ export function buildJourneyPath(
     unitBoundaries,
 
     goalMarker,
+
+    grassPlazas: [entrancePlaza],
 
   };
 

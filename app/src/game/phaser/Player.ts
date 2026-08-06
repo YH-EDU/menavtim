@@ -5,6 +5,7 @@ import {
   CAR_WHEEL_KEYS,
   CAR_WHEEL_OFFSETS,
   FOUR_DIR_WALK_COUNT,
+  KNIGHT_FLIP_LEFT,
   MISA,
   ROCKET_FIRE_KEYS,
   fourDirIdleFrame,
@@ -360,8 +361,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     switch (this.def.mode) {
       case 'fourDir': {
-        this.setFlipX(false);
-        const idle = this.def.id === 'misa' ? MISA.idle[this.facing] : fourDirIdleFrame(this.facing);
+        const flipLeft = this.def.id === 'knight' && KNIGHT_FLIP_LEFT && this.facing === 'left';
+        this.setFlipX(flipLeft);
+        const idle = this.def.id === 'misa' ? MISA.idle[this.facing] : fourDirIdleFrame(this.facing === 'left' && flipLeft ? 'right' : this.facing);
         this.setTexture(this.def.textureKey, idle);
         break;
       }
@@ -418,9 +420,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   private updateFourDir(moving: boolean, facing: Facing) {
     this.facing = facing;
-    this.setFlipX(false);
+    const flipLeft = this.def.id === 'knight' && KNIGHT_FLIP_LEFT && facing === 'left';
+    this.setFlipX(flipLeft);
+    const animFacing = flipLeft ? 'right' : facing;
     if (moving) {
-      this.playWalkAnim(this.animKey(`walk_${facing}`));
+      this.playWalkAnim(this.animKey(`walk_${animFacing}`));
     } else {
       this.setIdlePose();
     }

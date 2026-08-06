@@ -51,8 +51,21 @@ export const CAR_WHEEL_OFFSETS = [
 /** Target on-screen height ≈ 44px (Misa reference). */
 export const CHARACTERS: CharacterDef[] = [
   {
+    id: 'knight',
+    nameHe: 'אביר',
+    emoji: '⚔️',
+    mode: 'fourDir',
+    textureKey: 'avatar-knight',
+    atlas: { png: `${ATLAS}/knight/atlas.png`, json: `${ATLAS}/knight/atlas.json` },
+    scale: 0.72,
+    body: { w: 16, h: 22, ox: 12, oy: 42 },
+    origin: { x: 0.5, y: 0.92 },
+    preview: `${PREV}/knight.png`,
+    taglineHe: 'אביר אמיץ עם חרב ומגן — קדימה!',
+  },
+  {
     id: 'misa',
-    nameHe: 'מיסה',
+    nameHe: 'חנה',
     emoji: '👧',
     mode: 'fourDir',
     textureKey: ASSET.playerAtlas,
@@ -60,20 +73,7 @@ export const CHARACTERS: CharacterDef[] = [
     body: { w: 20, h: 28, ox: 6, oy: 28 },
     origin: { x: 0.5, y: 1 },
     preview: `${PREV}/misa.png`,
-    taglineHe: 'הרפתקנית חכמה — הכוכבת של המסע!',
-  },
-  {
-    id: 'knight',
-    nameHe: 'אבירה',
-    emoji: '🛡️',
-    mode: 'fourDir',
-    textureKey: 'avatar-knight',
-    atlas: { png: `${ATLAS}/knight/atlas.png`, json: `${ATLAS}/knight/atlas.json` },
-    scale: 0.72,
-    body: { w: 14, h: 20, ox: 9, oy: 14 },
-    origin: { x: 0.5, y: 0.92 },
-    preview: `${PREV}/knight.png`,
-    taglineHe: 'לוחמת עם מגן וחרב — אמיצה וחדה!',
+    taglineHe: 'חכמה ואמיצה — שותפה מעולה למסע!',
   },
   {
     id: 'fox',
@@ -82,7 +82,7 @@ export const CHARACTERS: CharacterDef[] = [
     mode: 'fourDir',
     textureKey: 'avatar-fox',
     atlas: { png: `${ATLAS}/fox/atlas.png`, json: `${ATLAS}/fox/atlas.json` },
-    scale: 0.88,
+    scale: 1.0,
     body: { w: 18, h: 24, ox: 9, oy: 20 },
     origin: { x: 0.5, y: 0.92 },
     preview: `${PREV}/fox.png`,
@@ -90,16 +90,16 @@ export const CHARACTERS: CharacterDef[] = [
   },
   {
     id: 'cat',
-    nameHe: 'חתול',
-    emoji: '🐱',
+    nameHe: 'נמר',
+    emoji: '🐆',
     mode: 'fourDir',
     textureKey: 'avatar-cat',
     atlas: { png: `${ATLAS}/cat/atlas.png`, json: `${ATLAS}/cat/atlas.json` },
-    scale: 1.08,
-    body: { w: 16, h: 22, ox: 8, oy: 18 },
+    scale: 1.28,
+    body: { w: 18, h: 24, ox: 7, oy: 16 },
     origin: { x: 0.5, y: 0.88 },
     preview: `${PREV}/cat.png`,
-    taglineHe: 'חתול חמוד שמיילל מיאו בדרך',
+    taglineHe: 'נמר חמוד עם נקודות — מייאו!',
   },
   {
     id: 'robot',
@@ -122,7 +122,8 @@ export const CHARACTERS: CharacterDef[] = [
     textureKey: 'avatar-horse',
     atlas: { png: `${ATLAS}/horse/atlas.png`, json: `${ATLAS}/horse/atlas.json` },
     scale: 0.58,
-    body: { w: 20, h: 28, ox: 19, oy: 20 },
+    /** 128×128 LPC frames — feet-aligned hitbox (was top-left, blocked maze exit). */
+    body: { w: 22, h: 26, ox: 53, oy: 98 },
     origin: { x: 0.5, y: 0.88 },
     preview: `${PREV}/horse.png`,
     taglineHe: 'חד־קרן לבן קסום — דה-דה-דה!',
@@ -153,7 +154,7 @@ export const CHARACTERS: CharacterDef[] = [
   },
 ];
 
-const DEFAULT_CHARACTER: CharacterId = 'misa';
+const DEFAULT_CHARACTER: CharacterId = 'knight';
 
 const LEGACY_IDS = new Set(['spaceship', 'soccer', 'penguin', 'dog']);
 
@@ -217,6 +218,9 @@ export const MISA = {
   idle: { down: 'misa-front', up: 'misa-back', left: 'misa-left', right: 'misa-right' },
   walkPrefix: { down: 'misa-front-walk.', up: 'misa-back-walk.', left: 'misa-left-walk.', right: 'misa-right-walk.' },
 } as const;
+
+/** Knight reuses right-facing frames with flipX for left. */
+export const KNIGHT_FLIP_LEFT = true;
 
 /** fourDir atlas frame helpers */
 export function fourDirIdleFrame(dir: string): string {

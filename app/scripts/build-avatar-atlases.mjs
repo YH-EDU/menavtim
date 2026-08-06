@@ -85,18 +85,18 @@ function gridAtlas(name, pngSrc, cellW, cellH, layout) {
   writeAtlas(path.join(OUT, name), 'atlas.png', frames, { w: cols * cellW, h: rows * cellH });
 }
 
-/** Shield Maiden — Sevarihk / OGA, 128×256, 32×64 cells, 4 frames × 4 dirs */
+/** Hero Knight — male warrior, 40×64 cells, 4 walk frames × 3 dirs (left = flip right) */
 function knightAtlas() {
   gridAtlas(
     'knight',
-    path.join(DL, 'shieldMaiden/npc-nordic-shieldmaiden1.png'),
-    32,
+    path.join(DL, 'heroKnight/player_full_animation.png'),
+    40,
     64,
     [
       { dir: 'down', row: 0, frames: 4, idle: true, idleCol: 0 },
+      { dir: 'right', row: 1, frames: 4, idle: true, idleCol: 0 },
+      { dir: 'up', row: 2, frames: 4, idle: true, idleCol: 0 },
       { dir: 'left', row: 1, frames: 4, idle: true, idleCol: 0 },
-      { dir: 'right', row: 2, frames: 4, idle: true, idleCol: 0 },
-      { dir: 'up', row: 3, frames: 4, idle: true, idleCol: 0 },
     ],
   );
 }
@@ -173,6 +173,44 @@ function catAtlas() {
     { dir: 'down', row: 2, frames: 3, idle: true, idleCol: 1 },
     { dir: 'left', row: 3, frames: 3, idle: true, idleCol: 1 },
   ]);
+  addLeopardSpots(path.join(OUT, 'cat/atlas.png'), 32, 48);
+}
+
+/** Paint leopard-like spots onto the orange cat atlas (נמר). */
+function addLeopardSpots(atlasPng, cellW, cellH) {
+  runPs(`
+Add-Type -AssemblyName System.Drawing
+$img = [System.Drawing.Bitmap]::FromFile('${atlasPng.replace(/'/g, "''")}')
+$g = [System.Drawing.Graphics]::FromImage($img)
+$g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::None
+$brush = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(180, 45, 30, 15))
+$spots = @(
+  @(10,18,5,4), @(20,16,4,3), @(14,26,5,4), @(22,28,3,3), @(8,24,3,3),
+  @(12,20,4,3), @(18,22,5,4), @(24,18,3,3), @(16,30,4,3)
+)
+$cols = [Math]::Max(1, [int][Math]::Floor($img.Width / ${cellW}))
+$rows = [Math]::Max(1, [int][Math]::Floor($img.Height / ${cellH}))
+for ($row = 0; $row -lt $rows; $row++) {
+  for ($col = 0; $col -lt $cols; $col++) {
+    $baseX = $col * ${cellW}
+    $baseY = $row * ${cellH}
+    foreach ($s in $spots) {
+      $sx = $baseX + $s[0]
+      $sy = $baseY + $s[1]
+      $sw = $s[2]
+      $sh = $s[3]
+      if ($sx + $sw -ge $img.Width -or $sy + $sh -ge $img.Height) { continue }
+      $p = $img.GetPixel([Math]::Min($sx + 1, $img.Width - 1), [Math]::Min($sy + 1, $img.Height - 1))
+      if ($p.A -lt 40) { continue }
+      $g.FillEllipse($brush, $sx, $sy, $sw, $sh)
+    }
+  }
+}
+$tmp = '${atlasPng.replace(/'/g, "''")}.tmp.png'
+$img.Save($tmp, [System.Drawing.Imaging.ImageFormat]::Png)
+$brush.Dispose(); $g.Dispose(); $img.Dispose()
+Move-Item -Force $tmp '${atlasPng.replace(/'/g, "''")}'
+`);
 }
 
 function rocketAssets() {

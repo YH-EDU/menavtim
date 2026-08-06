@@ -74,6 +74,49 @@ h1, h2, h3 { margin: 0; }
 .btn.gold:hover { background: #b45309; }
 .btn.small { padding: 7px 16px; font-size: 14px; }
 
+/* הקראה — כפתור בולט בפעילות */
+.tts-toggle-btn {
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top, 0px));
+  inset-inline-end: max(12px, env(safe-area-inset-right, 0px));
+  z-index: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 10px 18px;
+  font-size: 16px;
+  font-weight: 800;
+  border-radius: 999px;
+  border: 2px solid var(--teal-dark);
+  box-shadow: 0 4px 16px rgba(15, 118, 110, 0.35), 0 2px 6px rgba(30, 41, 59, 0.12);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s;
+}
+.tts-toggle-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(15, 118, 110, 0.4), 0 3px 8px rgba(30, 41, 59, 0.14);
+}
+.tts-toggle-btn:active:not(:disabled) { transform: translateY(0); }
+.tts-toggle-btn--on {
+  background: var(--teal);
+  color: #fff;
+  border-color: var(--teal-dark);
+}
+.tts-toggle-btn--off {
+  background: #fff;
+  color: var(--teal-dark);
+}
+.tts-toggle-btn:disabled {
+  background: #f1f5f9;
+  color: #94a3b8;
+  border-color: #cbd5e1;
+  cursor: not-allowed;
+  box-shadow: 0 2px 8px rgba(30, 41, 59, 0.08);
+}
+
 .card {
   background: var(--card);
   border-radius: var(--radius);

@@ -19,9 +19,39 @@ import TrueFalse from './TrueFalse';
 import SentenceBuilder from './SentenceBuilder';
 import { Stars, starsFor } from './ui';
 import { playWin } from '../lib/sound';
-import { cancelSpeech, toggleTts, ttsEnabled } from '../lib/tts';
+import { cancelSpeech, speechSupported, toggleTts, ttsEnabled } from '../lib/tts';
 import { SpeechProvider } from './SpeechContext';
 import { Volume2, VolumeX } from '../ui/icons';
+
+function TtsToggleButton({
+  ttsOn,
+  onToggle,
+}: {
+  ttsOn: boolean;
+  onToggle: () => void;
+}) {
+  const supported = speechSupported();
+  const title = !supported
+    ? 'הדפדפן לא תומך בהקראה קולית'
+    : ttsOn
+      ? 'הקראה פעילה — לחצו לכיבוי'
+      : 'הקראה כבויה — לחצו להפעלה';
+
+  return (
+    <button
+      type="button"
+      className={`tts-toggle-btn ${ttsOn ? 'tts-toggle-btn--on' : 'tts-toggle-btn--off'}`}
+      aria-pressed={ttsOn}
+      aria-label={ttsOn ? 'כיבוי הקראה אוטומטית' : 'הפעלת הקראה אוטומטית'}
+      title={title}
+      disabled={!supported}
+      onClick={() => supported && onToggle()}
+    >
+      {ttsOn ? <Volume2 size={22} /> : <VolumeX size={22} />}
+      הקראה
+    </button>
+  );
+}
 
 export default function GameHost({
   activity,
@@ -48,24 +78,29 @@ export default function GameHost({
     });
   };
 
+  const handleTtsToggle = () => setTtsOn(toggleTts());
+
   if (result) {
     const stars = starsFor(result.score, result.max);
     return (
-      <div className="card pop-in" style={{ textAlign: 'center', maxWidth: 460, margin: '40px auto' }}>
-        <h2 style={{ fontSize: 26 }}>
-          {stars === 3 ? 'מושלם! 🏅' : stars === 2 ? 'יפה מאוד!' : 'כל הכבוד שסיימתם!'}
-        </h2>
-        <Stars n={stars} />
-        <p style={{ fontSize: 18, color: 'var(--ink-soft)' }}>
-          {result.score} מתוך {result.max}
-        </p>
-        {stars < 3 && (
-          <p style={{ fontSize: 15, color: 'var(--ink-soft)' }}>אפשר לחזור על הפעילות בכל שלב כדי להשתפר ⭐</p>
-        )}
-        <button className="btn" onClick={() => onDone(result)}>
-          המשך במסע ←
-        </button>
-      </div>
+      <>
+        <TtsToggleButton ttsOn={ttsOn} onToggle={handleTtsToggle} />
+        <div className="card pop-in" style={{ textAlign: 'center', maxWidth: 460, margin: '40px auto' }}>
+          <h2 style={{ fontSize: 26 }}>
+            {stars === 3 ? 'מושלם! 🏅' : stars === 2 ? 'יפה מאוד!' : 'כל הכבוד שסיימתם!'}
+          </h2>
+          <Stars n={stars} />
+          <p style={{ fontSize: 18, color: 'var(--ink-soft)' }}>
+            {result.score} מתוך {result.max}
+          </p>
+          {stars < 3 && (
+            <p style={{ fontSize: 15, color: 'var(--ink-soft)' }}>אפשר לחזור על הפעילות בכל שלב כדי להשתפר ⭐</p>
+          )}
+          <button className="btn" onClick={() => onDone(result)}>
+            המשך במסע ←
+          </button>
+        </div>
+      </>
     );
   }
 
@@ -97,32 +132,9 @@ export default function GameHost({
       instructions={activity.instructions}
       ttsOn={ttsOn}
     >
+      <TtsToggleButton ttsOn={ttsOn} onToggle={handleTtsToggle} />
       <div className="float-up">
-        <div style={{ textAlign: 'center', marginBottom: 18, position: 'relative' }}>
-          <button
-            type="button"
-            className="btn small"
-            aria-pressed={ttsOn}
-            aria-label={ttsOn ? 'כיבוי הקראה אוטומטית' : 'הפעלת הקראה אוטומטית'}
-            title={ttsOn ? 'הקראה פעילה' : 'הקראה כבויה'}
-            onClick={() => setTtsOn(toggleTts())}
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              background: ttsOn ? 'var(--teal-soft)' : '#fff',
-              color: ttsOn ? 'var(--teal-dark)' : 'var(--ink-soft)',
-              border: `2px solid ${ttsOn ? 'var(--teal)' : '#e2e8f0'}`,
-              boxShadow: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              fontWeight: 700,
-            }}
-          >
-            {ttsOn ? <Volume2 size={18} /> : <VolumeX size={18} />}
-            הקראה
-          </button>
+        <div style={{ textAlign: 'center', marginBottom: 18, paddingTop: 52 }}>
           <h2 style={{ fontSize: 24 }}>{activity.title}</h2>
           <p style={{ color: 'var(--ink-soft)', fontSize: 16, maxWidth: 560, margin: '8px auto 0', lineHeight: 1.6 }}>
             {activity.instructions}

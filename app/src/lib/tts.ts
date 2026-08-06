@@ -72,13 +72,12 @@ export function toggleTts(): boolean {
   return next;
 }
 
+export function speechSupported(): boolean {
+  return typeof window !== 'undefined' && typeof speechSynthesis !== 'undefined';
+}
+
 export function canSpeak(): boolean {
-  return (
-    typeof window !== 'undefined' &&
-    typeof speechSynthesis !== 'undefined' &&
-    ttsEnabled() &&
-    soundEnabled()
-  );
+  return speechSupported() && ttsEnabled() && soundEnabled();
 }
 
 function loadVoices(): SpeechSynthesisVoice[] {

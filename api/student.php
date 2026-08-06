@@ -81,6 +81,34 @@ case 'attempt': {
     json_out(['ok' => true]);
 }
 
+case 'map_pos': {
+    $sid = require_student();
+    $b = body();
+    $x = (float)($b['x'] ?? 0);
+    $y = (float)($b['y'] ?? 0);
+    if (!is_finite($x) || !is_finite($y)) json_err('מיקום לא תקין');
+    $pos = [
+        'x' => $x,
+        'y' => $y,
+    ];
+    if (isset($b['faceX']) && is_finite((float)$b['faceX'])) {
+        $pos['faceX'] = (float)$b['faceX'];
+    }
+    if (isset($b['faceY']) && is_finite((float)$b['faceY'])) {
+        $pos['faceY'] = (float)$b['faceY'];
+    }
+    if (isset($b['pathIndex']) && is_int($b['pathIndex'])) {
+        $pos['pathIndex'] = $b['pathIndex'];
+    } elseif (isset($b['pathIndex'])) {
+        $pi = (int)$b['pathIndex'];
+        if ($pi >= 0) $pos['pathIndex'] = $pi;
+    }
+    $db = db();
+    $db->prepare('UPDATE students SET map_pos = ?, last_seen = datetime(\'now\') WHERE id = ?')
+       ->execute([json_encode($pos, JSON_UNESCAPED_UNICODE), $sid]);
+    json_out(['ok' => true]);
+}
+
 case 'progress': {
     $sid = require_student();
     $db = db();
@@ -103,11 +131,25 @@ case 'progress': {
     $fn = $db->prepare('SELECT c.free_nav FROM classes c JOIN students s ON s.class_id = c.id WHERE s.id = ?');
     $fn->execute([$sid]);
     $freeNav = (bool)($fn->fetchColumn() ?: 0);
-    json_out([
+    $mp = $db->prepare('SELECT map_pos FROM students WHERE id = ?');
+    $mp->execute([$sid]);
+    $mapPosRaw = $mp->fetchColumn();
+    $mapPos = null;
+    if (is_string($mapPosRaw) && $mapPosRaw !== '') {
+        $decoded = json_decode($mapPosRaw, true);
+        if (is_array($decoded) && isset($decoded['x'], $decoded['y'])) {
+            $mapPos = $decoded;
+        }
+    }
+    $out = [
         'letters' => $letters ?: new stdClass(),
         'completed' => $completed ?: new stdClass(),
         'freeNav' => $freeNav,
-    ]);
+    ];
+    if ($mapPos !== null) {
+        $out['mapPos'] = $mapPos;
+    }
+    json_out($out);
 }
 
 default:

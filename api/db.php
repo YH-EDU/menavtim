@@ -98,6 +98,11 @@ function db(): PDO {
         updated_at TEXT NOT NULL DEFAULT (datetime(\'now\')),
         PRIMARY KEY (student_id, letter)
     )');
+    try {
+        $pdo->exec('ALTER TABLE students ADD COLUMN map_pos TEXT');
+    } catch (PDOException $e) {
+        // column already exists
+    }
     return $pdo;
 }
 

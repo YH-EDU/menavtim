@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import Phaser from 'phaser';
 
-import type { ProgressData } from '../lib/api';
+import type { ProgressData, StudentSession } from '../lib/api';
+import { saveMapPosition } from '../lib/api';
 
 import { nav } from '../App';
 
@@ -11,6 +12,8 @@ import {
   createJourneyGame,
 
   destroyJourneyGame,
+
+  captureJourneyPlayerPosition,
 
   pauseJourneyGame,
 
@@ -41,10 +44,12 @@ import CharacterSelect from './CharacterSelect';
 
 
 export default function JourneyPhaser({
+  session,
   progress,
   forcePicker = false,
   onPickerClosed,
 }: {
+  session: StudentSession;
   progress: ProgressData;
   forcePicker?: boolean;
   onPickerClosed?: () => void;
@@ -55,8 +60,14 @@ export default function JourneyPhaser({
   const gameRef = useRef<Phaser.Game | null>(null);
 
   const progressRef = useRef(progress);
+  const sessionRef = useRef(session);
 
   progressRef.current = progress;
+  sessionRef.current = session;
+
+  const persistMapPos = (pos: Parameters<typeof saveMapPosition>[1]) => {
+    void saveMapPosition(sessionRef.current, pos).catch(() => {});
+  };
 
 
 
@@ -132,6 +143,8 @@ export default function JourneyPhaser({
 
       progress: progressRef.current,
 
+      onSaveMapPos: persistMapPos,
+
       onInteract: (unitId, activityId) => {
 
         pauseJourneyGame(gameRef.current);
@@ -166,6 +179,10 @@ export default function JourneyPhaser({
 
       window.removeEventListener('resize', onResize);
 
+      const pos = captureJourneyPlayerPosition(gameRef.current);
+
+      if (pos) persistMapPos(pos);
+
       destroyJourneyGame(gameRef.current);
 
       gameRef.current = null;
@@ -173,6 +190,24 @@ export default function JourneyPhaser({
     };
 
   }, [bridgeFactory, showPicker, gameKey, avatarId]);
+
+
+
+  useEffect(() => {
+
+    const onHide = () => {
+
+      const pos = captureJourneyPlayerPosition(gameRef.current);
+
+      if (pos) persistMapPos(pos);
+
+    };
+
+    window.addEventListener('pagehide', onHide);
+
+    return () => window.removeEventListener('pagehide', onHide);
+
+  }, []);
 
 
 

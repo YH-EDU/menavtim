@@ -89,6 +89,7 @@ export default function JourneyMap({
     return (
       <div style={{ position: 'relative' }}>
         <JourneyPhaser
+          session={session}
           progress={progress}
           forcePicker={avatarPicker}
           onPickerClosed={() => setAvatarPicker(false)}

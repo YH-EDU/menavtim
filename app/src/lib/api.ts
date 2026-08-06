@@ -16,10 +16,20 @@ export interface StudentSession {
   freeNav?: boolean;   // מסלול חופשי (ללא נעילת פעילויות)
 }
 
+/** מיקום השחקן על מפת המסע — נשמר בין סשנים */
+export interface MapPosition {
+  x: number;
+  y: number;
+  faceX?: number;
+  faceY?: number;
+  pathIndex?: number;
+}
+
 export interface ProgressData {
   letters: Record<string, { c: number; w: number }>;
   completed: Record<string, { score: number; max: number }>; // לפי activity id
   freeNav?: boolean;
+  mapPos?: MapPosition;
 }
 
 const SS_SESSION = 'aramit_session';
@@ -264,6 +274,12 @@ export async function fetchProgress(s: StudentSession): Promise<ProgressData> {
   return get<ProgressData>('student.php?a=progress', s.token);
 }
 
+function writeGuestProgress(s: StudentSession, p: ProgressData): void {
+  delete p.freeNav;
+  registerGuestIdentity(s.nickname, s.emoji);
+  localStorage.setItem(guestKey(s), JSON.stringify(p));
+}
+
 export async function reportAttempt(
   s: StudentSession,
   activityId: string,
@@ -283,12 +299,24 @@ export async function reportAttempt(
     if (!prev || score / max > prev.score / prev.max) {
       p.completed[activityId] = { score, max };
     }
-    delete p.freeNav; // לא שומרים את הדגל בתוך ההתקדמות
-    registerGuestIdentity(s.nickname, s.emoji);
-    localStorage.setItem(guestKey(s), JSON.stringify(p));
+    writeGuestProgress(s, p);
     return;
   }
   await post('student.php?a=attempt', { activityId, unitId, score, max, letters }, s.token);
+}
+
+/** שמירת מיקום השחקן על המפה — אורח ב-localStorage, כיתה בשרת */
+export async function saveMapPosition(s: StudentSession, pos: MapPosition): Promise<void> {
+  if (s.token === 'teacher-preview') return;
+  if (!Number.isFinite(pos.x) || !Number.isFinite(pos.y)) return;
+
+  if (isLocalSession(s)) {
+    const p = loadGuestProgress(s);
+    p.mapPos = pos;
+    writeGuestProgress(s, p);
+    return;
+  }
+  await post('student.php?a=map_pos', pos, s.token);
 }
 
 // ─── מורה ───

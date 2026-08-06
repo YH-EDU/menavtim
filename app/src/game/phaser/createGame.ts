@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import type { ProgressData } from '../../lib/api';
+import type { MapPosition, ProgressData } from '../../lib/api';
 import { CHARACTERS } from './characters';
 import { BootScene } from './BootScene';
 import { MainScene, type OnMissionInteract } from './MainScene';
@@ -12,6 +12,7 @@ export interface JourneyGameOptions {
   progress: ProgressData;
   onInteract: OnMissionInteract;
   overlayBridge?: JourneyOverlayBridge;
+  onSaveMapPos?: (pos: MapPosition) => void;
 }
 
 function focusGameCanvas(game: Phaser.Game) {
@@ -59,7 +60,8 @@ export function createJourneyGame(opts: JourneyGameOptions): Phaser.Game {
   game.registry.set('mainData', {
     progress: opts.progress,
     onInteract: opts.onInteract,
-  } satisfies { progress: ProgressData; onInteract: OnMissionInteract });
+    onSaveMapPos: opts.onSaveMapPos,
+  } satisfies { progress: ProgressData; onInteract: OnMissionInteract; onSaveMapPos?: (pos: MapPosition) => void });
 
   if (opts.overlayBridge) {
     game.registry.set(OVERLAY_BRIDGE_KEY, opts.overlayBridge);
@@ -106,6 +108,15 @@ function clearAvatarWalkAnims(game: Phaser.Game) {
       if (anims.exists(key)) anims.remove(key);
     }
   }
+}
+
+export function captureJourneyPlayerPosition(game: Phaser.Game | null): MapPosition | null {
+  if (!game) return null;
+  const main = game.scene.getScene(SCENE.main);
+  if (main && 'getMapPosition' in main) {
+    return (main as MainScene).getMapPosition();
+  }
+  return null;
 }
 
 export function destroyJourneyGame(game: Phaser.Game | null) {

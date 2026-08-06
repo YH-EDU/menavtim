@@ -1,5 +1,9 @@
-import type { ProgressData } from '../../lib/api';
-import { computeResumePosition, type PathPoint } from './journeyMap';
+import type { MapPosition, ProgressData } from '../../lib/api';
+import {
+  computeResumePosition,
+  findNearestSafePosition,
+  type PathPoint,
+} from './journeyMap';
 import { PHASER_MISSIONS } from './stations';
 
 export const LS_FOCUS_ACT = 'aramit_focus_act';
@@ -37,9 +41,31 @@ function nextMissionCenterlineIdx(
   return undefined;
 }
 
+function persistedMapPosition(
+  mapPos: MapPosition,
+  centerline: PathPoint[],
+  pathCells: Set<string>,
+): WorldPos {
+  const safe = findNearestSafePosition(
+    mapPos.x,
+    mapPos.y,
+    centerline,
+    pathCells,
+    mapPos.pathIndex,
+  );
+  const faceX = mapPos.faceX;
+  const faceY = mapPos.faceY;
+  if (faceX != null && faceY != null && Number.isFinite(faceX) && Number.isFinite(faceY)) {
+    return { x: safe.x, y: safe.y, faceX, faceY };
+  }
+  const faceIdx = Math.min(safe.pathIndex + 1, centerline.length - 1);
+  const face = centerline[faceIdx];
+  return { x: safe.x, y: safe.y, faceX: face.px, faceY: face.py };
+}
+
 /**
- * Resolve where to place the player after returning from a mission.
- * Prefers `aramit_focus_act` (same key as JourneyTrail), then saved world coords.
+ * Resolve where to place the player after returning from a mission or on fresh load.
+ * Session keys win (same tab); persisted mapPos restores cross-session resume.
  */
 export function resolveRestorePosition(
   stationPositions: { activityId: string; px: number; py: number }[],
@@ -82,10 +108,17 @@ export function resolveRestorePosition(
   if (raw) {
     try {
       const p = JSON.parse(raw) as WorldPos;
-      if (Number.isFinite(p.x) && Number.isFinite(p.y)) return p;
+      if (Number.isFinite(p.x) && Number.isFinite(p.y)) {
+        const safe = findNearestSafePosition(p.x, p.y, centerline, pathCells);
+        return { x: safe.x, y: safe.y, faceX: p.faceX, faceY: p.faceY };
+      }
     } catch {
       /* ignore */
     }
+  }
+
+  if (progress.mapPos && Number.isFinite(progress.mapPos.x) && Number.isFinite(progress.mapPos.y)) {
+    return persistedMapPosition(progress.mapPos, centerline, pathCells);
   }
 
   return null;
@@ -93,5 +126,5 @@ export function resolveRestorePosition(
 
 export function clearSavedPhaserState() {
   sessionStorage.removeItem(LS_PHASER_POS);
+  sessionStorage.removeItem(LS_FOCUS_ACT);
 }
-

@@ -452,6 +452,88 @@ function findSafeResumeIndex(
 
 
 
+/** Snap arbitrary coords to the nearest safe walkable point on the path. */
+
+export function findNearestSafePosition(
+
+  px: number,
+
+  py: number,
+
+  centerline: PathPoint[],
+
+  pathCells: Set<string>,
+
+  hintIndex?: number,
+
+): { x: number; y: number; pathIndex: number; faceX?: number; faceY?: number } {
+
+  if (isSafePlayerPosition(px, py, pathCells)) {
+
+    let nearest = 0;
+
+    let best = Infinity;
+
+    for (let i = 0; i < centerline.length; i++) {
+
+      const p = centerline[i];
+
+      const d = (p.px - px) ** 2 + (p.py - py) ** 2;
+
+      if (d < best) {
+
+        best = d;
+
+        nearest = i;
+
+      }
+
+    }
+
+    return { x: px, y: py, pathIndex: nearest };
+
+  }
+
+  if (hintIndex != null && hintIndex >= 0 && hintIndex < centerline.length) {
+
+    const idx = findSafeResumeIndex(centerline, hintIndex, pathCells);
+
+    const p = centerline[idx];
+
+    return { x: p.px, y: p.py, pathIndex: idx };
+
+  }
+
+  let bestIdx = 0;
+
+  let bestDist = Infinity;
+
+  for (let i = 0; i < centerline.length; i++) {
+
+    const p = centerline[i];
+
+    if (!isSafePlayerPosition(p.px, p.py, pathCells)) continue;
+
+    const d = (p.px - px) ** 2 + (p.py - py) ** 2;
+
+    if (d < bestDist) {
+
+      bestDist = d;
+
+      bestIdx = i;
+
+    }
+
+  }
+
+  const safe = centerline[bestIdx];
+
+  return { x: safe.px, y: safe.py, pathIndex: bestIdx };
+
+}
+
+
+
 function segmentOrient(
 
   a: { tx: number; ty: number },

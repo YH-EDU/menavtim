@@ -257,6 +257,25 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return !!(phaser || winKeys[dir] || this.dpad[dir]);
   }
 
+  /** World point one step ahead in the current facing direction (for map save). */
+  getFacingPoint(): { x: number; y: number } {
+    const dist = 32;
+    if (this.def.mode === 'rotate' || this.def.mode === 'rocket') {
+      const rad = Phaser.Math.DegToRad(this.angle - 90);
+      return { x: this.x + Math.cos(rad) * dist, y: this.y + Math.sin(rad) * dist };
+    }
+    switch (this.facing) {
+      case 'up':
+        return { x: this.x, y: this.y - dist };
+      case 'down':
+        return { x: this.x, y: this.y + dist };
+      case 'left':
+        return { x: this.x - dist, y: this.y };
+      case 'right':
+        return { x: this.x + dist, y: this.y };
+    }
+  }
+
   /** Face the player toward a world point (used after mission resume). */
   faceToward(faceX: number, faceY: number) {
     const dx = faceX - this.x;

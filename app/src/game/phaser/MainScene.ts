@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import type { ProgressData } from '../../lib/api';
+import type { MapPosition, ProgressData } from '../../lib/api';
 import { UNIT_COLORS } from '../../lib/pathLayout';
 
 import { ASSET, LAYER, SCENE } from './keys';
@@ -40,6 +40,7 @@ export type OnMissionInteract = (unitId: string, activityId: string) => void;
 export interface MainSceneData {
   progress: ProgressData;
   onInteract: OnMissionInteract;
+  onSaveMapPos?: (pos: MapPosition) => void;
 }
 
 interface StationZone {
@@ -59,6 +60,8 @@ interface StationZone {
 }
 
 const SPAWN_GRACE_MS = 1800;
+const MAP_POS_SAVE_MS = 4000;
+const MAP_POS_MIN_DELTA = 12;
 
 function isTouchDevice(): boolean {
   if (typeof window === 'undefined') return false;
@@ -72,6 +75,7 @@ export class MainScene extends Phaser.Scene {
   private unitLabels: { unitIndex: number; unitTitle: string; color: string; worldX: number; worldY: number }[] = [];
   private progress!: ProgressData;
   private onInteract!: OnMissionInteract;
+  private onSaveMapPos?: (pos: MapPosition) => void;
   private hintText!: Phaser.GameObjects.Text;
   private lastTouchId: string | null = null;
   private touchCooldown = 0;
@@ -88,6 +92,8 @@ export class MainScene extends Phaser.Scene {
   private touchStartX = 0;
   private touchStartY = 0;
   private touchDragging = false;
+  private mapPosSaveTimer = 0;
+  private lastPersistedPos: MapPosition | null = null;
 
   constructor() {
     super(SCENE.main);
@@ -96,6 +102,7 @@ export class MainScene extends Phaser.Scene {
   init(data: MainSceneData) {
     this.progress = data.progress;
     this.onInteract = data.onInteract;
+    this.onSaveMapPos = data.onSaveMapPos;
   }
 
   create() {
@@ -261,7 +268,51 @@ export class MainScene extends Phaser.Scene {
 
     this.events.on('wake', () => this.onSceneActive());
     this.events.on('resume', () => this.onSceneActive());
+    this.events.on('shutdown', () => this.persistMapPosition(true));
     this.onSceneActive();
+  }
+
+  getMapPosition(): MapPosition | null {
+    if (!this.player) return null;
+    const pathIndex = this.nearestCenterlineIndex(this.player.x, this.player.y);
+    const facing = this.player.getFacingPoint();
+    return {
+      x: this.player.x,
+      y: this.player.y,
+      faceX: facing.x,
+      faceY: facing.y,
+      pathIndex,
+    };
+  }
+
+  private nearestCenterlineIndex(px: number, py: number): number {
+    const cl = this.journeyPath?.centerline;
+    if (!cl?.length) return 0;
+    let best = 0;
+    let bestDist = Infinity;
+    for (let i = 0; i < cl.length; i++) {
+      const d = (cl[i].px - px) ** 2 + (cl[i].py - py) ** 2;
+      if (d < bestDist) {
+        bestDist = d;
+        best = i;
+      }
+    }
+    return best;
+  }
+
+  private persistMapPosition(force = false) {
+    if (!this.onSaveMapPos || !this.player) return;
+    const pos = this.getMapPosition();
+    if (!pos) return;
+
+    if (!force && this.lastPersistedPos) {
+      const dx = pos.x - this.lastPersistedPos.x;
+      const dy = pos.y - this.lastPersistedPos.y;
+      if (Math.hypot(dx, dy) < MAP_POS_MIN_DELTA) return;
+    }
+
+    this.lastPersistedPos = pos;
+    this.onSaveMapPos(pos);
   }
 
   /** Tile-aligned fence posts at maze gates — matches corridor fence elsewhere. */
@@ -475,6 +526,7 @@ export class MainScene extends Phaser.Scene {
 
   private openMission(unitId: string, activityId: string) {
     savePhaserPlayerState(this.player.x, this.player.y, activityId);
+    this.persistMapPosition(true);
     this.player.clearInputState();
     this.touchCooldown = 800;
     this.onInteract(unitId, activityId);
@@ -626,6 +678,12 @@ export class MainScene extends Phaser.Scene {
     if (this.touchCooldown > 0) this.touchCooldown -= delta;
     else this.lastTouchId = null;
 
+    this.mapPosSaveTimer += delta;
+    if (this.mapPosSaveTimer >= MAP_POS_SAVE_MS) {
+      this.mapPosSaveTimer = 0;
+      this.persistMapPosition();
+    }
+
     for (const s of this.stations) {
       if (!this.physics.overlap(this.player, s.zone)) {
         s.inside = false;
@@ -728,6 +786,7 @@ export class MainScene extends Phaser.Scene {
         this.player.hasMoved = true;
         this.spawnGrace = SPAWN_GRACE_MS;
         this.lastValidPos = { x: resume.x, y: resume.y };
+        this.persistMapPosition(true);
       }
     }
 

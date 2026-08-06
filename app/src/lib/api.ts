@@ -23,10 +23,121 @@ export interface ProgressData {
 }
 
 const LS_SESSION = 'aramit_session';
+const LS_GUEST_REGISTRY = 'aramit_guest_registry';
+const LS_GUEST_MIGRATED = 'aramit_guest_migrated_v2';
 
-/** התקדמות אורח נשמרת לפי שם+אימוג'י — כמה תלמידים יכולים לחלוק מחשב */
+/** מפתח יציב לשם — לא תלוי רישיות/רווחים */
+export function normalizeNickname(nickname: string): string {
+  return nickname.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+/** התקדמות אורח נשמרת לפי שם+אימוג'י מזהה — כמה תלמידים יכולים לחלוק מחשב */
+export function guestProgressKey(nickname: string, emoji: string): string {
+  const n = encodeURIComponent(normalizeNickname(nickname));
+  const e = encodeURIComponent(emoji.trim());
+  return `aramit_guest_${n}__${e}`;
+}
+
 function guestKey(s: StudentSession): string {
-  return `aramit_guest_${s.nickname}_${s.emoji}`;
+  return guestProgressKey(s.nickname, s.emoji);
+}
+
+type GuestRegistry = Record<string, string>;
+
+function loadGuestRegistry(): GuestRegistry {
+  migrateGuestStorage();
+  try {
+    const raw = localStorage.getItem(LS_GUEST_REGISTRY);
+    return raw ? (JSON.parse(raw) as GuestRegistry) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveGuestRegistry(reg: GuestRegistry): void {
+  localStorage.setItem(LS_GUEST_REGISTRY, JSON.stringify(reg));
+}
+
+/** סריקה חד-פעמית של מפתחות ישנים (name_emoji) + רישום במאגר */
+function migrateGuestStorage(): void {
+  if (localStorage.getItem(LS_GUEST_MIGRATED)) return;
+  const registry: GuestRegistry = {};
+  try {
+    const raw = localStorage.getItem(LS_GUEST_REGISTRY);
+    if (raw) Object.assign(registry, JSON.parse(raw) as GuestRegistry);
+  } catch { /* ignore */ }
+
+  const keys: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k?.startsWith('aramit_guest_') && k !== LS_GUEST_REGISTRY) keys.push(k);
+  }
+
+  for (const key of keys) {
+    if (key.includes('__')) {
+      const rest = key.slice('aramit_guest_'.length);
+      const sep = rest.indexOf('__');
+      if (sep > 0) {
+        try {
+          const nick = decodeURIComponent(rest.slice(0, sep));
+          const emoji = decodeURIComponent(rest.slice(sep + 2));
+          if (nick && emoji) registry[normalizeNickname(nick)] = emoji;
+        } catch { /* ignore */ }
+      }
+      continue;
+    }
+    const rest = key.slice('aramit_guest_'.length);
+    const lastUnderscore = rest.lastIndexOf('_');
+    if (lastUnderscore <= 0) continue;
+    const nick = rest.slice(0, lastUnderscore);
+    const emoji = rest.slice(lastUnderscore + 1);
+    if (!nick || !emoji) continue;
+    registry[normalizeNickname(nick)] = emoji;
+    const newKey = guestProgressKey(nick, emoji);
+    if (newKey !== key) {
+      const data = localStorage.getItem(key);
+      if (data) {
+        localStorage.setItem(newKey, data);
+        localStorage.removeItem(key);
+      }
+    }
+  }
+
+  saveGuestRegistry(registry);
+  localStorage.setItem(LS_GUEST_MIGRATED, '1');
+}
+
+/** האימוג'י הרשום לשם במכשיר (אם קיים) */
+export function getRegisteredIdentityEmoji(nickname: string): string | null {
+  const reg = loadGuestRegistry();
+  return reg[normalizeNickname(nickname)] ?? null;
+}
+
+export type GuestIdentityCheck = 'new' | 'match' | 'wrong_emoji';
+
+/** בדיקת זהות לפני כניסת אורח — מונעת דליפת מידע */
+export function checkGuestIdentity(nickname: string, emoji: string): GuestIdentityCheck {
+  const registered = getRegisteredIdentityEmoji(nickname);
+  if (!registered) return 'new';
+  if (registered === emoji.trim()) return 'match';
+  return 'wrong_emoji';
+}
+
+export function hasGuestProgress(nickname: string, emoji: string): boolean {
+  const raw = localStorage.getItem(guestProgressKey(nickname, emoji));
+  if (!raw) return false;
+  try {
+    const p = JSON.parse(raw) as ProgressData;
+    return Object.keys(p.completed ?? {}).length > 0 || Object.keys(p.letters ?? {}).length > 0;
+  } catch {
+    return false;
+  }
+}
+
+function registerGuestIdentity(nickname: string, emoji: string): void {
+  const reg = loadGuestRegistry();
+  reg[normalizeNickname(nickname)] = emoji.trim();
+  saveGuestRegistry(reg);
 }
 
 export function loadSession(): StudentSession | null {
@@ -87,7 +198,14 @@ export async function joinClass(code: string, nickname: string, emoji: string): 
 }
 
 export function guestSession(nickname: string, emoji: string): StudentSession {
-  const s: StudentSession = { token: 'guest', nickname, emoji };
+  const trimmed = nickname.trim();
+  const idEmoji = emoji.trim();
+  const check = checkGuestIdentity(trimmed, idEmoji);
+  if (check === 'wrong_emoji') {
+    throw new Error('האימוג\'י לא תואם לשם הזה במכשיר — בחרו את הסימן שבחרתם בפעם הראשונה, או שם אחר');
+  }
+  registerGuestIdentity(trimmed, idEmoji);
+  const s: StudentSession = { token: 'guest', nickname: trimmed, emoji: idEmoji };
   saveSession(s);
   return s;
 }
@@ -156,6 +274,7 @@ export async function reportAttempt(
       p.completed[activityId] = { score, max };
     }
     delete p.freeNav; // לא שומרים את הדגל בתוך ההתקדמות
+    registerGuestIdentity(s.nickname, s.emoji);
     localStorage.setItem(guestKey(s), JSON.stringify(p));
     return;
   }

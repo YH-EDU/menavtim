@@ -1,14 +1,20 @@
-import React, { useState } from 'react';
-import { joinClass, guestSession, type StudentSession } from '../lib/api';
+import React, { useMemo, useState } from 'react';
+import {
+  joinClass,
+  guestSession,
+  getRegisteredIdentityEmoji,
+  hasGuestProgress,
+  type StudentSession,
+} from '../lib/api';
 import { nav } from '../App';
 import { HeroBg } from '../ui/PageShell';
 import { asset } from '../lib/basePath';
 import {
   CHARACTERS,
-  getCharacterDef,
   saveSelectedAvatar,
   type CharacterId,
 } from '../game/phaser/characters';
+import EmojiPicker from '../ui/EmojiPicker';
 
 function CharacterPicker({
   picked,
@@ -70,7 +76,7 @@ export default function Join({
   initialCode = '',
 }: {
   onJoined: (s: StudentSession) => void;
-  /** תרגול חופשי — שם + דמות, בלי קוד כיתה */
+  /** תרגול חופשי — שם + סימן מזהה, בלי קוד כיתה */
   guest?: boolean;
   initialCode?: string;
 }) {
@@ -78,28 +84,53 @@ export default function Join({
   const linkCode = initialCode.replace(/\s+/g, '').toUpperCase();
   const [code, setCode] = useState(linkCode);
   const [nick, setNick] = useState('');
+  const [identityEmoji, setIdentityEmoji] = useState<string | null>(null);
   const [character, setCharacter] = useState<CharacterId | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
   const codeFromLink = linkCode.length > 0 && !isGuest;
 
+  const registeredEmoji = useMemo(
+    () => (nick.trim() ? getRegisteredIdentityEmoji(nick.trim()) : null),
+    [nick],
+  );
+
+  const resumeHint = useMemo(() => {
+    if (!nick.trim() || !identityEmoji) return null;
+    if (registeredEmoji && registeredEmoji !== identityEmoji) {
+      return { type: 'warn' as const, text: `לשם "${nick.trim()}" יש שמירה עם ${registeredEmoji} — בחרו אותו כדי להמשיך` };
+    }
+    if (isGuest && hasGuestProgress(nick.trim(), identityEmoji)) {
+      return { type: 'ok' as const, text: 'נמצאה שמירה — ממשיכים מהמקום שעצרתם! 🎉' };
+    }
+    if (!isGuest && registeredEmoji === identityEmoji) {
+      return { type: 'ok' as const, text: 'מזהים אתכם — ממשיכים מהמקום שעצרתם! 🎉' };
+    }
+    return null;
+  }, [nick, identityEmoji, registeredEmoji, isGuest]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr('');
     if (!nick.trim()) { setErr('כתבו שם או כינוי'); return; }
+    if (!identityEmoji) { setErr('בחרו סימן מזהה (אימוג\'י) — הוא "הסיסמה הקטנה" שלכם'); return; }
     if (!character) { setErr('בחרו דמות למסע'); return; }
-    const emoji = getCharacterDef(character).emoji;
     saveSelectedAvatar(character);
     if (isGuest) {
-      onJoined(guestSession(nick.trim(), emoji));
+      try {
+        onJoined(guestSession(nick.trim(), identityEmoji));
+      } catch (ex) {
+        setErr(ex instanceof Error ? ex.message : 'שגיאה — נסו שוב');
+      }
       return;
     }
     const joinCode = (codeFromLink ? linkCode : code.trim()).toUpperCase();
     if (!joinCode) { setErr('כתבו את קוד הכיתה שקיבלתם מהמורה'); return; }
     setBusy(true);
     try {
-      onJoined(await joinClass(joinCode, nick.trim(), emoji));
+      onJoined(await joinClass(joinCode, nick.trim(), identityEmoji));
     } catch (ex) {
       setErr(ex instanceof Error ? ex.message : 'שגיאה — נסו שוב');
     } finally {
@@ -123,10 +154,10 @@ export default function Join({
         <h2 style={{ margin: '6px 0 4px' }}>{isGuest ? 'תרגול חופשי' : 'הצטרפות לכיתה'}</h2>
         <p style={{ color: 'var(--ink-soft)', fontSize: 15, marginTop: 0 }}>
           {isGuest
-            ? 'בחרו שם ודמות — והמסע מתחיל (ההתקדמות נשמרת על המכשיר)'
+            ? 'שם + סימן מזהה + דמות — ההתקדמות נשמרת על המכשיר (אותו שם + אימוג\'י = המשך)'
             : codeFromLink
-              ? 'בחרו שם ודמות — והמסע מתחיל (הקוד כבר מולא מהקישור)'
-              : 'הכניסו קוד כיתה, ובחרו שם ודמות למסע'}
+              ? 'שם + סימן מזהה + דמות — ההתקדמות נשמרת בענן (אותו שם + אימוג\'י מכל מחשב)'
+              : 'קוד כיתה, שם, סימן מזהה ודמות — ההתקדמות נשמרת בענן'}
         </p>
         {!isGuest && codeFromLink && (
           <div
@@ -167,19 +198,71 @@ export default function Join({
           onChange={(e) => setNick(e.target.value)}
           maxLength={30}
         />
+
         <p style={{ fontSize: 14.5, fontWeight: 700, margin: '14px 0 8px' }}>
+          בחרו סימן מזהה 🔐
+        </p>
+        <p style={{ fontSize: 13, color: 'var(--ink-soft)', margin: '0 0 10px', lineHeight: 1.45 }}>
+          האימוג'י הוא "הסיסמה הקטנה" — יחד עם השם הוא שומר את ההתקדמות
+        </p>
+        <button
+          type="button"
+          className="identity-emoji-btn"
+          onClick={() => setShowEmojiPicker(true)}
+        >
+          {identityEmoji ? (
+            <>
+              <span className="identity-emoji-display">{identityEmoji}</span>
+              <span>שנו סימן</span>
+            </>
+          ) : (
+            <>בחרו אימוג'י 🎨</>
+          )}
+        </button>
+
+        {registeredEmoji && !identityEmoji && (
+          <p style={{ fontSize: 13, color: 'var(--teal-dark)', margin: '8px 0 0', fontWeight: 600 }}>
+            יש שמירה לשם הזה עם {registeredEmoji} — בחרו אותו כדי להמשיך
+          </p>
+        )}
+
+        {resumeHint && (
+          <p
+            className={resumeHint.type === 'warn' ? 'err' : undefined}
+            style={
+              resumeHint.type === 'ok'
+                ? { color: 'var(--green)', fontSize: 14, margin: '10px 0 0', fontWeight: 700 }
+                : { marginTop: 10 }
+            }
+          >
+            {resumeHint.text}
+          </p>
+        )}
+
+        <p style={{ fontSize: 14.5, fontWeight: 700, margin: '18px 0 8px' }}>
           בחרו דמות למסע 🎭
+        </p>
+        <p style={{ fontSize: 12.5, color: 'var(--ink-soft)', margin: '0 0 8px' }}>
+          הדמות היא השחקן על המפה — ניתן לשנות אותה בכל זמן
         </p>
         <CharacterPicker picked={character} onPick={setCharacter} />
 
         {err && <p className="err">{err}</p>}
         <button className="btn" style={{ width: '100%', marginTop: 16 }} disabled={busy}>
-          {busy ? 'רגע...' : 'יוצאים למסע! 🚀'}
+          {busy ? 'רגע...' : resumeHint?.type === 'ok' ? 'ממשיכים במסע! 🚀' : 'יוצאים למסע! 🚀'}
         </button>
         <button type="button" className="btn" style={{ background: 'transparent', boxShadow: 'none', color: 'var(--ink-soft)', fontSize: 14, marginTop: 6 }} onClick={() => nav('/')}>
           → חזרה
         </button>
       </form>
+
+      {showEmojiPicker && (
+        <EmojiPicker
+          value={identityEmoji}
+          onPick={setIdentityEmoji}
+          onClose={() => setShowEmojiPicker(false)}
+        />
+      )}
     </div>
     </HeroBg>
   );

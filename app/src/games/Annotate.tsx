@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { AnnotateActivity, ActivityResult, LetterEvents } from '../data/types';
 import { addLetterEvent } from '../lib/mastery';
 import { glossFor, stripPunct } from '../data/letters';
@@ -51,6 +52,7 @@ export default function Annotate({
   const [events] = useState<LetterEvents>({});
   const dragChip = useRef<string | null>(null);
   const didDrag = useRef(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
   const [ghost, setGhost] = useState<{ chip: string; x: number; y: number } | null>(null);
   const [hoverSlot, setHoverSlot] = useState<number | null>(null);
 
@@ -113,6 +115,11 @@ export default function Annotate({
   const startDrag = (chip: string, e: React.PointerEvent) => {
     if (used.has(chip)) return;
     e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    dragOffset.current = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    };
     e.currentTarget.setPointerCapture(e.pointerId);
     dragChip.current = chip;
     didDrag.current = false;
@@ -122,7 +129,11 @@ export default function Annotate({
     if (!dragChip.current) return;
     if (!didDrag.current) didDrag.current = true;
     setHeld(dragChip.current);
-    setGhost({ chip: dragChip.current, x: e.clientX, y: e.clientY });
+    setGhost({
+      chip: dragChip.current,
+      x: e.clientX - dragOffset.current.x,
+      y: e.clientY - dragOffset.current.y,
+    });
     const slot = slotFromPoint(e.clientX, e.clientY);
     setHoverSlot(slot !== null && !filled[slot] ? slot : null);
   };
@@ -272,30 +283,32 @@ export default function Annotate({
         </div>
       )}
 
-      {ghost && (
-        <div
-          aria-hidden
-          style={{
-            position: 'fixed',
-            left: ghost.x,
-            top: ghost.y,
-            transform: 'translate(-50%, -50%)',
-            padding: '10px 20px',
-            fontSize: 17,
-            fontWeight: 700,
-            borderRadius: 12,
-            background: 'var(--teal)',
-            color: '#fff',
-            border: '2px solid var(--teal-dark)',
-            boxShadow: '0 8px 20px rgba(13,148,136,0.35)',
-            pointerEvents: 'none',
-            zIndex: 9999,
-            touchAction: 'none',
-          }}
-        >
-          {ghost.chip}
-        </div>
-      )}
+      {ghost &&
+        createPortal(
+          <div
+            aria-hidden
+            style={{
+              position: 'fixed',
+              left: ghost.x,
+              top: ghost.y,
+              padding: '10px 20px',
+              fontSize: 17,
+              fontWeight: 700,
+              borderRadius: 12,
+              background: 'var(--teal)',
+              color: '#fff',
+              border: '2px solid var(--teal-dark)',
+              boxShadow: '0 8px 20px rgba(13,148,136,0.35)',
+              pointerEvents: 'none',
+              zIndex: 9999,
+              touchAction: 'none',
+              userSelect: 'none',
+            }}
+          >
+            {ghost.chip}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

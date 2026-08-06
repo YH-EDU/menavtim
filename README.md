@@ -4,17 +4,17 @@
 
 A playful journey for Hebrew speakers learning **Aramaic** — kids navigate stations along an Israel-themed path, from vineyard to Beit Midrash.
 
-**Live demo:** [https://yosefyotam-glitch.github.io/menavtim/](https://yosefyotam-glitch.github.io/menavtim/)
+**Live demo:** [https://YH-EDU.github.io/menavtim/](https://YH-EDU.github.io/menavtim/)
 
 **Netlify (כתובת נקייה):** פריסה מוכנה (`npm run deploy:netlify`) — ממתינה להגדרת דומיין/חשבון Netlify.
 
-> **הערה על הכתובת:** השם `yosefyotam-glitch` בכתובת GitHub Pages הוא שם חשבון GitHub — לא ניתן לשנותו דרך הקוד. שינוי שם משתמש GitHub אפשרי רק ידנית על ידי בעל החשבון (ולא לשם כמו `Y.H`, שאינו תקין ב-GitHub). לנתיב קצר יותר (למשל `menavtim.com`) נדרש **דומיין פרטי** או Netlify.
+> **הערה על הכתובת:** ב-GitHub Pages הכתובת כוללת את שם המשתמש (`YH-EDU`). לנתיב קצר יותר (למשל `menavtim.com`) נדרש **דומיין פרטי** או Netlify.
 
 ---
 
 ## חזון חינוכי · Educational vision
 
-ארמית היא שפת התalmud, התפילה והמקרא — אבל לרוב הלומדים היא "שפה זרה". **מנווטים בארמית** הופך את הלמידה למסע: הילד בוחר דמות, הולך על מפת Phaser אינטראקטיבית, ומגיע לתחנות פעילות קצרות. כל תחנה מלמדת מילה, ביטוי או מבנה — עם כוכבים, נקודות ומשוב מיידי.
+ארמית היא שפת התלמוד, התפילה והמקרא — אבל לרוב הלומדים היא "שפה זרה". **מנווטים בארמית** הופך את הלמידה למסע: הילד בוחר דמות, הולך על מפת Phaser אינטראקטיבית, ומגיע לתחנות פעילות קצרות. כל תחנה מלמדת מילה, ביטוי או מבנה — עם כוכבים, נקודות ומשוב מיידי.
 
 Aramaic is the language of Talmud, prayer, and parts of Scripture — yet it often feels foreign to modern Hebrew speakers. **Navigating Aramaic** turns learning into a journey: pick a character, walk an interactive Phaser map, and reach short activity stations. Each station teaches a word, phrase, or pattern — with stars, points, and instant feedback.
 
@@ -164,7 +164,7 @@ npm run deploy
 2. מעתיק את `app/dist/` לענף `gh-pages`
 3. דוחף ל-`origin gh-pages`
 
-**URL חי:** `https://<username>.github.io/menavtim/`
+**URL חי:** `https://YH-EDU.github.io/menavtim/`
 
 ---
 

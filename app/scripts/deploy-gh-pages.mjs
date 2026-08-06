@@ -63,7 +63,9 @@ function copyDir(src, dest) {
   }
 }
 copyDir(DIST, WORKTREE);
+// Belt-and-suspenders: skip Jekyll even if dist copy omitted the marker.
 fs.writeFileSync(path.join(WORKTREE, '.nojekyll'), '');
+fs.writeFileSync(path.join(DIST, '.nojekyll'), '');
 
 // Cache-bust marker + ensure HTML references the bundle we just copied
 const indexPath = path.join(WORKTREE, 'index.html');

@@ -45,9 +45,14 @@ jobs:
         run: node scripts/stamp-deploy-html.mjs
         working-directory: app
 
+      - name: Skip Jekyll on GitHub Pages
+        run: touch app/dist/.nojekyll
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: app/dist
 
       - id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          timeout: 1800000

@@ -10,3 +10,7 @@ html = html.replace(
   `<meta name="deploy" content="${new Date().toISOString()}" />\n    <meta name="viewport"`,
 );
 fs.writeFileSync(indexPath, html);
+
+// Vite static site — never run Jekyll on GitHub Pages (legacy or artifact deploy).
+const distDir = path.dirname(indexPath);
+fs.writeFileSync(path.join(distDir, '.nojekyll'), '');

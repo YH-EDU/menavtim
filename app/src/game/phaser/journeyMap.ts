@@ -540,7 +540,7 @@ function addExitPlaza(pathCells: Set<string>, anchorTx: number, anchorTy: number
 
 
 
-/** Visible fence posts flanking maze gates — open plazas skip auto wall generation. */
+/** Visible fence posts flanking a maze gate (exit and similar transitions). */
 
 function ensureMazeGateFence(
 
@@ -594,9 +594,9 @@ function ensureMazeGateFence(
 
 
 
-/** Orderly 2-tile corridor through a grass plaza — gray path, symmetrical green fence. */
+/** Fence posts north from the entrance mouth — open plaza stays fence-free south of gate. */
 
-function addEntranceApproachCorridor(
+function ensureEntranceGateFence(
 
   pathCells: Set<string>,
 
@@ -606,33 +606,35 @@ function addEntranceApproachCorridor(
 
   gateTx: number,
 
+  gateTy: number,
+
   lane: Lane,
 
-  plaza: PlazaRect,
-
-): PlazaRect {
+): void {
 
   const txA = gateTx;
 
   const txB = gateTx + lane;
 
-  const leftWallTx = Math.min(txA, txB) - 1;
+  const leftTx = Math.min(txA, txB) - 1;
 
-  const rightWallTx = Math.max(txA, txB) + 1;
+  const rightTx = Math.max(txA, txB) + 1;
 
 
 
-  for (let ty = plaza.minTy; ty <= plaza.maxTy; ty++) {
+  for (let dy = 0; dy >= -4; dy--) {
 
-    addPathTile(pathCells, txA, ty);
+    const ty = gateTy + dy;
 
-    addPathTile(pathCells, txB, ty);
+    if (ty < 1 || ty >= MAP_HEIGHT - 1) continue;
 
-    for (const tx of [leftWallTx, rightWallTx]) {
+    for (const tx of [leftTx, rightTx]) {
 
-      if (tx < 1 || tx >= MAP_WIDTH - 1 || ty < 1 || ty >= MAP_HEIGHT - 1) continue;
+      if (tx < 1 || tx >= MAP_WIDTH - 1) continue;
 
       const k = key(tx, ty);
+
+      if (pathCells.has(k)) continue;
 
       wallCells.add(k);
 
@@ -642,19 +644,41 @@ function addEntranceApproachCorridor(
 
   }
 
+}
 
 
-  return {
 
-    minTx: leftWallTx,
+/** Strip visible fence tiles from an open plaza interior. */
 
-    maxTx: rightWallTx,
+function clearVisibleWallsInPlaza(wallCells: Set<string>, plaza: PlazaRect): void {
 
-    minTy: plaza.minTy,
+  for (let ty = plaza.minTy; ty <= plaza.maxTy; ty++) {
 
-    maxTy: plaza.maxTy,
+    for (let tx = plaza.minTx; tx <= plaza.maxTx; tx++) {
 
-  };
+      wallCells.delete(key(tx, ty));
+
+    }
+
+  }
+
+}
+
+
+
+/** First centerline step north of an open plaza (maze pipe begins here). */
+
+function mazeStartCenterlineIndex(
+
+  centerline: { tx: number; ty: number }[],
+
+  plaza: PlazaRect,
+
+): number {
+
+  const idx = centerline.findIndex((p) => p.ty < plaza.minTy);
+
+  return idx >= 0 ? idx : 0;
 
 }
 
@@ -976,7 +1000,15 @@ export function computeResumePosition(
 
 
 
-function distributeStationIndices(stationCount: number, centerlineLen: number): number[] {
+function distributeStationIndices(
+
+  stationCount: number,
+
+  centerlineLen: number,
+
+  minStartIndex = 8,
+
+): number[] {
 
   if (stationCount <= 0) return [];
 
@@ -984,7 +1016,7 @@ function distributeStationIndices(stationCount: number, centerlineLen: number): 
 
 
 
-  const lead = 8;
+  const lead = minStartIndex;
 
   const tail = 10;
 
@@ -1100,7 +1132,11 @@ export function buildJourneyPath(
 
   const goal = doorGoal;
 
-  const stationIndices = distributeStationIndices(stationCount, centerPoints.length);
+  const mazeStartIdx = mazeStartCenterlineIndex(centerlineRaw, entrancePlaza);
+
+  const minStationIdx = mazeStartIdx + 8;
+
+  const stationIndices = distributeStationIndices(stationCount, centerPoints.length, minStationIdx);
 
   const unitBoundaries: UnitBoundary[] = [];
 
@@ -1154,7 +1190,9 @@ export function buildJourneyPath(
 
   const spawn = corridorCenterPoint(spawnAnchor.tx, spawnAnchor.ty + 3, spawnLane, 'v');
 
-  const mazeEntrance = corridorCenterPoint(spawnAnchor.tx, spawnAnchor.ty - 1, spawnLane, 'v');
+  /** North edge of spawn plaza — maze pipe mouth; fences begin here. */
+
+  const mazeEntrance = corridorCenterPoint(spawnAnchor.tx, entrancePlaza.minTy, spawnLane, 'v');
 
   const mazeExit = corridorCenterPoint(22, 14, 1, 'v');
 
@@ -1192,23 +1230,9 @@ export function buildJourneyPath(
 
   const wallCells = buildWallCells(pathCells, buildingZone, openPlazas);
 
-  const entranceCorridor = addEntranceApproachCorridor(
+  clearVisibleWallsInPlaza(wallCells, entrancePlaza);
 
-    pathCells,
-
-    wallCells,
-
-    hiddenWallCells,
-
-    mazeEntrance.tx,
-
-    spawnLane,
-
-    entrancePlaza,
-
-  );
-
-  ensureMazeGateFence(pathCells, wallCells, hiddenWallCells, mazeEntrance.tx, mazeEntrance.ty, spawnLane);
+  ensureEntranceGateFence(pathCells, wallCells, hiddenWallCells, mazeEntrance.tx, mazeEntrance.ty, spawnLane);
 
   ensureMazeGateFence(pathCells, wallCells, hiddenWallCells, mazeExit.tx, mazeExit.ty, 1);
 
@@ -1250,7 +1274,7 @@ export function buildJourneyPath(
 
     grassPlazas: [entrancePlaza],
 
-    pavedCorridors: [entranceCorridor],
+    pavedCorridors: [],
 
   };
 

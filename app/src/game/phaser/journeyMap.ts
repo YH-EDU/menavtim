@@ -280,6 +280,178 @@ function corridorCenterPoint(
 
 
 
+/** Player body sample width — must match MainScene.enforcePathOnly. */
+
+const PLAYER_SAMPLE_HALF_W = 11;
+
+
+
+function isCornerCenterlineIndex(
+
+  centerlineRaw: { orient: CorridorOrient }[],
+
+  idx: number,
+
+): boolean {
+
+  if (idx <= 0 || idx >= centerlineRaw.length - 1) return false;
+
+  const prev = centerlineRaw[idx - 1];
+
+  const cur = centerlineRaw[idx];
+
+  const next = centerlineRaw[idx + 1];
+
+  return prev.orient !== cur.orient || cur.orient !== next.orient;
+
+}
+
+
+
+function isWalkableTile(tx: number, ty: number, pathCells: Set<string>): boolean {
+
+  return pathCells.has(key(tx, ty));
+
+}
+
+
+
+/** True when the player body (3 foot samples) sits entirely on path tiles. */
+
+export function isSafePlayerPosition(px: number, py: number, pathCells: Set<string>): boolean {
+
+  const feetY = py - 1;
+
+  const samples = [
+
+    { x: px, y: feetY },
+
+    { x: px - PLAYER_SAMPLE_HALF_W, y: feetY },
+
+    { x: px + PLAYER_SAMPLE_HALF_W, y: feetY },
+
+  ];
+
+  return samples.every((p) => {
+
+    const tx = Math.floor(p.x / TILE_SIZE);
+
+    const ty = Math.floor(p.y / TILE_SIZE);
+
+    return isWalkableTile(tx, ty, pathCells);
+
+  });
+
+}
+
+
+
+/** Pixel center for a centerline step — tile center at corners, corridor center on straights. */
+
+function centerlineIndexToPoint(
+
+  centerlineRaw: { tx: number; ty: number; lane: Lane; orient: CorridorOrient }[],
+
+  idx: number,
+
+  pathCells: Set<string>,
+
+): PathPoint {
+
+  const pt = centerlineRaw[idx];
+
+  if (isCornerCenterlineIndex(centerlineRaw, idx)) {
+
+    const tileCenter = { tx: pt.tx, ty: pt.ty, ...toPixel(pt.tx, pt.ty) };
+
+    if (isSafePlayerPosition(tileCenter.px, tileCenter.py, pathCells)) return tileCenter;
+
+  }
+
+  const corridor = corridorCenterPoint(pt.tx, pt.ty, pt.lane, pt.orient);
+
+  if (isSafePlayerPosition(corridor.px, corridor.py, pathCells)) return corridor;
+
+  return { tx: pt.tx, ty: pt.ty, ...toPixel(pt.tx, pt.ty) };
+
+}
+
+
+
+/** Move station index off corner cells onto a straight corridor segment. */
+
+function nudgeOffCorner(
+
+  idx: number,
+
+  centerlineRaw: { orient: CorridorOrient }[],
+
+  maxDist = 6,
+
+): number {
+
+  if (!isCornerCenterlineIndex(centerlineRaw, idx)) return idx;
+
+  for (let d = 1; d <= maxDist; d++) {
+
+    const forward = idx + d;
+
+    if (forward < centerlineRaw.length && !isCornerCenterlineIndex(centerlineRaw, forward)) {
+
+      return forward;
+
+    }
+
+    const backward = idx - d;
+
+    if (backward >= 0 && !isCornerCenterlineIndex(centerlineRaw, backward)) {
+
+      return backward;
+
+    }
+
+  }
+
+  return idx;
+
+}
+
+
+
+function findSafeResumeIndex(
+
+  centerline: PathPoint[],
+
+  startIdx: number,
+
+  pathCells: Set<string>,
+
+): number {
+
+  const maxIdx = centerline.length - 1;
+
+  for (let idx = Math.min(startIdx, maxIdx); idx <= maxIdx; idx++) {
+
+    const p = centerline[idx];
+
+    if (isSafePlayerPosition(p.px, p.py, pathCells)) return idx;
+
+  }
+
+  for (let idx = startIdx - 1; idx >= 0; idx--) {
+
+    const p = centerline[idx];
+
+    if (isSafePlayerPosition(p.px, p.py, pathCells)) return idx;
+
+  }
+
+  return Math.min(startIdx, maxIdx);
+
+}
+
+
+
 function segmentOrient(
 
   a: { tx: number; ty: number },
@@ -976,11 +1148,15 @@ export function computeResumePosition(
 
   stationCenterlineIdx: number,
 
+  pathCells: Set<string>,
+
   faceCenterlineIdx?: number,
 
 ): { x: number; y: number; faceX: number; faceY: number } {
 
-  const pastIdx = Math.min(stationCenterlineIdx + RESUME_STEPS_PAST, centerline.length - 1);
+  const targetIdx = Math.min(stationCenterlineIdx + RESUME_STEPS_PAST, centerline.length - 1);
+
+  const pastIdx = findSafeResumeIndex(centerline, targetIdx, pathCells);
 
   const pos = centerline[pastIdx];
 
@@ -989,6 +1165,8 @@ export function computeResumePosition(
   if (faceIdx >= centerline.length) faceIdx = centerline.length - 1;
 
   if (faceIdx <= pastIdx) faceIdx = Math.min(pastIdx + 1, centerline.length - 1);
+
+  faceIdx = findSafeResumeIndex(centerline, faceIdx, pathCells);
 
   const face = centerline[faceIdx];
 
@@ -1118,9 +1296,35 @@ export function buildJourneyPath(
 
 
 
-  const centerPoints: PathPoint[] = centerlineRaw.map(({ tx, ty, lane, orient }) =>
+  const mazeStartIdx = mazeStartCenterlineIndex(centerlineRaw, entrancePlaza);
 
-    corridorCenterPoint(tx, ty, lane, orient),
+  const minStationIdx = mazeStartIdx + 8;
+
+
+
+  const lastRaw = centerlineRaw[centerlineRaw.length - 1];
+
+  const tempDoorGoal = corridorCenterPoint(
+
+    lastRaw.tx,
+
+    lastRaw.ty,
+
+    lastRaw.lane,
+
+    lastRaw.orient,
+
+  );
+
+  const goalMarker = buildGoalMarker(tempDoorGoal);
+
+  pathCells.add(key(goalMarker.doorCell.tx, goalMarker.doorCell.ty));
+
+
+
+  const centerPoints: PathPoint[] = centerlineRaw.map((_, idx) =>
+
+    centerlineIndexToPoint(centerlineRaw, idx, pathCells),
 
   );
 
@@ -1130,11 +1334,11 @@ export function buildJourneyPath(
 
   const goal = doorGoal;
 
-  const mazeStartIdx = mazeStartCenterlineIndex(centerlineRaw, entrancePlaza);
 
-  const minStationIdx = mazeStartIdx + 8;
 
-  const stationIndices = distributeStationIndices(stationCount, centerPoints.length, minStationIdx);
+  let stationIndices = distributeStationIndices(stationCount, centerPoints.length, minStationIdx);
+
+  stationIndices = stationIndices.map((idx) => nudgeOffCorner(idx, centerlineRaw));
 
   const unitBoundaries: UnitBoundary[] = [];
 
@@ -1195,12 +1399,6 @@ export function buildJourneyPath(
   const mazeEntrance = corridorCenterPoint(spawnAnchor.tx, mazePipeStartTy, spawnLane, 'v');
 
   const mazeExit = corridorCenterPoint(22, 14, 1, 'v');
-
-
-
-  const goalMarker = buildGoalMarker(doorGoal);
-
-  pathCells.add(key(goalMarker.doorCell.tx, goalMarker.doorCell.ty));
 
 
 

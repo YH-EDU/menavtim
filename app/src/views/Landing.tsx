@@ -81,9 +81,21 @@ export default function Landing() {
 
         <p
           style={{
+            color: 'rgba(255,255,255,0.88)',
+            fontSize: 14,
+            marginTop: 44,
+            marginBottom: 6,
+            textShadow: '0 1px 6px rgba(0,0,0,0.4)',
+            fontWeight: 700,
+          }}
+        >
+          משחק זה נוצר על ידי יותם חדד
+        </p>
+        <p
+          style={{
             color: 'rgba(255,255,255,0.82)',
             fontSize: 13,
-            marginTop: 44,
+            marginTop: 0,
             textShadow: '0 1px 6px rgba(0,0,0,0.4)',
             fontWeight: 600,
           }}

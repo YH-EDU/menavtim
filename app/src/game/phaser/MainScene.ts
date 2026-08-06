@@ -185,6 +185,7 @@ export class MainScene extends Phaser.Scene {
       stationPositions,
       journey.stationCenterlineIndices,
       journey.centerline,
+      journey.pathCells,
       this.progress,
     );
     const startX = restored?.x ?? journey.spawn.px;
@@ -716,7 +717,12 @@ export class MainScene extends Phaser.Scene {
             break;
           }
         }
-        const resume = computeResumePosition(this.journeyPath.centerline, clIdx, faceIdx);
+        const resume = computeResumePosition(
+          this.journeyPath.centerline,
+          clIdx,
+          this.journeyPath.pathCells,
+          faceIdx,
+        );
         this.player.setPosition(resume.x, resume.y);
         this.player.faceToward(resume.faceX, resume.faceY);
         this.player.hasMoved = true;

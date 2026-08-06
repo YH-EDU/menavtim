@@ -13,7 +13,7 @@ All sprites are **CC0 or open-license** game art — free for personal and comme
 | `robot` | רובוט | Kenney Toon Characters 1 — Robot (side walk + flipX) | https://opengameart.org/content/toon-characters-1 |
 | `horse` | חד־קרן | LPC Horse Extended — 6-frame 4-dir walk (white) | https://opengameart.org/content/lpc-horse-extended |
 | `car` | מכונית | Kenney Racing Pack — drive-bob + rotate | https://opengameart.org/content/racing-pack |
-| `rocket` | רקטה | Kenney Space Shooter Redux — ship + fire FX | https://opengameart.org/content/space-shooter-redux |
+| `rocket` | חללית | Kenney Space Shooter Redux — ship + fire FX | https://opengameart.org/content/space-shooter-redux |
 
 ## License
 

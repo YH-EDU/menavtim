@@ -6,12 +6,12 @@ All sprites are **CC0 or open-license** game art — free for personal and comme
 
 | ID | Hebrew | Pack | URL |
 |----|--------|------|-----|
-| `misa` | מיסה | Phaser RPG / Tuxemon sample atlas | bundled in `public/phaser-rpg/atlas/` |
-| `knight` | אבירה | Animated Shield Maiden (Sevarihk) — 4-dir walk | https://opengameart.org/content/animated-shield-maiden-sprite-busts |
+| `misa` | חנה | Phaser RPG / Tuxemon sample atlas | bundled in `public/phaser-rpg/atlas/` |
+| `knight` | אביר | Animated Shield Maiden (Sevarihk) — 4-dir walk | https://opengameart.org/content/animated-shield-maiden-sprite-busts |
 | `fox` | שועל | Fox (Wolf Pack Rework) — 4-dir walk | https://opengameart.org/content/fox-wolf-pack-rework |
-| `cat` | חתול | [LPC] Cats Rework — top-down 4-dir | https://opengameart.org/content/cats-rework |
+| `cat` | נמר | [LPC] Cats Rework — top-down 4-dir + leopard spots | https://opengameart.org/content/cats-rework |
 | `robot` | רובוט | Kenney Toon Characters 1 — Robot (side walk + flipX) | https://opengameart.org/content/toon-characters-1 |
-| `horse` | סוס | LPC Horse Extended — 6-frame 4-dir walk (brown) | https://opengameart.org/content/lpc-horse-extended |
+| `horse` | חד־קרן | LPC Horse Extended — 6-frame 4-dir walk (white) | https://opengameart.org/content/lpc-horse-extended |
 | `car` | מכונית | Kenney Racing Pack — drive-bob + rotate | https://opengameart.org/content/racing-pack |
 | `rocket` | רקטה | Kenney Space Shooter Redux — ship + fire FX | https://opengameart.org/content/space-shooter-redux |
 

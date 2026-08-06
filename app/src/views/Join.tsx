@@ -66,12 +66,15 @@ function CharacterPicker({
 
 export default function Join({
   onJoined,
+  guest = false,
   initialCode = '',
 }: {
   onJoined: (s: StudentSession) => void;
+  /** תרגול חופשי — שם + דמות, בלי קוד כיתה */
+  guest?: boolean;
   initialCode?: string;
 }) {
-  const isGuest = window.location.hash.includes('guest');
+  const isGuest = guest;
   const linkCode = initialCode.replace(/\s+/g, '').toUpperCase();
   const [code, setCode] = useState(linkCode);
   const [nick, setNick] = useState('');

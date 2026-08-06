@@ -127,6 +127,7 @@ export default function StarHud({
           gap: 6,
           direction: 'rtl',
           pointerEvents: 'none',
+          ...(embedded ? { justifyContent: 'flex-end', paddingInlineEnd: 2 } : {}),
         }}
       >
         <div

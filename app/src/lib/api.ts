@@ -38,6 +38,11 @@ export function loadSession(): StudentSession | null {
   }
 }
 
+/** סשן תקין — שם ואימוג'י (דמות) חובה לפני כניסה למסע */
+export function isCompleteSession(s: StudentSession | null | undefined): s is StudentSession {
+  return !!s?.nickname?.trim() && !!s?.emoji?.trim();
+}
+
 export function saveSession(s: StudentSession | null): void {
   if (s) localStorage.setItem(LS_SESSION, JSON.stringify(s));
   else localStorage.removeItem(LS_SESSION);

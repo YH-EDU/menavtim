@@ -2,7 +2,7 @@ import React from 'react';
 import { nav } from '../App';
 import { HeroBg } from '../ui/PageShell';
 import { asset } from '../lib/basePath';
-import type { StudentSession } from '../lib/api';
+import { isCompleteSession, type StudentSession } from '../lib/api';
 
 export default function Landing({
   session,
@@ -60,7 +60,7 @@ export default function Landing({
           <button
             className="btn gold"
             style={{ fontSize: 20, padding: '16px 24px', fontWeight: 900, whiteSpace: 'nowrap' }}
-            onClick={() => nav(session ? '/map' : '/join/guest')}
+            onClick={() => nav(isCompleteSession(session) ? '/map' : '/join/guest')}
           >
             🎮 התחילו לשחק!
           </button>

@@ -27,6 +27,14 @@ function shuffle<T>(arr: T[], seed: number): T[] {
   return a;
 }
 
+function slotFromPoint(x: number, y: number): number | null {
+  const el = document.elementFromPoint(x, y);
+  const slotEl = el?.closest('[data-annotate-slot]') as HTMLElement | null;
+  if (!slotEl) return null;
+  const n = Number(slotEl.dataset.annotateSlot);
+  return Number.isFinite(n) ? n : null;
+}
+
 export default function Annotate({
   activity,
   onFinish,
@@ -41,6 +49,10 @@ export default function Annotate({
   const [score, setScore] = useState(0);
   const erred = useRef(false);
   const [events] = useState<LetterEvents>({});
+  const dragChip = useRef<string | null>(null);
+  const didDrag = useRef(false);
+  const [ghost, setGhost] = useState<{ chip: string; x: number; y: number } | null>(null);
+  const [hoverSlot, setHoverSlot] = useState<number | null>(null);
 
   const item = activity.sentences[idx];
 
@@ -69,6 +81,7 @@ export default function Annotate({
   }, [item, idx]);
 
   const done = slots.length > 0 && slots.every((_, i) => filled[i]);
+  const used = new Set(Object.values(filled));
 
   const place = (slot: number, chip: string) => {
     if (filled[slot]) return;
@@ -87,6 +100,33 @@ export default function Annotate({
     }
   };
 
+  const endDrag = (chip: string, x: number, y: number) => {
+    if (didDrag.current) {
+      const slot = slotFromPoint(x, y);
+      if (slot !== null && !filled[slot]) place(slot, chip);
+    }
+    dragChip.current = null;
+    setGhost(null);
+    setHoverSlot(null);
+  };
+
+  const startDrag = (chip: string, e: React.PointerEvent) => {
+    if (used.has(chip)) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragChip.current = chip;
+    didDrag.current = false;
+  };
+
+  const moveDrag = (e: React.PointerEvent) => {
+    if (!dragChip.current) return;
+    if (!didDrag.current) didDrag.current = true;
+    setHeld(dragChip.current);
+    setGhost({ chip: dragChip.current, x: e.clientX, y: e.clientY });
+    const slot = slotFromPoint(e.clientX, e.clientY);
+    setHoverSlot(slot !== null && !filled[slot] ? slot : null);
+  };
+
   const next = () => {
     const gained = erred.current ? 0 : 1;
     const total = score + gained;
@@ -100,8 +140,6 @@ export default function Annotate({
       erred.current = false;
     }
   };
-
-  const used = new Set(Object.values(filled));
 
   return (
     <div style={{ textAlign: 'center' }}>
@@ -129,6 +167,7 @@ export default function Annotate({
           if (t.slot === undefined) return <React.Fragment key={i}>{t.raw}</React.Fragment>;
           const s = t.slot;
           const value = filled[s];
+          const hot = hoverSlot === s && !value;
           return (
             <span
               key={i}
@@ -138,13 +177,9 @@ export default function Annotate({
                 {t.raw}
               </span>
               <button
+                type="button"
+                data-annotate-slot={s}
                 onClick={() => held && place(s, held)}
-                onDragOver={(e) => { if (!value) e.preventDefault(); }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const chip = e.dataTransfer.getData('text/plain');
-                  if (chip) place(s, chip);
-                }}
                 disabled={!!value}
                 className={badSlot === s ? 'shake' : ''}
                 style={{
@@ -160,10 +195,11 @@ export default function Annotate({
                   fontWeight: 700,
                   whiteSpace: 'nowrap',
                   borderRadius: 9,
-                  background: value ? 'var(--green-soft)' : held ? '#fff' : 'rgba(255,255,255,0.6)',
+                  touchAction: 'none',
+                  background: value ? 'var(--green-soft)' : hot ? '#fff' : held ? '#fff' : 'rgba(255,255,255,0.6)',
                   border: value
                     ? '2px solid var(--green)'
-                    : `2px dashed ${held ? 'var(--teal)' : '#c9bd9a'}`,
+                    : `2px dashed ${hot || held ? 'var(--teal)' : '#c9bd9a'}`,
                   color: value ? 'var(--green)' : 'var(--ink-soft)',
                   cursor: value ? 'default' : held ? 'pointer' : 'default',
                   transition: 'all 0.15s',
@@ -185,13 +221,23 @@ export default function Annotate({
             {bank.map((chip) => {
               const taken = used.has(chip);
               const active = held === chip;
+              const dragging = ghost?.chip === chip;
               return (
                 <button
                   key={chip}
-                  draggable={!taken}
-                  onDragStart={(e) => { e.dataTransfer.setData('text/plain', chip); setHeld(chip); }}
-                  onDragEnd={() => setHeld(null)}
-                  onClick={() => !taken && setHeld(active ? null : chip)}
+                  type="button"
+                  onPointerDown={(e) => startDrag(chip, e)}
+                  onPointerMove={moveDrag}
+                  onPointerUp={(e) => {
+                    if (dragChip.current === chip) endDrag(chip, e.clientX, e.clientY);
+                  }}
+                  onPointerCancel={(e) => {
+                    if (dragChip.current === chip) endDrag(chip, e.clientX, e.clientY);
+                  }}
+                  onClick={() => {
+                    if (didDrag.current || taken) return;
+                    setHeld(active ? null : chip);
+                  }}
                   disabled={taken}
                   style={{
                     padding: '10px 20px',
@@ -202,9 +248,11 @@ export default function Annotate({
                     color: taken ? '#b6c0bc' : active ? '#fff' : 'var(--ink)',
                     border: `2px solid ${taken ? '#e2e8f0' : active ? 'var(--teal-dark)' : '#cfd8d4'}`,
                     cursor: taken ? 'default' : 'grab',
-                    opacity: taken ? 0.45 : 1,
+                    opacity: taken ? 0.45 : dragging ? 0.35 : 1,
                     transform: active ? 'translateY(-2px)' : 'none',
                     transition: 'all 0.15s',
+                    touchAction: 'none',
+                    userSelect: 'none',
                   }}
                 >
                   {chip}
@@ -221,6 +269,31 @@ export default function Annotate({
           <button className="btn" onClick={next} style={{ marginTop: 12 }}>
             {idx + 1 >= activity.sentences.length ? 'סיימתי ←' : 'המשפט הבא ←'}
           </button>
+        </div>
+      )}
+
+      {ghost && (
+        <div
+          aria-hidden
+          style={{
+            position: 'fixed',
+            left: ghost.x,
+            top: ghost.y,
+            transform: 'translate(-50%, -50%)',
+            padding: '10px 20px',
+            fontSize: 17,
+            fontWeight: 700,
+            borderRadius: 12,
+            background: 'var(--teal)',
+            color: '#fff',
+            border: '2px solid var(--teal-dark)',
+            boxShadow: '0 8px 20px rgba(13,148,136,0.35)',
+            pointerEvents: 'none',
+            zIndex: 9999,
+            touchAction: 'none',
+          }}
+        >
+          {ghost.chip}
         </div>
       )}
     </div>

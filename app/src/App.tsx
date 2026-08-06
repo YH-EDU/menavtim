@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { loadSession, saveSession, fetchProgress, type StudentSession, type ProgressData } from './lib/api';
+import { loadSession, saveSession, fetchProgress, isCompleteSession, type StudentSession, type ProgressData } from './lib/api';
 import Landing from './views/Landing';
 import Join from './views/Join';
 import JourneyMap from './views/JourneyMap';
@@ -37,7 +37,10 @@ export default function App() {
     trackPage(hash);
   }, [hash]);
 
-  const [session, setSession] = useState<StudentSession | null>(loadSession());
+  const [session, setSession] = useState<StudentSession | null>(() => {
+    const s = loadSession();
+    return isCompleteSession(s) ? s : null;
+  });
   const [progress, setProgress] = useState<ProgressData>({ letters: {}, completed: {} });
 
   const refreshProgress = useCallback(async () => {
@@ -55,10 +58,25 @@ export default function App() {
 
   // סנכרון סשן מ-localStorage (למשל תצוגת מורה שנפתחת מלוח המורה)
   useEffect(() => {
-    const sync = () => setSession(loadSession());
+    const sync = () => {
+      const s = loadSession();
+      setSession(isCompleteSession(s) ? s : null);
+    };
     window.addEventListener('aramit-session', sync);
     return () => window.removeEventListener('aramit-session', sync);
   }, []);
+
+  const parts = hash.replace(/^#\//, '').split('/').filter(Boolean);
+  const route = parts[0] || '';
+  const joinTail = parts[1] || '';
+  const isGuestJoin = route === 'join' && joinTail === 'guest';
+  const needsSession = route === 'map' || route === 'unit' || route === 'play' || route === 'progress';
+
+  useEffect(() => {
+    if (needsSession && !isCompleteSession(session)) {
+      nav('/join/guest');
+    }
+  }, [needsSession, session]);
 
   const logout = (to = '/') => {
     saveSession(null);
@@ -66,26 +84,23 @@ export default function App() {
     nav(to);
   };
 
-  const parts = hash.replace(/^#\//, '').split('/').filter(Boolean);
-  const route = parts[0] || '';
-
   let view: React.ReactNode;
   if (route === 'path-edit') {
     view = <PathEdit />;
   } else if (route === 'teacher') {
     view = <Teacher />;
   } else if (route === 'join') {
-    const joinCode = parts[1] || '';
     view = (
       <Join
-        initialCode={joinCode}
+        guest={isGuestJoin}
+        initialCode={isGuestJoin ? '' : joinTail}
         onJoined={(s) => { setSession(s); nav('/map'); }}
       />
     );
   } else if (route === '' || route === 'landing') {
     view = <Landing session={session} onLogout={logout} />;
-  } else if (!session) {
-    view = <Landing session={null} onLogout={logout} />;
+  } else if (!isCompleteSession(session)) {
+    view = needsSession ? null : <Landing session={null} onLogout={logout} />;
   } else if (route === 'map') {
     view = (
       <JourneyMap

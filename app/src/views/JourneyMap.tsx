@@ -127,7 +127,15 @@ export default function JourneyMap({
               {' '}· {pct}% מהמסע
             </div>
           </div>
-          <StarHud progress={progress} embedded />
+          <div
+            style={{
+              alignSelf: 'flex-end',
+              marginInlineEnd: -10,
+              marginTop: 2,
+            }}
+          >
+            <StarHud progress={progress} embedded />
+          </div>
         </div>
 
         {/* כפתורי פעולה — מוצמדים לפינה השמאלית העליונה */}

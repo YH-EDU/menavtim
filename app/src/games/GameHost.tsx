@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import type { Activity, ActivityResult } from '../data/types';
 import Intro from './Intro';
@@ -21,19 +21,141 @@ import { Stars, starsFor } from './ui';
 import { playWin } from '../lib/sound';
 import {
   cancelSpeech,
+  isSpeaking,
+  setTtsEnabled,
   setTtsToastHandler,
   speechSupported,
   toggleTts,
   ttsEnabled,
 } from '../lib/tts';
 import { SpeechProvider, useSpeechControls } from './SpeechContext';
-import { Play, Volume2, VolumeX } from '../ui/icons';
+import { Volume2, VolumeX } from '../ui/icons';
+
+const LONG_PRESS_MS = 500;
 
 function TtsToast({ message }: { message: string | null }) {
   if (!message) return null;
   return (
     <div className="tts-toast" role="status" aria-live="polite">
       {message}
+    </div>
+  );
+}
+
+function useLongPress(onLongPress: () => void) {
+  const timerRef = useRef<number | null>(null);
+  const firedRef = useRef(false);
+
+  const clear = useCallback(() => {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const onPointerDown = useCallback(() => {
+    firedRef.current = false;
+    clear();
+    timerRef.current = window.setTimeout(() => {
+      firedRef.current = true;
+      onLongPress();
+    }, LONG_PRESS_MS);
+  }, [clear, onLongPress]);
+
+  const onPointerUp = useCallback(() => {
+    clear();
+  }, [clear]);
+
+  const onPointerCancel = useCallback(() => {
+    clear();
+  }, [clear]);
+
+  const consumeLongPress = useCallback(() => {
+    const was = firedRef.current;
+    firedRef.current = false;
+    return was;
+  }, []);
+
+  return { onPointerDown, onPointerUp, onPointerCancel, consumeLongPress };
+}
+
+function TtsButton({
+  ttsOn,
+  onTtsChange,
+  onSpeak,
+  standalone = false,
+}: {
+  ttsOn: boolean;
+  onTtsChange: (next: boolean) => void;
+  onSpeak?: () => void;
+  standalone?: boolean;
+}) {
+  const supported = speechSupported();
+
+  const handleLongPress = useCallback(() => {
+    if (!supported) return;
+    if (ttsOn) {
+      setTtsEnabled(false);
+      onTtsChange(false);
+      cancelSpeech();
+    }
+  }, [supported, ttsOn, onTtsChange]);
+
+  const { onPointerDown, onPointerUp, onPointerCancel, consumeLongPress } =
+    useLongPress(handleLongPress);
+
+  const title = !supported
+    ? 'הדפדפן לא תומך בהקראה קולית'
+    : ttsOn
+      ? 'הקראה פעילה — הקישו לשמיעה · לחיצה ארוכה לכיבוי'
+      : 'הקראה כבויה — הקישו להפעלה ושמיעה';
+
+  const handleTap = () => {
+    if (!supported) return;
+    if (consumeLongPress()) return;
+
+    if (standalone) {
+      onTtsChange(toggleTts());
+      return;
+    }
+
+    if (isSpeaking()) {
+      cancelSpeech();
+      return;
+    }
+
+    if (!ttsOn) {
+      setTtsEnabled(true);
+      onTtsChange(true);
+    }
+
+    onSpeak?.();
+  };
+
+  return (
+    <div className="tts-controls">
+      <button
+        type="button"
+        className={`tts-btn ${ttsOn ? 'tts-btn--on' : 'tts-btn--off'}`}
+        aria-pressed={ttsOn}
+        aria-label={ttsOn ? 'הקראה פעילה' : 'הפעלת הקראה'}
+        title={title}
+        disabled={!supported}
+        onPointerDown={onPointerDown}
+        onPointerUp={(e) => {
+          onPointerUp();
+          handleTap();
+          e.preventDefault();
+        }}
+        onPointerCancel={onPointerCancel}
+        onClick={(e) => {
+          e.preventDefault();
+        }}
+      >
+        {ttsOn ? <Volume2 size={22} /> : <VolumeX size={22} />}
+        הקראה
+        {ttsOn && <span className="tts-btn-badge" aria-hidden>✓</span>}
+      </button>
     </div>
   );
 }
@@ -46,55 +168,13 @@ function TtsControls({
   onTtsChange: (next: boolean) => void;
 }) {
   const speech = useSpeechControls();
-  const supported = speechSupported();
-
-  const title = !supported
-    ? 'הדפדפן לא תומך בהקראה קולית'
-    : ttsOn
-      ? 'הקראה פעילה — לחצו לכיבוי · ▶ לשמיעה חוזרת'
-      : 'הקראה כבויה — לחצו להפעלה';
-
-  const handleToggle = () => {
-    if (!supported) return;
-    if (ttsOn) {
-      onTtsChange(toggleTts());
-      return;
-    }
-    onTtsChange(toggleTts());
-    void speech?.replayFromGesture(true);
-  };
-
-  const handleReplay = () => {
-    if (!supported || !ttsOn) return;
-    void speech?.replayFromGesture(false);
-  };
 
   return (
-    <div className="tts-controls">
-      <button
-        type="button"
-        className={`tts-toggle-btn ${ttsOn ? 'tts-toggle-btn--on' : 'tts-toggle-btn--off'}`}
-        aria-pressed={ttsOn}
-        aria-label={ttsOn ? 'כיבוי הקראה אוטומטית' : 'הפעלת הקראה אוטומטית'}
-        title={title}
-        disabled={!supported}
-        onClick={handleToggle}
-      >
-        {ttsOn ? <Volume2 size={22} /> : <VolumeX size={22} />}
-        הקראה
-      </button>
-      {ttsOn && supported && (
-        <button
-          type="button"
-          className="tts-replay-btn"
-          aria-label="השמע שוב את השאלה הנוכחית"
-          title="השמע שוב"
-          onClick={handleReplay}
-        >
-          <Play size={20} />
-        </button>
-      )}
-    </div>
+    <TtsButton
+      ttsOn={ttsOn}
+      onTtsChange={onTtsChange}
+      onSpeak={() => speech?.speakCurrentFromGesture()}
+    />
   );
 }
 
@@ -105,29 +185,7 @@ function TtsControlsStandalone({
   ttsOn: boolean;
   onTtsChange: (next: boolean) => void;
 }) {
-  const supported = speechSupported();
-  const title = !supported
-    ? 'הדפדפן לא תומך בהקראה קולית'
-    : ttsOn
-      ? 'הקראה פעילה — לחצו לכיבוי'
-      : 'הקראה כבויה — לחצו להפעלה';
-
-  return (
-    <div className="tts-controls">
-      <button
-        type="button"
-        className={`tts-toggle-btn ${ttsOn ? 'tts-toggle-btn--on' : 'tts-toggle-btn--off'}`}
-        aria-pressed={ttsOn}
-        aria-label={ttsOn ? 'כיבוי הקראה אוטומטית' : 'הפעלת הקראה אוטומטית'}
-        title={title}
-        disabled={!supported}
-        onClick={() => supported && onTtsChange(toggleTts())}
-      >
-        {ttsOn ? <Volume2 size={22} /> : <VolumeX size={22} />}
-        הקראה
-      </button>
-    </div>
-  );
+  return <TtsButton ttsOn={ttsOn} onTtsChange={onTtsChange} standalone />;
 }
 
 export default function GameHost({

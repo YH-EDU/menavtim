@@ -11,15 +11,17 @@ import {
   cancelSpeech,
   isSpeechUnlocked,
   markSpeechUnlocked,
+  speakNowSync,
   speakText,
-  unlockSpeech,
   warmUpVoices,
 } from '../lib/tts';
 
 interface SpeechCtx {
   setPromptText: (text: string) => void;
-  replayFromGesture: (unlock?: boolean) => Promise<void>;
+  /** מקריא מיד מתוך מחוות — חייב להיקרא סינכרונית ב-pointer handler */
+  speakCurrentFromGesture: () => void;
   currentSpeechText: () => string;
+  promptOnlyText: () => string;
 }
 
 const Ctx = createContext<SpeechCtx | null>(null);
@@ -63,29 +65,30 @@ export function SpeechProvider({
     return buildSpeechText(includeInstructions);
   }, [buildSpeechText]);
 
-  const replayFromGesture = useCallback(
-    async (unlock = false) => {
-      if (!ttsOn && !unlock) return;
+  const promptOnlyText = useCallback(() => promptText.trim(), [promptText]);
 
-      markSpeechUnlocked();
+  const speakCurrentFromGesture = useCallback(() => {
+    markSpeechUnlocked();
 
-      const includeInstructions = !spokeInstructionsRef.current;
-      const toSpeak = buildSpeechText(includeInstructions);
+    const includeInstructions = !spokeInstructionsRef.current;
+    const toSpeak = buildSpeechText(includeInstructions);
+    const fallback = promptText.trim() || instructions.trim();
 
-      if (!toSpeak) {
-        if (unlock) await unlockSpeech(true);
-        return;
-      }
+    if (includeInstructions && instructions.trim()) {
+      spokeInstructionsRef.current = true;
+    }
 
-      if (includeInstructions && instructions.trim()) {
-        spokeInstructionsRef.current = true;
-      }
-
+    if (toSpeak) {
       lastSpokenRef.current = toSpeak;
-      await speakText(toSpeak, { fromGesture: true });
-    },
-    [ttsOn, buildSpeechText, instructions],
-  );
+      speakNowSync(toSpeak, {
+        fromGesture: true,
+        promptFallback: fallback !== toSpeak ? fallback : undefined,
+      });
+    } else if (fallback) {
+      lastSpokenRef.current = fallback;
+      speakNowSync(fallback, { fromGesture: true });
+    }
+  }, [buildSpeechText, instructions, promptText]);
 
   useEffect(() => {
     if (activityRef.current !== activityId) {
@@ -121,12 +124,14 @@ export function SpeechProvider({
     }
 
     lastSpokenRef.current = toSpeak;
-    void speakText(toSpeak);
-  }, [ttsOn, instructions, promptText, activityId, buildSpeechText]);
+    void speakText(toSpeak, {
+      promptFallback: promptOnlyText() !== toSpeak ? promptOnlyText() : undefined,
+    });
+  }, [ttsOn, instructions, promptText, activityId, buildSpeechText, promptOnlyText]);
 
   const value = useMemo(
-    () => ({ setPromptText, replayFromGesture, currentSpeechText }),
-    [setPromptText, replayFromGesture, currentSpeechText],
+    () => ({ setPromptText, speakCurrentFromGesture, currentSpeechText, promptOnlyText }),
+    [setPromptText, speakCurrentFromGesture, currentSpeechText, promptOnlyText],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

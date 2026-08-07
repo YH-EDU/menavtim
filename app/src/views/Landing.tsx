@@ -105,7 +105,7 @@ export default function Landing() {
               fontWeight: 700,
             }}
           >
-            משחק זה נוצר על ידי יותם חדד
+            משחק זה נוצר על ידי יותם חדד ©
           </p>
           <p
             style={{

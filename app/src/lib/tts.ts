@@ -2,9 +2,9 @@
 // ניקוד מוסתר: מילים ארמיות מוחלפות ב-voc מהלקסיקון רק לשכבת הדיבור.
 
 import { stripNiqqud, stripPunct, vocalize } from '../data/letters';
-import { soundEnabled } from './sound';
 
 const LS_TTS = 'aramit_tts';
+const UNLOCK_PHRASE = 'הקראה מופעלת';
 
 const PREFIXES = new Set(['ו', 'ש', 'ה', 'ב', 'ל', 'כ', 'מ', 'ד']);
 
@@ -12,7 +12,55 @@ const MALE_HINTS =
   /male|daniel|asaf|hillel|avri|lior|david|guy|yosef|aaron|אברהם|דוד|הילל|אסף/i;
 const FEMALE_HINTS = /female|carmit|samantha|helena|naomi|שרה|כרמית/i;
 
+export type SpeakResult = 'ok' | 'blocked' | 'unsupported' | 'error';
+
 let voicesLoaded = false;
+let speechUnlocked = false;
+let speakGeneration = 0;
+let toastHandler: ((msg: string) => void) | null = null;
+
+function isIOS(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  );
+}
+
+function isAndroid(): boolean {
+  return typeof navigator !== 'undefined' && /Android/.test(navigator.userAgent);
+}
+
+function isMobile(): boolean {
+  return isIOS() || isAndroid();
+}
+
+/** iOS Safari — speechSynthesis קיים אך לעיתים דורש resume/pause. */
+function iosSpeechResumeHack(): void {
+  if (!isIOS() || typeof speechSynthesis === 'undefined') return;
+  window.setTimeout(() => {
+    if (speechSynthesis.speaking || speechSynthesis.pending) {
+      speechSynthesis.pause();
+      speechSynthesis.resume();
+    }
+  }, 120);
+}
+
+export function setTtsToastHandler(handler: ((msg: string) => void) | null): void {
+  toastHandler = handler;
+}
+
+function showToast(msg: string): void {
+  toastHandler?.(msg);
+}
+
+export function isSpeechUnlocked(): boolean {
+  return speechUnlocked;
+}
+
+export function markSpeechUnlocked(): void {
+  speechUnlocked = true;
+}
 
 function reattachAffixes(original: string, vocalized: string): string {
   const lead = original.match(/^[^\u05D0-\u05EA\u0591-\u05C7]+/)?.[0] ?? '';
@@ -53,7 +101,6 @@ export function prepareSpeechText(raw: string): string {
     .map((part) => (part.trim() ? vocalizeWordForSpeech(part) : part))
     .join('');
 
-  // פיסוק עוזר ל-Web Speech לעצור — מוודאים סימן בסוף משפט/שאלה.
   if (text && !/[.!??,;:]$/.test(text)) {
     text += text.includes('?') || text.includes('؟') ? '' : '.';
   }
@@ -73,11 +120,16 @@ export function toggleTts(): boolean {
 }
 
 export function speechSupported(): boolean {
-  return typeof window !== 'undefined' && typeof speechSynthesis !== 'undefined';
+  if (typeof window === 'undefined') return false;
+  return (
+    typeof speechSynthesis !== 'undefined' &&
+    typeof SpeechSynthesisUtterance !== 'undefined'
+  );
 }
 
+/** TTS עצמאי מהשתקת צלילי משחק (aramit_sound). */
 export function canSpeak(): boolean {
-  return speechSupported() && ttsEnabled() && soundEnabled();
+  return speechSupported() && ttsEnabled();
 }
 
 function loadVoices(): SpeechSynthesisVoice[] {
@@ -88,60 +140,160 @@ function loadVoices(): SpeechSynthesisVoice[] {
 }
 
 function waitForVoices(): Promise<SpeechSynthesisVoice[]> {
+  if (typeof speechSynthesis === 'undefined') return Promise.resolve([]);
+
   const existing = loadVoices();
-  if (existing.length || voicesLoaded) return Promise.resolve(existing);
+  if (existing.length && voicesLoaded) return Promise.resolve(existing);
 
   return new Promise((resolve) => {
-    if (typeof speechSynthesis === 'undefined') {
-      resolve([]);
+    let settled = false;
+    const finish = (voices: SpeechSynthesisVoice[]) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(voices);
+    };
+
+    const tryLoad = (): SpeechSynthesisVoice[] | null => {
+      const voices = loadVoices();
+      return voices.length ? voices : null;
+    };
+
+    const onVoicesChanged = () => {
+      const voices = tryLoad();
+      if (voices) finish(voices);
+    };
+
+    const cleanup = () => {
+      speechSynthesis.removeEventListener('voiceschanged', onVoicesChanged);
+      window.clearInterval(pollId);
+      window.clearTimeout(timeoutId);
+    };
+
+    speechSynthesis.addEventListener('voiceschanged', onVoicesChanged);
+
+    const immediate = tryLoad();
+    if (immediate) {
+      finish(immediate);
       return;
     }
-    const done = () => resolve(loadVoices());
-    speechSynthesis.addEventListener('voiceschanged', done, { once: true });
-    setTimeout(done, 400);
+
+    let attempts = 0;
+    const maxAttempts = isMobile() ? 12 : 4;
+    const pollId = window.setInterval(() => {
+      attempts += 1;
+      const voices = tryLoad();
+      if (voices || attempts >= maxAttempts) finish(voices ?? loadVoices());
+    }, isMobile() ? 180 : 100);
+
+    const timeoutId = window.setTimeout(
+      () => finish(loadVoices()),
+      isMobile() ? 2800 : 900,
+    );
   });
 }
 
-/** בוחר קול עברי — מעדיף גברי רך אם זמין. */
+/** בוחר קול עברי — מעדיף he-IL/gברי; נופל לכל קול זמין. */
 export function pickHebrewVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
-  const he = voices.filter((v) => v.lang.startsWith('he'));
-  if (!he.length) return null;
+  if (!voices.length) return null;
 
-  const male = he.find((v) => MALE_HINTS.test(v.name) && !FEMALE_HINTS.test(v.name));
+  const he = voices.filter((v) => /^he/i.test(v.lang));
+  const pool = he.length ? he : voices;
+
+  const heIl = pool.find((v) => v.lang.toLowerCase().startsWith('he-il'));
+  if (heIl && !FEMALE_HINTS.test(heIl.name)) return heIl;
+
+  const male = pool.find((v) => MALE_HINTS.test(v.name) && !FEMALE_HINTS.test(v.name));
   if (male) return male;
 
-  const notFemale = he.find((v) => !FEMALE_HINTS.test(v.name));
-  return notFemale ?? he[0];
+  const notFemale = pool.find((v) => !FEMALE_HINTS.test(v.name));
+  return notFemale ?? pool[0] ?? voices[0] ?? null;
 }
 
 export function cancelSpeech(): void {
   if (typeof speechSynthesis === 'undefined') return;
+  speakGeneration += 1;
   speechSynthesis.cancel();
 }
 
-/** מקריא טקסט מוכן. מבטל הקראה קודמת. מכבד השתקת צלילים + מצב הקראה. */
-export async function speakText(raw: string): Promise<void> {
-  if (!canSpeak() || !raw.trim()) return;
-  if (typeof speechSynthesis === 'undefined') return;
+function runSpeak(
+  text: string,
+  options: { fromGesture?: boolean; unlockOnly?: boolean } = {},
+): Promise<SpeakResult> {
+  if (!speechSupported()) {
+    if (options.fromGesture) showToast('לא ניתן להקריא במכשיר זה');
+    return Promise.resolve('unsupported');
+  }
+  if (!ttsEnabled() && !options.unlockOnly) return Promise.resolve('blocked');
 
-  const text = prepareSpeechText(raw);
-  if (!text) return;
+  const prepared = prepareSpeechText(text);
+  if (!prepared) return Promise.resolve('ok');
 
-  cancelSpeech();
+  const gen = ++speakGeneration;
+  speechSynthesis.cancel();
 
-  const voices = await waitForVoices();
-  const voice = pickHebrewVoice(voices);
+  return waitForVoices().then((voices) => {
+    if (gen !== speakGeneration) return 'blocked' as const;
 
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = voice?.lang ?? 'he-IL';
-  utter.rate = 0.9;
-  utter.pitch = 1;
-  if (voice) utter.voice = voice;
+    const voice = pickHebrewVoice(voices);
+    const utter = new SpeechSynthesisUtterance(prepared);
+    utter.lang = voice?.lang ?? 'he-IL';
+    utter.rate = 0.9;
+    utter.pitch = 1;
+    if (voice) utter.voice = voice;
 
-  speechSynthesis.speak(utter);
+    return new Promise<SpeakResult>((resolve) => {
+      let settled = false;
+      const finish = (result: SpeakResult) => {
+        if (settled || gen !== speakGeneration) return;
+        settled = true;
+        if (result === 'ok') speechUnlocked = true;
+        if (options.fromGesture && result !== 'ok') {
+          showToast(
+            result === 'unsupported'
+              ? 'לא ניתן להקריא במכשיר זה'
+              : 'הקישו שוב על הקראה',
+          );
+        }
+        resolve(result);
+      };
+
+      utter.onend = () => finish('ok');
+      utter.onerror = () => finish('error');
+
+      speechSynthesis.speak(utter);
+      iosSpeechResumeHack();
+
+      window.setTimeout(() => {
+        if (settled || gen !== speakGeneration) return;
+        if (!speechSynthesis.speaking && !speechSynthesis.pending) {
+          finish('error');
+        }
+      }, isMobile() ? 700 : 400);
+    });
+  });
+}
+
+/** פותח הקראה במחשוב נייד — חייב להיקרא מתוך tap. */
+export async function unlockSpeech(fromGesture = true): Promise<SpeakResult> {
+  markSpeechUnlocked();
+  return runSpeak(UNLOCK_PHRASE, { fromGesture, unlockOnly: true });
+}
+
+/** מקריא טקסט מוכן. מבטל הקראה קודמת. */
+export async function speakText(
+  raw: string,
+  options: { fromGesture?: boolean } = {},
+): Promise<SpeakResult> {
+  if (!canSpeak() || !raw.trim()) return 'blocked';
+  if (!options.fromGesture && isMobile() && !speechUnlocked) return 'blocked';
+  return runSpeak(raw, options);
 }
 
 /** מאזין לטעינת קולות (קריאה מוקדמת בפתיחת פעילות). */
 export function warmUpVoices(): void {
   void waitForVoices();
+  if (typeof speechSynthesis !== 'undefined') {
+    speechSynthesis.addEventListener('voiceschanged', () => loadVoices(), { once: true });
+  }
 }

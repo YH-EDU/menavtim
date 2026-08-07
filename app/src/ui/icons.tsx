@@ -30,6 +30,7 @@ function make(children: React.ReactNode) {
   };
 }
 
+export const Play = make(<polygon points="6 4 20 12 6 20 6 4" />);
 export const SkipForward = make(<><polygon points="5 4 15 12 5 20 5 4" /><line x1="19" y1="5" x2="19" y2="19" /></>);
 export const Lock = make(<><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>);
 export const Unlock = make(<><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" /></>);

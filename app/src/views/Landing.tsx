@@ -2,6 +2,8 @@ import React from 'react';
 import { nav } from '../App';
 import { HeroBg } from '../ui/PageShell';
 import { asset } from '../lib/basePath';
+import { FullscreenFab } from '../ui/FullscreenToggle';
+
 export default function Landing() {
   return (
     <HeroBg
@@ -19,6 +21,17 @@ export default function Landing() {
           position: 'relative',
         }}
       >
+        <div
+          style={{
+            position: 'fixed',
+            top: 'max(12px, env(safe-area-inset-top))',
+            left: 'max(12px, env(safe-area-inset-left))',
+            zIndex: 20,
+          }}
+        >
+          <FullscreenFab />
+        </div>
+
         <div className="pop-in" style={{ textAlign: 'center', color: '#fff', marginBottom: 40 }}>
           <div style={{ fontSize: 52, marginBottom: 6, filter: 'drop-shadow(0 3px 12px rgba(0,0,0,0.4))' }}>
             🗺️✨

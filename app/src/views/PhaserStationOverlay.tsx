@@ -196,6 +196,92 @@ function GoalMedalOverlay({
   );
 }
 
+function EscapeGuideOverlay({
+  guide,
+}: {
+  guide: NonNullable<JourneyOverlaySync['escapeGuide']>;
+}) {
+  const pad = 28;
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 400;
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 700;
+  const x = Math.min(Math.max(guide.screenX, pad), vw - pad);
+  const y = Math.min(Math.max(guide.screenY, pad + 40), vh - pad);
+
+  return (
+    <>
+      <div
+        role="status"
+        style={{
+          position: 'absolute',
+          left: '50%',
+          bottom: 88,
+          transform: 'translateX(-50%)',
+          zIndex: 18,
+          pointerEvents: 'none',
+          direction: 'rtl',
+          background: 'rgba(255,254,247,0.97)',
+          border: '3px solid #c9a24a',
+          borderRadius: 16,
+          padding: '12px 18px',
+          maxWidth: 'min(420px, 92vw)',
+          textAlign: 'center',
+          boxShadow: '0 8px 22px rgba(40,30,10,0.3)',
+        }}
+      >
+        <div style={{ fontWeight: 900, fontSize: 16, color: '#4a3416' }}>
+          היכנסו לבית המדרש
+        </div>
+        <div style={{ fontSize: 13.5, fontWeight: 700, color: '#6b5a3e', marginTop: 4, lineHeight: 1.4 }}>
+          סיימתם את כל התחנות — הלכו אחרי החץ אל הכניסה
+        </div>
+      </div>
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          left: x,
+          top: y,
+          transform: 'translate(-50%, -110%)',
+          zIndex: 17,
+          pointerEvents: 'none',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          animation: 'trail-pulse 1.4s ease-in-out infinite',
+        }}
+      >
+        <div
+          style={{
+            background: '#c9a24a',
+            color: '#1a1208',
+            fontWeight: 900,
+            fontSize: 13,
+            padding: '4px 10px',
+            borderRadius: 10,
+            border: '2px solid #fff8ea',
+            boxShadow: '0 4px 12px rgba(40,30,10,0.35)',
+            whiteSpace: 'nowrap',
+            direction: 'rtl',
+            marginBottom: 2,
+          }}
+        >
+          בית המדרש
+        </div>
+        <div
+          style={{
+            width: 0,
+            height: 0,
+            borderLeft: '14px solid transparent',
+            borderRight: '14px solid transparent',
+            borderTop: '22px solid #c9a24a',
+            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.35))',
+          }}
+        />
+      </div>
+    </>
+  );
+}
+
 export function PhaserStationOverlay({
   sync,
   onStationClick,
@@ -207,7 +293,7 @@ export function PhaserStationOverlay({
 }) {
   if (!sync) return null;
 
-  const { stations, unitLabels, progress, goalMedal } = sync;
+  const { stations, unitLabels, progress, goalMedal, escapeGuide } = sync;
 
   return (
     <div
@@ -221,6 +307,7 @@ export function PhaserStationOverlay({
       }}
     >
       {goalMedal?.visible && <GoalMedalOverlay medal={goalMedal} onEnter={onEnterEscape} />}
+      {escapeGuide?.visible && !goalMedal?.visible && <EscapeGuideOverlay guide={escapeGuide} />}
       {unitLabels.map((u) => (
         <div
           key={`unit-${u.unitIndex}`}

@@ -641,10 +641,10 @@ function ContinuousJourneyTrail({
           }}
         >
           <div style={{ fontWeight: 900, fontSize: 17, color: '#3f2a12' }}>
-            כל הכבוד — הגעתם לבית המדרש!
+            כל הכבוד — היכנסו לבית המדרש!
           </div>
           <div style={{ fontSize: 14, fontWeight: 700, color: '#6b4f26', marginTop: 6, lineHeight: 1.45 }}>
-            סיימתם את ארבעת מקטעי המסע. אפשר להמשיך ביחידות נוספות מתצוגת הרשימה.
+            סיימתם את כל התחנות. הלכו אל הכניסה לבית המדרש בסוף המסע.
           </div>
         </div>
       )}

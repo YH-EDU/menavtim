@@ -458,6 +458,8 @@ export class MainScene extends Phaser.Scene {
     else if (escapeOpen) mode = 'enter';
 
     const showGoal = nearGoal && (mode !== 'locked' || missionsDone || this.currentIdx < 0);
+    /* Campaign cue: after every learning station, point to בית המדרש. */
+    const showEscapeGuide = missionsDone && !escapeDone;
 
     bridge.onSync({
       stations,
@@ -471,6 +473,13 @@ export class MainScene extends Phaser.Scene {
             mode,
             totals: computeJourneyTotals(this.progress),
             allComplete: escapeDone,
+          }
+        : null,
+      escapeGuide: showEscapeGuide
+        ? {
+            screenX: goalScreen.x,
+            screenY: goalScreen.y,
+            visible: true,
           }
         : null,
     });

@@ -35,11 +35,19 @@ export interface GoalMedalScreenState {
   allComplete: boolean;
 }
 
+/** Point players toward בית המדרש after all learning stations are done. */
+export interface EscapeGuideScreenState {
+  screenX: number;
+  screenY: number;
+  visible: boolean;
+}
+
 export interface JourneyOverlaySync {
   stations: StationScreenState[];
   unitLabels: UnitLabelScreenState[];
   progress: ProgressData;
   goalMedal: GoalMedalScreenState | null;
+  escapeGuide: EscapeGuideScreenState | null;
 }
 
 export interface JourneyOverlayBridge {

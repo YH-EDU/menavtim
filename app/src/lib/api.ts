@@ -33,9 +33,12 @@ export interface ProgressData {
 }
 
 const SS_SESSION = 'aramit_session';
-const LS_SESSION_LEGACY = 'aramit_session'; // הוסר — סשן פעיל רק ב-sessionStorage
+const LS_LAST_ROUTE = 'aramit_last_route';
 const LS_GUEST_REGISTRY = 'aramit_guest_registry';
 const LS_GUEST_MIGRATED = 'aramit_guest_migrated_v2';
+
+/** נתיבי משחק ששומרים לסשן — לרענון בלי חזרה למסך הבית */
+const PERSISTABLE_ROUTES = new Set(['map', 'unit', 'play', 'progress', 'escape']);
 
 /** מפתח יציב לשם — לא תלוי רישיות/רווחים */
 export function normalizeNickname(nickname: string): string {
@@ -151,14 +154,21 @@ function registerGuestIdentity(nickname: string, emoji: string): void {
   saveGuestRegistry(reg);
 }
 
-/** סשן פעיל (מחובר) — sessionStorage בלבד; נמחק בסגירת לשונית/דפדפן */
+/**
+ * סשן פעיל — sessionStorage + localStorage.
+ * localStorage שומר רענון/חזרה ללשונית; sessionStorage לסנכרון מיידי באותה לשונית.
+ */
 export function loadSession(): StudentSession | null {
   try {
-    localStorage.removeItem(LS_SESSION_LEGACY);
-  } catch { /* ignore */ }
-  try {
-    const raw = sessionStorage.getItem(SS_SESSION);
-    return raw ? JSON.parse(raw) : null;
+    const raw = sessionStorage.getItem(SS_SESSION) || localStorage.getItem(SS_SESSION);
+    if (!raw) return null;
+    const s = JSON.parse(raw) as StudentSession;
+    // סנכרון בין המחסנים (למשל אחרי רענון ששמר רק ב-localStorage)
+    try {
+      sessionStorage.setItem(SS_SESSION, raw);
+      localStorage.setItem(SS_SESSION, raw);
+    } catch { /* ignore */ }
+    return s;
   } catch {
     return null;
   }
@@ -167,6 +177,7 @@ export function loadSession(): StudentSession | null {
 /** מנקה את הסשן הפעיל — ההתקדמות לפי שם+אימוג'י נשארת ב-localStorage */
 export function clearActiveSession(): void {
   saveSession(null);
+  clearLastRoute();
 }
 
 /** סשן תקין — שם ואימוג'י (דמות) חובה לפני כניסה למסע */
@@ -175,8 +186,41 @@ export function isCompleteSession(s: StudentSession | null | undefined): s is St
 }
 
 export function saveSession(s: StudentSession | null): void {
-  if (s) sessionStorage.setItem(SS_SESSION, JSON.stringify(s));
-  else sessionStorage.removeItem(SS_SESSION);
+  if (s) {
+    const raw = JSON.stringify(s);
+    try { sessionStorage.setItem(SS_SESSION, raw); } catch { /* ignore */ }
+    try { localStorage.setItem(SS_SESSION, raw); } catch { /* ignore */ }
+  } else {
+    try { sessionStorage.removeItem(SS_SESSION); } catch { /* ignore */ }
+    try { localStorage.removeItem(SS_SESSION); } catch { /* ignore */ }
+  }
+}
+
+/** שומר את מסך המשחק האחרון (map/play/…) לשחזור אחרי רענון */
+export function saveLastRoute(hashPath: string): void {
+  const clean = hashPath.replace(/^#\/?/, '').replace(/^\//, '');
+  const head = clean.split('/').filter(Boolean)[0] || '';
+  if (!PERSISTABLE_ROUTES.has(head)) return;
+  try {
+    localStorage.setItem(LS_LAST_ROUTE, clean);
+  } catch { /* ignore */ }
+}
+
+export function loadLastRoute(): string | null {
+  try {
+    const raw = localStorage.getItem(LS_LAST_ROUTE);
+    if (!raw) return null;
+    const head = raw.split('/').filter(Boolean)[0] || '';
+    return PERSISTABLE_ROUTES.has(head) ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearLastRoute(): void {
+  try {
+    localStorage.removeItem(LS_LAST_ROUTE);
+  } catch { /* ignore */ }
 }
 
 async function post<T>(path: string, body: unknown, token?: string): Promise<T> {

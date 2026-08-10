@@ -281,7 +281,7 @@ export default function GameHost({
       <TtsToast message={toast} />
       <TtsControls ttsOn={ttsOn} onTtsChange={setTtsOn} />
       <div className="float-up">
-        <div style={{ textAlign: 'center', marginBottom: 18, paddingTop: 52 }}>
+        <div style={{ textAlign: 'center', marginBottom: 18, paddingTop: 108 }}>
           <h2 style={{ fontSize: 24 }}>{activity.title}</h2>
           <p style={{ color: 'var(--ink-soft)', fontSize: 16, maxWidth: 560, margin: '8px auto 0', lineHeight: 1.6 }}>
             {activity.instructions}

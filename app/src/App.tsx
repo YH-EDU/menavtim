@@ -1,5 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { loadSession, clearActiveSession, fetchProgress, isCompleteSession, type StudentSession, type ProgressData } from './lib/api';
+import {
+  loadSession,
+  clearActiveSession,
+  fetchProgress,
+  isCompleteSession,
+  loadLastRoute,
+  saveLastRoute,
+  type StudentSession,
+  type ProgressData,
+} from './lib/api';
 import Landing from './views/Landing';
 import Join from './views/Join';
 import JourneyMap from './views/JourneyMap';
@@ -13,8 +22,31 @@ import { trackPage } from './lib/analytics';
 
 // ניתוב מבוסס hash — עובד בכל אחסון סטטי בלי הגדרות שרת.
 
+/** אם נכנסו למסך הבית עם סשן פעיל — משחזרים את המסך האחרון (רענון לא «סוגר» את המשחק). */
+function resolveInitialHash(): string {
+  const current = window.location.hash || '#/';
+  const route = current.replace(/^#\//, '').split('/').filter(Boolean)[0] || '';
+  const onLanding = route === '' || route === 'landing';
+  if (!onLanding) return current;
+
+  const s = loadSession();
+  if (!isCompleteSession(s)) return current;
+
+  const last = loadLastRoute();
+  const restored = last ? `#/${last}` : '#/map';
+  if (restored !== current) {
+    try {
+      const url = `${window.location.pathname}${window.location.search}${restored}`;
+      window.history.replaceState(null, '', url);
+    } catch {
+      window.location.hash = restored;
+    }
+  }
+  return restored;
+}
+
 function useHash(): string {
-  const [hash, setHash] = useState(window.location.hash || '#/');
+  const [hash, setHash] = useState(resolveInitialHash);
   useEffect(() => {
     const fn = () => setHash(window.location.hash || '#/');
     window.addEventListener('hashchange', fn);
@@ -72,15 +104,13 @@ export default function App() {
   const joinTail = parts[1] || '';
   const isGuestJoin = route === 'join' && joinTail === 'guest';
   const needsSession = route === 'map' || route === 'unit' || route === 'play' || route === 'progress' || route === 'escape';
-  const isLanding = route === '' || route === 'landing';
 
-  // מסך הבית = אין סשן פעיל — חובה הרשמה מחדש (התקדמות נשמרת לפי שם+אימוג')
+  // שמירת מסך המשחק האחרון — לרענון / חזרה ללשונית
+  const routePath = parts.join('/');
   useEffect(() => {
-    if (isLanding) {
-      clearActiveSession();
-      setSession(null);
-    }
-  }, [isLanding]);
+    if (!isCompleteSession(session)) return;
+    if (routePath) saveLastRoute(routePath);
+  }, [hash, session, routePath]);
 
   useEffect(() => {
     if (needsSession && !isCompleteSession(session)) {
@@ -89,6 +119,13 @@ export default function App() {
   }, [needsSession, session]);
 
   const logout = (to = '/') => {
+    clearActiveSession();
+    setSession(null);
+    nav(to);
+  };
+
+  /** משחק חדש ממסך הבית — מוחק סשן פעיל בלבד (התקדמות לפי שם נשארת). */
+  const startFresh = (to: string) => {
     clearActiveSession();
     setSession(null);
     nav(to);
@@ -108,9 +145,21 @@ export default function App() {
       />
     );
   } else if (route === '' || route === 'landing') {
-    view = <Landing />;
+    view = (
+      <Landing
+        session={session}
+        onResume={() => nav(`/${loadLastRoute() || 'map'}`)}
+        onStartFresh={startFresh}
+      />
+    );
   } else if (!isCompleteSession(session)) {
-    view = needsSession ? null : <Landing />;
+    view = needsSession ? null : (
+      <Landing
+        session={null}
+        onResume={() => nav('/map')}
+        onStartFresh={startFresh}
+      />
+    );
   } else if (route === 'map') {
     view = (
       <JourneyMap
@@ -152,7 +201,13 @@ export default function App() {
   } else if (route === 'progress') {
     view = <ProgressView session={session} progress={progress} />;
   } else {
-    view = <Landing />;
+    view = (
+      <Landing
+        session={session}
+        onResume={() => nav(`/${loadLastRoute() || 'map'}`)}
+        onStartFresh={startFresh}
+      />
+    );
   }
 
   return <div style={{ minHeight: '100vh' }}>{view}</div>;

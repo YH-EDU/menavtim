@@ -1,10 +1,30 @@
 import React from 'react';
 import { nav } from '../App';
+import { isCompleteSession, type StudentSession } from '../lib/api';
 import { HeroBg } from '../ui/PageShell';
 import { asset } from '../lib/basePath';
 import { FullscreenFab } from '../ui/FullscreenToggle';
 
-export default function Landing() {
+export default function Landing({
+  session,
+  onResume,
+  onStartFresh,
+}: {
+  session?: StudentSession | null;
+  onResume?: () => void;
+  onStartFresh?: (to: string) => void;
+}) {
+  const canResume = isCompleteSession(session);
+
+  const goJoinGuest = () => {
+    if (onStartFresh) onStartFresh('/join/guest');
+    else nav('/join/guest');
+  };
+  const goJoinClass = () => {
+    if (onStartFresh) onStartFresh('/join');
+    else nav('/join');
+  };
+
   return (
     <HeroBg
       image={asset('/bg-landing-maze.jpg')}
@@ -62,12 +82,34 @@ export default function Landing() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, width: '100%', maxWidth: 360 }}>
+          {canResume && (
+            <button
+              className="btn gold"
+              style={{ fontSize: 20, padding: '16px 24px', fontWeight: 900, whiteSpace: 'nowrap' }}
+              onClick={() => onResume?.()}
+            >
+              ▶️ המשיכו לשחק{session?.nickname ? ` — ${session.nickname}` : ''}
+            </button>
+          )}
           <button
             className="btn gold"
-            style={{ fontSize: 20, padding: '16px 24px', fontWeight: 900, whiteSpace: 'nowrap' }}
-            onClick={() => nav('/join/guest')}
+            style={{
+              fontSize: canResume ? 17 : 20,
+              padding: canResume ? '14px 22px' : '16px 24px',
+              fontWeight: 900,
+              whiteSpace: 'nowrap',
+              ...(canResume
+                ? {
+                    background: 'rgba(255,255,255,0.22)',
+                    border: '2px solid rgba(255,255,255,0.7)',
+                    backdropFilter: 'blur(6px)',
+                    color: '#fff',
+                  }
+                : {}),
+            }}
+            onClick={goJoinGuest}
           >
-            🎮 התחילו לשחק!
+            {canResume ? '🎮 משחק חדש / החלפת משתמש' : '🎮 התחילו לשחק!'}
           </button>
           <button
             className="btn"
@@ -79,7 +121,7 @@ export default function Landing() {
               border: '2px solid rgba(255,255,255,0.7)',
               backdropFilter: 'blur(6px)',
             }}
-            onClick={() => nav('/join')}
+            onClick={goJoinClass}
           >
             🏫 יש לי קוד כיתה
           </button>

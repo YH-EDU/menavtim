@@ -3,7 +3,6 @@ import { nav } from '../App';
 import { HeroBg } from '../ui/PageShell';
 import { asset } from '../lib/basePath';
 import { FullscreenFab } from '../ui/FullscreenToggle';
-import { feedbackMailto } from '../ui/Feedback';
 
 export default function Landing() {
   return (
@@ -93,22 +92,6 @@ export default function Landing() {
           </button>
         </div>
 
-        <a
-          href={feedbackMailto()}
-          style={{
-            marginTop: 22,
-            color: 'rgba(255,255,255,0.92)',
-            fontSize: 'clamp(14px, 3.5vw, 16px)',
-            fontWeight: 700,
-            textDecoration: 'underline',
-            textUnderlineOffset: 3,
-            textShadow: '0 1px 6px rgba(0,0,0,0.45)',
-            letterSpacing: 0.2,
-          }}
-        >
-          פידבקים והערות
-        </a>
-
         <div
           aria-label="ייחוסים"
           style={{
@@ -141,7 +124,7 @@ export default function Landing() {
             style={{
               color: 'rgba(255,255,255,0.85)',
               fontSize: 12,
-              margin: 0,
+              margin: '0 0 6px',
               lineHeight: 1.45,
               textShadow: '0 1px 4px rgba(0,0,0,0.55), 0 0 1px rgba(0,0,0,0.8)',
               fontWeight: 600,
@@ -149,6 +132,24 @@ export default function Landing() {
           >
             מבוסס על מנוע המשחקים של חפציה בן ארצי
           </p>
+          <a
+            href="mailto:yosefyotam@gmail.com"
+            style={{
+              display: 'inline-block',
+              pointerEvents: 'auto',
+              color: 'rgba(255,255,255,0.78)',
+              fontSize: 11,
+              fontWeight: 600,
+              lineHeight: 1.4,
+              textDecoration: 'underline',
+              textUnderlineOffset: 2,
+              textShadow: '0 1px 4px rgba(0,0,0,0.55), 0 0 1px rgba(0,0,0,0.8)',
+              direction: 'ltr',
+              unicodeBidi: 'isolate',
+            }}
+          >
+            yosefyotam@gmail.com
+          </a>
         </div>
       </div>
     </HeroBg>

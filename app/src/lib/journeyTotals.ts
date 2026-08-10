@@ -2,6 +2,7 @@ import type { ProgressData } from './api';
 import { UNITS } from '../data/units';
 import { starsFor } from '../games/ui';
 import { isSkipped } from './progressUtil';
+import { ESCAPE_STAR_MAX } from './escapeRoom';
 
 export interface JourneyTotals {
   stars: number;
@@ -12,7 +13,7 @@ export interface JourneyTotals {
 }
 
 export function maxJourneyStars(): number {
-  return UNITS.reduce((n, u) => n + u.activities.length, 0) * 3;
+  return UNITS.reduce((n, u) => n + u.activities.length, 0) * 3 + ESCAPE_STAR_MAX;
 }
 
 export function computeJourneyTotals(progress: ProgressData): JourneyTotals {

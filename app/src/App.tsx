@@ -8,6 +8,7 @@ import PlayView from './views/PlayView';
 import ProgressView from './views/ProgressView';
 import Teacher from './views/Teacher';
 import PathEdit from './views/PathEdit';
+import EscapeRoomPage from './views/EscapeRoomPage';
 import { trackPage } from './lib/analytics';
 
 // ניתוב מבוסס hash — עובד בכל אחסון סטטי בלי הגדרות שרת.
@@ -70,7 +71,7 @@ export default function App() {
   const route = parts[0] || '';
   const joinTail = parts[1] || '';
   const isGuestJoin = route === 'join' && joinTail === 'guest';
-  const needsSession = route === 'map' || route === 'unit' || route === 'play' || route === 'progress';
+  const needsSession = route === 'map' || route === 'unit' || route === 'play' || route === 'progress' || route === 'escape';
   const isLanding = route === '' || route === 'landing';
 
   // מסך הבית = אין סשן פעיל — חובה הרשמה מחדש (התקדמות נשמרת לפי שם+אימוג')
@@ -127,6 +128,14 @@ export default function App() {
             }));
           }
         }}
+      />
+    );
+  } else if (route === 'escape') {
+    view = (
+      <EscapeRoomPage
+        session={session}
+        progress={progress}
+        onReported={refreshProgress}
       />
     );
   } else if (route === 'unit' && parts[1]) {

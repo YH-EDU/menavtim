@@ -12,6 +12,11 @@ import StarHud from './StarHud';
 import { SoftPageShell } from '../ui/PageShell';
 import { FeedbackButton } from '../ui/Feedback';
 import { nav } from '../App';
+import {
+  ESCAPE_LABEL,
+  escapeCompleted,
+  escapeUnlocked,
+} from '../lib/escapeRoom';
 
 type MapView = 'trail' | 'list';
 const LS_VIEW = 'aramit_map_view';
@@ -369,6 +374,54 @@ export default function JourneyMap({
             </button>
           );
         })}
+        {(() => {
+          const unlocked = escapeUnlocked(progress);
+          const completed = escapeCompleted(progress);
+          return (
+            <button
+              key="escape-beit-midrash"
+              onClick={() => unlocked && nav('/escape')}
+              className="card"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                textAlign: 'right',
+                border: completed ? '2px solid var(--gold)' : unlocked ? '2px solid #c9a24a' : '2px solid transparent',
+                opacity: unlocked ? 1 : 0.55,
+                cursor: unlocked ? 'pointer' : 'default',
+                transition: 'transform 0.15s, box-shadow 0.15s',
+              }}
+              onMouseEnter={(e) => unlocked && (e.currentTarget.style.transform = 'translateY(-2px)')}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}
+            >
+              <div
+                style={{
+                  fontSize: 34,
+                  width: 62,
+                  height: 62,
+                  borderRadius: 16,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: completed ? 'var(--green-soft)' : unlocked ? '#fff3c8' : '#e2e8f0',
+                  flexShrink: 0,
+                }}
+              >
+                {unlocked ? (completed ? '🏅' : '🚪') : '🔒'}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h3 style={{ fontSize: 19 }}>{UNITS.length + 1}. {ESCAPE_LABEL}</h3>
+                <p style={{ margin: '2px 0 0', color: 'var(--ink-soft)', fontSize: 14 }}>
+                  חדר בריחה · מנעול · מכתב בארמית — המשימה האחרונה
+                </p>
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: completed ? 'var(--green)' : 'var(--ink-soft)', flexShrink: 0 }}>
+                {completed ? '✓ הושלם' : unlocked ? 'פתוח' : 'נעול'}
+              </div>
+            </button>
+          );
+        })()}
       </div>
     </div>
     </SoftPageShell>

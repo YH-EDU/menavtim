@@ -24,10 +24,13 @@ export interface UnitLabelScreenState {
   screenY: number;
 }
 
+export type GoalOverlayMode = 'locked' | 'enter' | 'medal';
+
 export interface GoalMedalScreenState {
   screenX: number;
   screenY: number;
   visible: boolean;
+  mode: GoalOverlayMode;
   totals: JourneyTotals;
   allComplete: boolean;
 }

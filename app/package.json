@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/ensure-escape-room.mjs",
     "build": "tsc -b && vite build",
+    "build:escape": "node scripts/build-escape-room.mjs",
     "build:netlify": "node scripts/build-netlify.mjs",
     "preview": "vite preview",
     "build:avatars": "node scripts/build-avatar-atlases.mjs",

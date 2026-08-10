@@ -32,10 +32,94 @@ function StarArc({ count }: { count: number }) {
   );
 }
 
-function GoalMedalOverlay({ medal }: { medal: NonNullable<JourneyOverlaySync['goalMedal']> }) {
-  const { totals, allComplete } = medal;
+function GoalMedalOverlay({
+  medal,
+  onEnter,
+}: {
+  medal: NonNullable<JourneyOverlaySync['goalMedal']>;
+  onEnter: () => void;
+}) {
+  const { totals, allComplete, mode } = medal;
   const missing = totals.maxStars - totals.stars;
   const hasMaxStars = missing <= 0;
+
+  if (mode === 'locked') {
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          left: medal.screenX,
+          top: medal.screenY,
+          transform: 'translate(-50%, -50%)',
+          pointerEvents: 'none',
+          direction: 'rtl',
+          zIndex: 20,
+          animation: 'pop-in 0.45s ease-out',
+        }}
+      >
+        <div
+          style={{
+            background: 'rgba(255,254,247,0.96)',
+            border: '3px solid rgba(125,82,38,0.7)',
+            borderRadius: 18,
+            padding: '14px 18px',
+            minWidth: 220,
+            maxWidth: 280,
+            boxShadow: '0 10px 24px rgba(40,30,10,0.3)',
+            textAlign: 'center',
+          }}
+        >
+          <div style={{ fontSize: 28, marginBottom: 4 }}>🔒</div>
+          <div style={{ fontSize: 17, fontWeight: 900, color: '#4a3416' }}>בית המדרש נעול</div>
+          <p style={{ margin: '8px 0 0', fontSize: 13.5, fontWeight: 600, color: '#6b5a3e', lineHeight: 1.45 }}>
+            סיימו את כל התחנות — או הפעילו מסלול חופשי — כדי להיכנס
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (mode === 'enter') {
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          left: medal.screenX,
+          top: medal.screenY,
+          transform: 'translate(-50%, -50%)',
+          pointerEvents: 'auto',
+          direction: 'rtl',
+          zIndex: 20,
+          animation: 'pop-in 0.45s ease-out',
+        }}
+      >
+        <button
+          type="button"
+          onClick={onEnter}
+          style={{
+            background: 'linear-gradient(165deg, rgba(255,252,240,0.98) 0%, rgba(255,245,210,0.97) 100%)',
+            border: '3px solid #c9a24a',
+            borderRadius: 22,
+            padding: '16px 20px 14px',
+            minWidth: 240,
+            maxWidth: 300,
+            boxShadow: '0 12px 32px rgba(40,30,10,0.35), 0 0 0 6px rgba(201,162,74,0.22)',
+            textAlign: 'center',
+            cursor: 'pointer',
+          }}
+        >
+          <div style={{ fontSize: 36, lineHeight: 1, marginBottom: 4 }}>🚪</div>
+          <div style={{ fontSize: 19, fontWeight: 900, color: '#4a3416', marginBottom: 6 }}>
+            כניסה לבית המדרש
+          </div>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#6b5a3e', lineHeight: 1.45 }}>
+            חדר בריחה · מנעול · מכתב בארמית
+          </p>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
@@ -63,11 +147,11 @@ function GoalMedalOverlay({ medal }: { medal: NonNullable<JourneyOverlaySync['go
       >
         <div style={{ fontSize: 44, lineHeight: 1, marginBottom: 4 }}>🏅</div>
         <div style={{ fontSize: 20, fontWeight: 900, color: '#4a3416', marginBottom: 6 }}>
-          {allComplete ? 'הגעתם לבית המדרש!' : 'ברוכים הבאים ליעד!'}
+          {allComplete ? 'יצאתם מבית המדרש!' : 'ברוכים הבאים ליעד!'}
         </div>
         <p style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, color: '#6b5a3e', lineHeight: 1.5 }}>
           {allComplete
-            ? 'סיימתם את כל התחנות — הנה סיכום ההישגים שלכם'
+            ? 'סיימתם את חדר הבריחה — הנה סיכום ההישגים שלכם'
             : 'המשיכו לתחנות — כאן יוצג סיכום ההישגים שלכם'}
         </p>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10, gap: 6, fontSize: 28 }}>
@@ -115,9 +199,11 @@ function GoalMedalOverlay({ medal }: { medal: NonNullable<JourneyOverlaySync['go
 export function PhaserStationOverlay({
   sync,
   onStationClick,
+  onEnterEscape,
 }: {
   sync: JourneyOverlaySync | null;
   onStationClick: (unitId: string, activityId: string) => void;
+  onEnterEscape: () => void;
 }) {
   if (!sync) return null;
 
@@ -134,7 +220,7 @@ export function PhaserStationOverlay({
         zIndex: 5,
       }}
     >
-      {goalMedal?.visible && <GoalMedalOverlay medal={goalMedal} />}
+      {goalMedal?.visible && <GoalMedalOverlay medal={goalMedal} onEnter={onEnterEscape} />}
       {unitLabels.map((u) => (
         <div
           key={`unit-${u.unitIndex}`}

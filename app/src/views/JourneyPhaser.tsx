@@ -40,8 +40,7 @@ import {
 } from './PhaserStationOverlay';
 
 import CharacterSelect from './CharacterSelect';
-
-
+import { ESCAPE_ACTIVITY_ID } from '../lib/escapeRoom';
 
 export default function JourneyPhaser({
   session,
@@ -87,12 +86,18 @@ export default function JourneyPhaser({
 
 
 
-  const handleStationClick = (unitId: string, activityId: string) => {
-
+  const enterEscape = () => {
     pauseJourneyGame(gameRef.current);
+    nav('/escape');
+  };
 
+  const handleStationClick = (unitId: string, activityId: string) => {
+    if (activityId === ESCAPE_ACTIVITY_ID) {
+      enterEscape();
+      return;
+    }
+    pauseJourneyGame(gameRef.current);
     nav(`/play/${unitId}/${activityId}`);
-
   };
 
 
@@ -146,11 +151,13 @@ export default function JourneyPhaser({
       onSaveMapPos: persistMapPos,
 
       onInteract: (unitId, activityId) => {
-
+        if (activityId === ESCAPE_ACTIVITY_ID) {
+          pauseJourneyGame(gameRef.current);
+          nav('/escape');
+          return;
+        }
         pauseJourneyGame(gameRef.current);
-
         nav(`/play/${unitId}/${activityId}`);
-
       },
 
       overlayBridge: bridge,
@@ -329,7 +336,7 @@ export default function JourneyPhaser({
 
       <OverlayBridgeHost bridgeFactory={bridgeFactory} />
 
-      <PhaserStationOverlay sync={sync} onStationClick={handleStationClick} />
+      <PhaserStationOverlay sync={sync} onStationClick={handleStationClick} onEnterEscape={enterEscape} />
 
     </div>
 

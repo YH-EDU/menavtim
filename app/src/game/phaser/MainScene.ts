@@ -24,11 +24,19 @@ import { Player } from './Player';
 import { missionPlacement, PHASER_MISSIONS } from './stations';
 
 import { computeJourneyTotals } from '../../lib/journeyTotals';
+import {
+  ESCAPE_ACTIVITY_ID,
+  ESCAPE_LABEL,
+  ESCAPE_UNIT_ID,
+  escapeCompleted,
+  escapeUnlocked,
+} from '../../lib/escapeRoom';
 
 import { resolveRestorePosition, savePhaserPlayerState } from './playerState';
 
 import {
   OVERLAY_BRIDGE_KEY,
+  type GoalOverlayMode,
   type JourneyOverlayBridge,
   type JourneyOverlaySync,
   type StationScreenState,
@@ -84,6 +92,7 @@ export class MainScene extends Phaser.Scene {
   private goalZone!: Phaser.GameObjects.Zone;
   private goalWorld = { x: 0, y: 0 };
   private goalMarker!: GoalMarker;
+  private goalInside = false;
   private pathCells!: Set<string>;
   private lastValidPos = { x: 0, y: 0 };
   private journeyPath!: JourneyPath;
@@ -200,6 +209,14 @@ export class MainScene extends Phaser.Scene {
 
     this.player = new Player(this, startX, startY);
     this.physics.add.collider(this.player, this.worldLayer);
+
+    this.physics.add.overlap(
+      this.player,
+      this.goalZone,
+      () => this.handleGoalOverlap(),
+      undefined,
+      this,
+    );
     this.lastValidPos = { x: startX, y: startY };
 
     if (restored?.faceX != null && restored.faceY != null) {
@@ -426,26 +443,34 @@ export class MainScene extends Phaser.Scene {
       return { ...u, screenX: screen.x, screenY: screen.y };
     });
 
-    const allComplete = this.stations.every((s) => s.completed);
+    const missionsDone = this.stations.every((s) => s.completed);
+    const escapeDone = escapeCompleted(this.progress);
+    const escapeOpen = escapeUnlocked(this.progress);
     const nearGoal =
       Phaser.Math.Distance.Between(this.player.x, this.player.y, this.goalWorld.x, this.goalWorld.y) < 56;
     const { approachPath } = this.goalMarker;
     const stageX = approachPath.x + approachPath.w / 2;
     const stageY = approachPath.y + approachPath.h * 0.42;
     const goalScreen = this.worldToScreen(stageX, stageY);
-    const showMedal = nearGoal && (allComplete || this.currentIdx < 0);
+
+    let mode: GoalOverlayMode = 'locked';
+    if (escapeDone) mode = 'medal';
+    else if (escapeOpen) mode = 'enter';
+
+    const showGoal = nearGoal && (mode !== 'locked' || missionsDone || this.currentIdx < 0);
 
     bridge.onSync({
       stations,
       unitLabels,
       progress: this.progress,
-      goalMedal: showMedal
+      goalMedal: showGoal
         ? {
             screenX: goalScreen.x,
             screenY: goalScreen.y,
             visible: true,
+            mode,
             totals: computeJourneyTotals(this.progress),
-            allComplete,
+            allComplete: escapeDone,
           }
         : null,
     });
@@ -507,6 +532,21 @@ export class MainScene extends Phaser.Scene {
     );
 
     return stationRef;
+  }
+
+  private handleGoalOverlap() {
+    const wasInside = this.goalInside;
+    this.goalInside = true;
+    if (wasInside) return;
+    if (escapeCompleted(this.progress)) return;
+    if (!escapeUnlocked(this.progress)) return;
+    if (this.touchCooldown > 0) return;
+    if (this.lastTouchId === ESCAPE_ACTIVITY_ID) return;
+    if (this.spawnGrace > 0) return;
+    if (!this.player.hasMoved) return;
+
+    this.lastTouchId = ESCAPE_ACTIVITY_ID;
+    this.openMission(ESCAPE_UNIT_ID, ESCAPE_ACTIVITY_ID);
   }
 
   private handleStationOverlap(station: StationZone) {
@@ -689,6 +729,9 @@ export class MainScene extends Phaser.Scene {
         s.inside = false;
       }
     }
+    if (!this.physics.overlap(this.player, this.goalZone)) {
+      this.goalInside = false;
+    }
 
     this.syncOverlay();
   }
@@ -732,20 +775,36 @@ export class MainScene extends Phaser.Scene {
   private updateHint() {
     const free = this.progress.freeNav;
     const next = this.stations.find((s) => s.unlocked && !s.completed);
+    const escapeDone = escapeCompleted(this.progress);
+    const escapeOpen = escapeUnlocked(this.progress);
     if (isTouchDevice()) {
       this.hintText.setText(
         free
-          ? '📱 הקישו להתחיל/לעצור · גררו לכיוון'
+          ? escapeOpen && !escapeDone
+            ? `📱 ${ESCAPE_LABEL} — הקישו לריצה · גררו לכיוון`
+            : '📱 הקישו להתחיל/לעצור · גררו לכיוון'
           : next
             ? `▶ ${next.idx + 1}. ${next.label} — הקישו לריצה · גררו לכיוון`
-            : '🏆 סיימתם את כל המסע!',
+            : escapeDone
+              ? '🏅 סיימתם — המדליה בבית המדרש!'
+              : escapeOpen
+                ? `▶ ${ESCAPE_LABEL} — הלכו אל הבית`
+                : '🔒 סיימו את כל התחנות לפתיחת בית המדרש',
       );
     } else if (free) {
-      this.hintText.setText('🔓 חצים / WASD · לחיצה לתנועה · לחיצה על תחנה לפתיחה');
+      this.hintText.setText(
+        escapeOpen && !escapeDone
+          ? `🔓 ${ESCAPE_LABEL} פתוח · חצים / WASD · לחיצה לתנועה`
+          : '🔓 חצים / WASD · לחיצה לתנועה · לחיצה על תחנה לפתיחה',
+      );
     } else if (next) {
       this.hintText.setText(`▶ ${next.idx + 1}. ${next.label} — הלכו אל התחנה הזוהרת`);
+    } else if (escapeDone) {
+      this.hintText.setText('🏅 סיימתם — המדליה בבית המדרש!');
+    } else if (escapeOpen) {
+      this.hintText.setText(`▶ ${ESCAPE_LABEL} — הלכו אל הבית בסוף המסע`);
     } else {
-      this.hintText.setText('🏆 סיימתם את כל המסע!');
+      this.hintText.setText('🔒 סיימו את כל התחנות לפתיחת בית המדרש');
     }
   }
 

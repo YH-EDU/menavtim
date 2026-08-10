@@ -1,15 +1,19 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { reportAttempt, type StudentSession } from '../lib/api';
 import { asset } from '../lib/basePath';
 import {
   ESCAPE_ACTIVITY_ID,
   ESCAPE_LABEL,
+  ESCAPE_MSG_JOURNEY_STARS,
+  ESCAPE_MSG_SOURCE,
   ESCAPE_STAR_MAX,
   ESCAPE_STAR_SCORE,
   ESCAPE_UNIT_ID,
   escapeUnlocked,
   isEscapeCompleteMessage,
   isEscapeFullscreenToggleMessage,
+  isEscapeReadyMessage,
+  journeyStarsBeforeEscape,
 } from '../lib/escapeRoom';
 import { isFullscreenActive, subscribeFullscreenChange, toggleFullscreen } from '../lib/fullscreen';
 import type { ProgressData } from '../lib/api';
@@ -29,7 +33,9 @@ export default function EscapeRoomPage({
   const [finishing, setFinishing] = useState(false);
   const [hostFs, setHostFs] = useState(() => isFullscreenActive());
   const doneRef = useRef(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const unlocked = escapeUnlocked(progress);
+  const journeyStars = useMemo(() => journeyStarsBeforeEscape(progress), [progress]);
 
   useEffect(() => {
     if (!unlocked) {
@@ -41,11 +47,32 @@ export default function EscapeRoomPage({
     return subscribeFullscreenChange(() => setHostFs(isFullscreenActive()));
   }, []);
 
+  const postJourneyStars = () => {
+    const win = iframeRef.current?.contentWindow;
+    if (!win) return;
+    try {
+      win.postMessage(
+        {
+          source: ESCAPE_MSG_SOURCE,
+          type: ESCAPE_MSG_JOURNEY_STARS,
+          journeyStars,
+        },
+        '*',
+      );
+    } catch {
+      /* cross-origin / not ready */
+    }
+  };
+
   useEffect(() => {
     const onMessage = async (event: MessageEvent) => {
       if (isEscapeFullscreenToggleMessage(event.data)) {
         await toggleFullscreen();
         setHostFs(isFullscreenActive());
+        return;
+      }
+      if (isEscapeReadyMessage(event.data)) {
+        postJourneyStars();
         return;
       }
       if (!isEscapeCompleteMessage(event.data) || doneRef.current) return;
@@ -76,11 +103,13 @@ export default function EscapeRoomPage({
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [session, onReported]);
+    // journeyStars / postJourneyStars intentionally read from closure for ready handshake
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, onReported, journeyStars]);
 
   if (!unlocked) return null;
 
-  const src = `${asset('/escape-room/')}?embed=1`;
+  const src = `${asset('/escape-room/')}?embed=1&journeyStars=${journeyStars}`;
 
   return (
     <div
@@ -144,8 +173,10 @@ export default function EscapeRoomPage({
         </div>
       )}
       <iframe
+        ref={iframeRef}
         title={ESCAPE_LABEL}
         src={src}
+        onLoad={postJourneyStars}
         style={{
           flex: 1,
           width: '100%',

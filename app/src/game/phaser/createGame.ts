@@ -33,11 +33,15 @@ function refreshMainSceneInput(game: Phaser.Game) {
 export function createJourneyGame(opts: JourneyGameOptions): Phaser.Game {
   clearWinKeys();
 
+  const parent = opts.parent;
+  const w = Math.max(1, Math.round(parent.clientWidth || window.innerWidth));
+  const h = Math.max(1, Math.round(parent.clientHeight || window.innerHeight));
+
   const game = new Phaser.Game({
     type: Phaser.AUTO,
-    parent: opts.parent,
-    width: window.innerWidth,
-    height: window.innerHeight,
+    parent,
+    width: w,
+    height: h,
     backgroundColor: '#6faf4a',
     physics: {
       default: 'arcade',
@@ -51,8 +55,8 @@ export function createJourneyGame(opts: JourneyGameOptions): Phaser.Game {
     scale: {
       mode: Phaser.Scale.RESIZE,
       autoCenter: Phaser.Scale.CENTER_BOTH,
-      width: window.innerWidth,
-      height: window.innerHeight,
+      width: w,
+      height: h,
     },
     scene: [BootScene, MainScene],
   });

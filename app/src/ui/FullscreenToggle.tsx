@@ -109,6 +109,42 @@ export function FullscreenFab({
   );
 }
 
+/**
+ * Fixed corner control for registration, quizzes, character picker, etc.
+ * Keeps fullscreen reachable whenever a modal/screen covers the map FABs.
+ */
+export function FullscreenCorner({
+  corner = 'top-left',
+}: {
+  corner?: 'top-left' | 'top-right';
+}) {
+  const inset = 'max(10px, env(safe-area-inset-top, 0px))';
+  const side =
+    corner === 'top-left'
+      ? { left: 'max(10px, env(safe-area-inset-left, 0px))' }
+      : { right: 'max(10px, env(safe-area-inset-right, 0px))' };
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: inset,
+        ...side,
+        zIndex: 320,
+        pointerEvents: 'auto',
+      }}
+    >
+      <FullscreenFab
+        style={{
+          // Slightly smaller so it sits cleanly in modal chrome
+          transform: 'scale(0.92)',
+          transformOrigin: corner === 'top-left' ? 'top left' : 'top right',
+        }}
+      />
+    </div>
+  );
+}
+
 /** Text/chrome button for EscapeRoomPage top bar. */
 export function FullscreenChromeButton() {
   const active = useFullscreenState();

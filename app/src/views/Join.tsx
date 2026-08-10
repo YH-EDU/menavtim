@@ -15,6 +15,7 @@ import {
   type CharacterId,
 } from '../game/phaser/characters';
 import EmojiPicker from '../ui/EmojiPicker';
+import { FullscreenCorner } from '../ui/FullscreenToggle';
 
 function CharacterPicker({
   picked,
@@ -140,6 +141,7 @@ export default function Join({
 
   return (
     <HeroBg image={asset('/bg-join.webp')} overlay="linear-gradient(170deg, rgba(19,60,50,0.55) 0%, rgba(15,80,70,0.5) 100%)">
+    <FullscreenCorner />
     <div
       style={{
         minHeight: '100vh',

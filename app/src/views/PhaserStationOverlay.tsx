@@ -461,9 +461,26 @@ export function usePhaserOverlay(onStationClick: (unitId: string, activityId: st
   const [sync, setSync] = useState<JourneyOverlaySync | null>(null);
   const clickRef = useRef(onStationClick);
   clickRef.current = onStationClick;
+  const lastSig = useRef('');
 
   const bridge = useCallback(() => ({
-    onSync: (data: JourneyOverlaySync) => setSync(data),
+    onSync: (data: JourneyOverlaySync) => {
+      // Skip React updates when rounded screen positions / state haven't changed —
+      // prevents marker jitter while the camera lerps during a run.
+      const sig = [
+        data.stations.map((s) => `${s.activityId}:${s.screenX},${s.screenY},${s.unlocked?1:0}${s.completed?1:0}${s.isCurrent?1:0}`).join('|'),
+        data.unitLabels.map((u) => `${u.unitIndex}:${u.screenX},${u.screenY}`).join('|'),
+        data.goalMedal
+          ? `${data.goalMedal.mode}:${data.goalMedal.screenX},${data.goalMedal.screenY},${data.goalMedal.visible?1:0}`
+          : '-',
+        data.escapeGuide
+          ? `${data.escapeGuide.screenX},${data.escapeGuide.screenY},${data.escapeGuide.visible?1:0}`
+          : '-',
+      ].join('#');
+      if (sig === lastSig.current) return;
+      lastSig.current = sig;
+      setSync(data);
+    },
     onStationClick: (unitId: string, activityId: string) => clickRef.current(unitId, activityId),
   }), []);
 

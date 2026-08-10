@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { ALL_IDENTITY_EMOJIS, IDENTITY_EMOJI_CATEGORIES } from '../data/identityEmojis';
+import { FullscreenCorner } from './FullscreenToggle';
 
 export default function EmojiPicker({
   value,
@@ -31,6 +32,7 @@ export default function EmojiPicker({
         if (e.target === e.currentTarget) onClose();
       }}
     >
+      <FullscreenCorner />
       <div className="emoji-picker-sheet pop-in">
         <div className="emoji-picker-handle" aria-hidden />
         <div className="emoji-picker-header">

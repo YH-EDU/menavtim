@@ -10,7 +10,7 @@ import {
   isEscapeCompleteMessage,
   isEscapeFullscreenToggleMessage,
 } from '../lib/escapeRoom';
-import { toggleFullscreen } from '../lib/fullscreen';
+import { isFullscreenActive, subscribeFullscreenChange, toggleFullscreen } from '../lib/fullscreen';
 import type { ProgressData } from '../lib/api';
 import { LS_FLY_STARS } from './StarHud';
 import { nav } from '../App';
@@ -26,6 +26,7 @@ export default function EscapeRoomPage({
   onReported: () => void;
 }) {
   const [finishing, setFinishing] = useState(false);
+  const [hostFs, setHostFs] = useState(() => isFullscreenActive());
   const doneRef = useRef(false);
   const unlocked = escapeUnlocked(progress);
 
@@ -36,9 +37,14 @@ export default function EscapeRoomPage({
   }, [unlocked]);
 
   useEffect(() => {
+    return subscribeFullscreenChange(() => setHostFs(isFullscreenActive()));
+  }, []);
+
+  useEffect(() => {
     const onMessage = async (event: MessageEvent) => {
       if (isEscapeFullscreenToggleMessage(event.data)) {
         await toggleFullscreen();
+        setHostFs(isFullscreenActive());
         return;
       }
       if (!isEscapeCompleteMessage(event.data) || doneRef.current) return;
@@ -71,7 +77,7 @@ export default function EscapeRoomPage({
 
   return (
     <div
-      className="escape-host"
+      className={`escape-host${hostFs ? ' escape-host--fs' : ''}`}
       style={{
         position: 'fixed',
         inset: 0,
@@ -79,18 +85,21 @@ export default function EscapeRoomPage({
         background: '#1a120c',
         display: 'flex',
         flexDirection: 'column',
+        width: '100%',
         height: '100dvh',
         maxHeight: '100dvh',
-        paddingTop: 'env(safe-area-inset-top, 0px)',
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        paddingLeft: 'env(safe-area-inset-left, 0px)',
-        paddingRight: 'env(safe-area-inset-right, 0px)',
+        paddingTop: hostFs ? 0 : 'env(safe-area-inset-top, 0px)',
+        paddingBottom: hostFs ? 0 : 'env(safe-area-inset-bottom, 0px)',
+        paddingLeft: hostFs ? 0 : 'env(safe-area-inset-left, 0px)',
+        paddingRight: hostFs ? 0 : 'env(safe-area-inset-right, 0px)',
         boxSizing: 'border-box',
+        overflow: 'hidden',
       }}
     >
       <div
+        className="escape-host__chrome"
         style={{
-          display: 'flex',
+          display: hostFs ? 'none' : 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 10,
@@ -114,15 +123,30 @@ export default function EscapeRoomPage({
         </div>
         <FullscreenChromeButton />
       </div>
+      {hostFs && (
+        <div
+          className="escape-host__fs-exit"
+          style={{
+            position: 'absolute',
+            top: 'calc(8px + env(safe-area-inset-top, 0px))',
+            left: 'calc(8px + env(safe-area-inset-left, 0px))',
+            zIndex: 90,
+          }}
+        >
+          <FullscreenChromeButton />
+        </div>
+      )}
       <iframe
         title="חדר בריחה — בית המדרש"
         src={src}
         style={{
           flex: 1,
           width: '100%',
+          height: '100%',
           border: 'none',
           background: '#1a120c',
           minHeight: 0,
+          display: 'block',
         }}
         allow="fullscreen"
         allowFullScreen

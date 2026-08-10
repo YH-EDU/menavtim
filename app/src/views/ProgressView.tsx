@@ -4,6 +4,7 @@ import type { StudentSession, ProgressData } from '../lib/api';
 import { masteryFrom, masteryColor, masteryLabel } from '../lib/mastery';
 import { nav } from '../App';
 import { SoftPageShell } from '../ui/PageShell';
+import { FullscreenCorner } from '../ui/FullscreenToggle';
 
 export default function ProgressView({
   session,
@@ -14,6 +15,7 @@ export default function ProgressView({
 }) {
   return (
     <SoftPageShell seed="progress">
+    <FullscreenCorner />
     <div style={{ maxWidth: 680, margin: '0 auto', padding: '20px 16px 60px' }}>
       <button className="btn small" style={{ background: 'transparent', boxShadow: 'none', color: 'var(--teal-dark)', fontWeight: 700 }} onClick={() => nav('/map')}>
         → חזרה למפת המסע

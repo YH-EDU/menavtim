@@ -168,23 +168,28 @@ export default function JourneyPhaser({
 
 
 
-    const onResize = () => {
-
-      const w = window.innerWidth;
-
-      const h = window.innerHeight;
-
-      game.scale.resize(w, h);
-
+    const syncSize = () => {
+      const w = Math.max(1, Math.round(host.clientWidth));
+      const h = Math.max(1, Math.round(host.clientHeight));
+      if (game.scale.width !== w || game.scale.height !== h) {
+        game.scale.resize(w, h);
+      }
     };
 
+    syncSize();
+
+    const onResize = () => syncSize();
+
     window.addEventListener('resize', onResize);
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(onResize) : null;
+    ro?.observe(host);
 
 
 
     return () => {
 
       window.removeEventListener('resize', onResize);
+      ro?.disconnect();
 
       const pos = captureJourneyPlayerPosition(gameRef.current);
 
@@ -319,14 +324,6 @@ export default function JourneyPhaser({
         overflow: 'hidden',
 
         touchAction: 'none',
-
-        paddingTop: 'env(safe-area-inset-top)',
-
-        paddingRight: 'env(safe-area-inset-right)',
-
-        paddingBottom: 'env(safe-area-inset-bottom)',
-
-        paddingLeft: 'env(safe-area-inset-left)',
 
       }}
 

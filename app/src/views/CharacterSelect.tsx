@@ -4,6 +4,7 @@ import {
   saveSelectedAvatar,
   type CharacterId,
 } from '../game/phaser/characters';
+import { FullscreenCorner } from '../ui/FullscreenToggle';
 
 export default function CharacterSelect({
   onSelected,
@@ -36,6 +37,7 @@ export default function CharacterSelect({
         overflowY: 'auto',
       }}
     >
+      <FullscreenCorner />
       <div style={{ textAlign: 'center', marginBottom: 18, maxWidth: 520 }}>
         <div style={{ fontSize: 48, lineHeight: 1.1 }}>🎭</div>
         <h1 style={{ margin: '8px 0 6px', fontSize: 28, color: '#fff', textShadow: '0 2px 8px rgba(0,0,0,0.25)' }}>

@@ -29,12 +29,56 @@ function shuffle<T>(arr: T[], seed: number): T[] {
   return a;
 }
 
+/** Fine pointer (mouse/trackpad) gets a larger drop slack than touch. */
+function dropSlackPx(): number {
+  if (typeof window === 'undefined') return 28;
+  const fine = window.matchMedia('(pointer: fine)').matches;
+  const coarse = window.matchMedia('(pointer: coarse)').matches;
+  if (fine && !coarse) return 48;
+  if (fine) return 36;
+  return 22;
+}
+
+function distToRect(x: number, y: number, r: DOMRect): number {
+  const cx = Math.min(Math.max(x, r.left), r.right);
+  const cy = Math.min(Math.max(y, r.top), r.bottom);
+  const dx = x - cx;
+  const dy = y - cy;
+  return Math.hypot(dx, dy);
+}
+
 function slotFromPoint(x: number, y: number): number | null {
+  // Prefer the topmost element under the pointer (exact hit).
   const el = document.elementFromPoint(x, y);
   const slotEl = el?.closest('[data-annotate-slot]') as HTMLElement | null;
-  if (!slotEl) return null;
-  const n = Number(slotEl.dataset.annotateSlot);
-  return Number.isFinite(n) ? n : null;
+  if (slotEl) {
+    const n = Number(slotEl.dataset.annotateSlot);
+    if (Number.isFinite(n)) return n;
+  }
+
+  // Desktop-friendly: nearest empty/filled slot within expanded slack.
+  const slack = dropSlackPx();
+  const nodes = document.querySelectorAll<HTMLElement>('[data-annotate-slot]');
+  let best: number | null = null;
+  let bestDist = slack;
+  for (const node of nodes) {
+    const n = Number(node.dataset.annotateSlot);
+    if (!Number.isFinite(n)) continue;
+    const r = node.getBoundingClientRect();
+    // Inflate the rect for hit testing (larger target without changing layout much).
+    const inflated = new DOMRect(
+      r.left - slack * 0.35,
+      r.top - slack * 0.55,
+      r.width + slack * 0.7,
+      r.height + slack * 1.1,
+    );
+    const d = distToRect(x, y, inflated);
+    if (d <= bestDist) {
+      bestDist = d;
+      best = n;
+    }
+  }
+  return best;
 }
 
 export default function Annotate({
@@ -56,6 +100,7 @@ export default function Annotate({
   const dragOffset = useRef({ x: 0, y: 0 });
   const [ghost, setGhost] = useState<{ chip: string; x: number; y: number } | null>(null);
   const [hoverSlot, setHoverSlot] = useState<number | null>(null);
+  const finePointer = typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches;
 
   const item = activity.sentences[idx];
 
@@ -166,13 +211,13 @@ export default function Annotate({
           background: 'linear-gradient(160deg,#fffdf5,#fdf6e3)',
           border: '2px solid #e7d9b0',
           borderRadius: 20,
-          padding: '34px 22px 24px',
+          padding: finePointer ? '42px 26px 28px' : '34px 22px 24px',
           maxWidth: 620,
           margin: '14px auto 0',
           boxShadow: 'var(--shadow)',
           direction: 'rtl',
           fontSize: 22,
-          lineHeight: 2.9,
+          lineHeight: finePointer ? 3.2 : 2.9,
           fontWeight: 500,
         }}
       >
@@ -202,9 +247,10 @@ export default function Annotate({
                   left: '50%',
                   transform: 'translateX(-50%)',
                   marginBottom: 2,
-                  minWidth: 68,
-                  padding: '1px 8px',
-                  fontSize: 14,
+                  minWidth: finePointer ? 92 : 68,
+                  minHeight: finePointer ? 36 : undefined,
+                  padding: finePointer ? '4px 14px' : '1px 8px',
+                  fontSize: finePointer ? 15 : 14,
                   lineHeight: 1.6,
                   fontWeight: 700,
                   whiteSpace: 'nowrap',
@@ -217,6 +263,8 @@ export default function Annotate({
                   color: value ? 'var(--green)' : 'var(--ink-soft)',
                   cursor: value ? 'default' : held ? 'pointer' : 'default',
                   transition: 'all 0.15s',
+                  // Invisible hit padding via outline box — expands drop target on desktop
+                  boxShadow: finePointer && !value ? '0 0 0 10px transparent' : undefined,
                 }}
               >
                 {value ?? '?'}

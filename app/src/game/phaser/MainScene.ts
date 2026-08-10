@@ -409,11 +409,10 @@ export class MainScene extends Phaser.Scene {
 
   private worldToScreen(worldX: number, worldY: number): { x: number; y: number } {
     const cam = this.cameras.main;
-    const { x: wx, y: wy, width: ww, height: wh } = cam.worldView;
-    return {
-      x: ((worldX - wx) / ww) * cam.width,
-      y: ((worldY - wy) / wh) * cam.height,
-    };
+    // midPoint + zoom maps world → camera viewport pixels (stable with follow lerp).
+    const x = (worldX - cam.midPoint.x) * cam.zoom + cam.width * 0.5;
+    const y = (worldY - cam.midPoint.y) * cam.zoom + cam.height * 0.5;
+    return { x: Math.round(x), y: Math.round(y) };
   }
 
   private syncOverlay() {

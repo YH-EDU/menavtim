@@ -8,6 +8,7 @@ import { LS_FLY_STARS } from './StarHud';
 import { nav } from '../App';
 import { SoftPageShell } from '../ui/PageShell';
 import { FeedbackButton } from '../ui/Feedback';
+import { FullscreenCorner } from '../ui/FullscreenToggle';
 import { asset } from '../lib/basePath';
 
 export default function PlayView({
@@ -48,6 +49,7 @@ export default function PlayView({
       overlay="rgba(248, 245, 238, 0.58)"
       seed={activity.id}
     >
+      <FullscreenCorner />
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '20px 16px 60px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
           <button

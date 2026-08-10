@@ -574,9 +574,12 @@ const WAYPOINTS: { tx: number; ty: number; lane?: Lane }[] = [
 
   { tx: 22, ty: 200, lane: 1 },
 
+  /** Straight north out of the entrance plaza before the first maze turn. */
   { tx: 22, ty: 198, lane: 1 },
 
-  { tx: 34, ty: 198, lane: 1 },
+  { tx: 22, ty: 188, lane: 1 },
+
+  { tx: 34, ty: 188, lane: 1 },
 
   { tx: 34, ty: 184, lane: -1 },
 

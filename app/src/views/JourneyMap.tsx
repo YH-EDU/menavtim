@@ -11,6 +11,7 @@ import JourneyPhaser from './JourneyPhaser';
 import StarHud from './StarHud';
 import { SoftPageShell } from '../ui/PageShell';
 import { FeedbackButton } from '../ui/Feedback';
+import { FullscreenFab, FullscreenChromeButton } from '../ui/FullscreenToggle';
 import { nav } from '../App';
 import {
   ESCAPE_LABEL,
@@ -150,6 +151,7 @@ export default function JourneyMap({
         >
           {fab(<TypeIcon size={21} />, 'המילים שלי', () => nav('/progress'))}
           {fab(sound ? <Volume2 size={21} /> : <VolumeX size={21} />, sound ? 'השתקת צלילים' : 'הפעלת צלילים', () => setSound(toggleSound()))}
+          <FullscreenFab />
           {fab(<ListIcon size={21} />, 'תצוגת רשימה', () => switchView('list'))}
           {fab(<span style={{ fontSize: 20 }}>🎭</span>, 'החלפת דמות', () => setAvatarPicker(true))}
           {isTeacherPreview
@@ -260,6 +262,7 @@ export default function JourneyMap({
           <button className="btn secondary small" onClick={() => switchView('trail')}>
             🗺️ מפת מסע
           </button>
+          <FullscreenChromeButton />
           <button className="btn secondary small" onClick={() => nav('/progress')}>
             📚 המילים שלי
           </button>

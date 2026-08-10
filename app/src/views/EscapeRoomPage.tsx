@@ -8,10 +8,13 @@ import {
   ESCAPE_UNIT_ID,
   escapeUnlocked,
   isEscapeCompleteMessage,
+  isEscapeFullscreenToggleMessage,
 } from '../lib/escapeRoom';
+import { toggleFullscreen } from '../lib/fullscreen';
 import type { ProgressData } from '../lib/api';
 import { LS_FLY_STARS } from './StarHud';
 import { nav } from '../App';
+import { FullscreenChromeButton } from '../ui/FullscreenToggle';
 
 export default function EscapeRoomPage({
   session,
@@ -34,6 +37,10 @@ export default function EscapeRoomPage({
 
   useEffect(() => {
     const onMessage = async (event: MessageEvent) => {
+      if (isEscapeFullscreenToggleMessage(event.data)) {
+        await toggleFullscreen();
+        return;
+      }
       if (!isEscapeCompleteMessage(event.data) || doneRef.current) return;
       doneRef.current = true;
       setFinishing(true);
@@ -64,6 +71,7 @@ export default function EscapeRoomPage({
 
   return (
     <div
+      className="escape-host"
       style={{
         position: 'fixed',
         inset: 0,
@@ -71,6 +79,13 @@ export default function EscapeRoomPage({
         background: '#1a120c',
         display: 'flex',
         flexDirection: 'column',
+        height: '100dvh',
+        maxHeight: '100dvh',
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        paddingLeft: 'env(safe-area-inset-left, 0px)',
+        paddingRight: 'env(safe-area-inset-right, 0px)',
+        boxSizing: 'border-box',
       }}
     >
       <div
@@ -89,14 +104,15 @@ export default function EscapeRoomPage({
         <button
           type="button"
           className="btn small"
-          style={{ background: 'transparent', boxShadow: 'none', color: 'var(--teal-dark)', fontWeight: 700 }}
+          style={{ background: 'transparent', boxShadow: 'none', color: 'var(--teal-dark)', fontWeight: 700, minHeight: 40 }}
           onClick={() => nav('/map')}
         >
           → חזרה למפת המסע
         </button>
-        <div style={{ fontWeight: 900, fontSize: 15, color: '#4a3416' }}>
+        <div style={{ fontWeight: 900, fontSize: 15, color: '#4a3416', textAlign: 'center', flex: 1 }}>
           {finishing ? '🏅 מעניקים מדליה…' : 'כניסה לבית המדרש'}
         </div>
+        <FullscreenChromeButton />
       </div>
       <iframe
         title="חדר בריחה — בית המדרש"
@@ -106,8 +122,10 @@ export default function EscapeRoomPage({
           width: '100%',
           border: 'none',
           background: '#1a120c',
+          minHeight: 0,
         }}
         allow="fullscreen"
+        allowFullScreen
       />
     </div>
   );

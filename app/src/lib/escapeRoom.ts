@@ -12,6 +12,7 @@ export const ESCAPE_STAR_MAX = 3;
 
 export const ESCAPE_MSG_SOURCE = 'escape-room-beit-midrash';
 export const ESCAPE_MSG_COMPLETE = 'escape-complete';
+export const ESCAPE_MSG_FULLSCREEN_TOGGLE = 'escape-fullscreen-toggle';
 
 export function missionsCompleted(progress: ProgressData): boolean {
   return PHASER_MISSIONS.every((m) => !!progress.completed[m.activityId]);
@@ -36,4 +37,10 @@ export function isEscapeCompleteMessage(data: unknown): boolean {
   if (!data || typeof data !== 'object') return false;
   const msg = data as { source?: string; type?: string };
   return msg.source === ESCAPE_MSG_SOURCE && msg.type === ESCAPE_MSG_COMPLETE;
+}
+
+export function isEscapeFullscreenToggleMessage(data: unknown): boolean {
+  if (!data || typeof data !== 'object') return false;
+  const msg = data as { source?: string; type?: string };
+  return msg.source === ESCAPE_MSG_SOURCE && msg.type === ESCAPE_MSG_FULLSCREEN_TOGGLE;
 }

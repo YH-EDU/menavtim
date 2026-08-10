@@ -51,22 +51,28 @@ export default function EscapeRoomPage({
       if (!isEscapeCompleteMessage(event.data) || doneRef.current) return;
       doneRef.current = true;
       setFinishing(true);
+      const starsFromMsg =
+        event.data &&
+        typeof event.data === 'object' &&
+        typeof (event.data as { stars?: unknown }).stars === 'number'
+          ? Math.max(1, Math.min(3, (event.data as { stars: number }).stars))
+          : ESCAPE_STAR_SCORE;
       try {
         await reportAttempt(
           session,
           ESCAPE_ACTIVITY_ID,
           ESCAPE_UNIT_ID,
-          ESCAPE_STAR_SCORE,
+          starsFromMsg,
           ESCAPE_STAR_MAX,
           {},
         );
       } catch {
         /* still return to map — progress may already be local */
       }
-      sessionStorage.setItem(LS_FLY_STARS, String(ESCAPE_STAR_SCORE));
+      sessionStorage.setItem(LS_FLY_STARS, String(starsFromMsg));
       sessionStorage.setItem('aramit_focus_act', ESCAPE_ACTIVITY_ID);
       onReported();
-      window.setTimeout(() => nav('/map'), 900);
+      window.setTimeout(() => nav('/map'), 1400);
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);

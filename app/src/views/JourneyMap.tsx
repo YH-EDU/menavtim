@@ -14,6 +14,7 @@ import { FeedbackButton } from '../ui/Feedback';
 import { FullscreenFab, FullscreenChromeButton } from '../ui/FullscreenToggle';
 import { nav } from '../App';
 import {
+  ESCAPE_BLURB,
   ESCAPE_LABEL,
   escapeCompleted,
   escapeUnlocked,
@@ -416,7 +417,7 @@ export default function JourneyMap({
               <div style={{ flex: 1, minWidth: 0 }}>
                 <h3 style={{ fontSize: 19 }}>{UNITS.length + 1}. {ESCAPE_LABEL}</h3>
                 <p style={{ margin: '2px 0 0', color: 'var(--ink-soft)', fontSize: 14 }}>
-                  חדר בריחה · מנעול · מכתב בארמית
+                  {ESCAPE_BLURB}
                 </p>
               </div>
               <div style={{ fontSize: 14, fontWeight: 700, color: completed ? 'var(--green)' : 'var(--ink-soft)', flexShrink: 0 }}>

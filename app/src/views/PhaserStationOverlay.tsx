@@ -3,6 +3,7 @@ import { isSkipped } from '../lib/progressUtil';
 import { starsFor } from '../games/ui';
 import { ACTIVITY_ICONS, Lock, Check, Star3D } from '../ui/icons';
 import { UNIT_COLORS } from '../lib/pathLayout';
+import { ESCAPE_BLURB, ESCAPE_LABEL } from '../lib/escapeRoom';
 import type { JourneyOverlaySync } from '../game/phaser/overlayBridge';
 
 function StarArc({ count }: { count: number }) {
@@ -70,7 +71,7 @@ function GoalMedalOverlay({
           }}
         >
           <div style={{ fontSize: 28, marginBottom: 4 }}>🔒</div>
-          <div style={{ fontSize: 17, fontWeight: 900, color: '#4a3416' }}>בית המדרש נעול</div>
+          <div style={{ fontSize: 17, fontWeight: 900, color: '#4a3416' }}>{ESCAPE_LABEL} נעול</div>
           <p style={{ margin: '8px 0 0', fontSize: 13.5, fontWeight: 600, color: '#6b5a3e', lineHeight: 1.45 }}>
             סיימו את כל התחנות — או הפעילו מסלול חופשי — כדי להיכנס
           </p>
@@ -110,10 +111,10 @@ function GoalMedalOverlay({
         >
           <div style={{ fontSize: 36, lineHeight: 1, marginBottom: 4 }}>🚪</div>
           <div style={{ fontSize: 19, fontWeight: 900, color: '#4a3416', marginBottom: 6 }}>
-            כניסה לבית המדרש
+            כניסה ל{ESCAPE_LABEL}
           </div>
           <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#6b5a3e', lineHeight: 1.45 }}>
-            חדר בריחה · מנעול · מכתב בארמית
+            {ESCAPE_BLURB}
           </p>
         </button>
       </div>
@@ -147,11 +148,11 @@ function GoalMedalOverlay({
       >
         <div style={{ fontSize: 44, lineHeight: 1, marginBottom: 4 }}>🏅</div>
         <div style={{ fontSize: 20, fontWeight: 900, color: '#4a3416', marginBottom: 6 }}>
-          {allComplete ? 'יצאתם מבית המדרש!' : 'ברוכים הבאים ליעד!'}
+          {allComplete ? `פענחתם את ${ESCAPE_LABEL}!` : 'ברוכים הבאים ליעד!'}
         </div>
         <p style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, color: '#6b5a3e', lineHeight: 1.5 }}>
           {allComplete
-            ? 'סיימתם את חדר הבריחה — הנה סיכום ההישגים שלכם'
+            ? 'סיימתם את המשימה האחרונה — הנה סיכום ההישגים שלכם'
             : 'המשיכו לתחנות — כאן יוצג סיכום ההישגים שלכם'}
         </p>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10, gap: 6, fontSize: 28 }}>
@@ -229,10 +230,10 @@ function EscapeGuideOverlay({
         }}
       >
         <div style={{ fontWeight: 900, fontSize: 16, color: '#4a3416' }}>
-          היכנסו לבית המדרש
+          היכנסו ל{ESCAPE_LABEL}
         </div>
         <div style={{ fontSize: 13.5, fontWeight: 700, color: '#6b5a3e', marginTop: 4, lineHeight: 1.4 }}>
-          סיימתם את כל התחנות — הלכו אחרי החץ אל הכניסה
+          סיימתם את כל התחנות — הלכו אחרי החץ אל המשימה האחרונה
         </div>
       </div>
       <div
@@ -265,7 +266,7 @@ function EscapeGuideOverlay({
             marginBottom: 2,
           }}
         >
-          בית המדרש
+          {ESCAPE_LABEL}
         </div>
         <div
           style={{

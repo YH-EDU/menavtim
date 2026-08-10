@@ -1,10 +1,13 @@
 import type { ProgressData } from './api';
 import { PHASER_MISSIONS } from '../game/phaser/stations';
 
-/** Final beit-midrash escape — not a regular GameHost activity. */
+/** Final path mission — Aramaic cipher escape (not a regular GameHost activity). */
 export const ESCAPE_UNIT_ID = 'escape';
 export const ESCAPE_ACTIVITY_ID = 'escape-beit-midrash';
-export const ESCAPE_LABEL = 'כניסה לבית המדרש';
+/** Player-facing mission name (last station on the journey). */
+export const ESCAPE_LABEL = 'הצופן הארמי';
+/** Short blurb under the mission name on map / station cards. */
+export const ESCAPE_BLURB = 'משימה אחרונה · מנעול · מכתב בארמית';
 
 /** Stars awarded when the letter finale is completed. */
 export const ESCAPE_STAR_SCORE = 3;

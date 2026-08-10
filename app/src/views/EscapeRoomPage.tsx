@@ -3,6 +3,7 @@ import { reportAttempt, type StudentSession } from '../lib/api';
 import { asset } from '../lib/basePath';
 import {
   ESCAPE_ACTIVITY_ID,
+  ESCAPE_LABEL,
   ESCAPE_STAR_MAX,
   ESCAPE_STAR_SCORE,
   ESCAPE_UNIT_ID,
@@ -119,7 +120,7 @@ export default function EscapeRoomPage({
           → חזרה למפת המסע
         </button>
         <div style={{ fontWeight: 900, fontSize: 15, color: '#4a3416', textAlign: 'center', flex: 1 }}>
-          {finishing ? '🏅 מעניקים מדליה…' : 'כניסה לבית המדרש'}
+          {finishing ? '🏅 מעניקים מדליה…' : ESCAPE_LABEL}
         </div>
         <FullscreenChromeButton />
       </div>
@@ -137,7 +138,7 @@ export default function EscapeRoomPage({
         </div>
       )}
       <iframe
-        title="חדר בריחה — בית המדרש"
+        title={ESCAPE_LABEL}
         src={src}
         style={{
           flex: 1,

@@ -35,7 +35,7 @@ export interface GoalMedalScreenState {
   allComplete: boolean;
 }
 
-/** Point players toward בית המדרש after all learning stations are done. */
+/** Point players toward הצופן הארמי after all learning stations are done. */
 export interface EscapeGuideScreenState {
   screenX: number;
   screenY: number;

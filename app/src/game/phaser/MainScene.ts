@@ -457,7 +457,7 @@ export class MainScene extends Phaser.Scene {
     else if (escapeOpen) mode = 'enter';
 
     const showGoal = nearGoal && (mode !== 'locked' || missionsDone || this.currentIdx < 0);
-    /* Campaign cue: after every learning station, point to בית המדרש. */
+    /* Campaign cue: after every learning station, point to הצופן הארמי. */
     const showEscapeGuide = missionsDone && !escapeDone;
 
     bridge.onSync({
@@ -794,10 +794,10 @@ export class MainScene extends Phaser.Scene {
           : next
             ? `▶ ${next.idx + 1}. ${next.label} — הקישו לריצה · גררו לכיוון`
             : escapeDone
-              ? '🏅 סיימתם — המדליה בבית המדרש!'
+              ? `🏅 סיימתם את ${ESCAPE_LABEL} — המדליה שלכם!`
               : escapeOpen
-                ? `▶ ${ESCAPE_LABEL} — הלכו אל הבית`
-                : '🔒 סיימו את כל התחנות לפתיחת בית המדרש',
+                ? `▶ ${ESCAPE_LABEL} — הלכו אל המשימה האחרונה`
+                : `🔒 סיימו את כל התחנות לפתיחת ${ESCAPE_LABEL}`,
       );
     } else if (free) {
       this.hintText.setText(
@@ -808,11 +808,11 @@ export class MainScene extends Phaser.Scene {
     } else if (next) {
       this.hintText.setText(`▶ ${next.idx + 1}. ${next.label} — הלכו אל התחנה הזוהרת`);
     } else if (escapeDone) {
-      this.hintText.setText('🏅 סיימתם — המדליה בבית המדרש!');
+      this.hintText.setText(`🏅 סיימתם את ${ESCAPE_LABEL} — המדליה שלכם!`);
     } else if (escapeOpen) {
-      this.hintText.setText(`▶ ${ESCAPE_LABEL} — הלכו אל הבית בסוף המסע`);
+      this.hintText.setText(`▶ ${ESCAPE_LABEL} — הלכו אל המשימה האחרונה בסוף השביל`);
     } else {
-      this.hintText.setText('🔒 סיימו את כל התחנות לפתיחת בית המדרש');
+      this.hintText.setText(`🔒 סיימו את כל התחנות לפתיחת ${ESCAPE_LABEL}`);
     }
   }
 

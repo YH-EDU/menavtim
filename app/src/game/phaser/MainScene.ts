@@ -796,7 +796,7 @@ export class MainScene extends Phaser.Scene {
             : escapeDone
               ? `🏅 סיימתם את ${ESCAPE_LABEL} — המדליה שלכם!`
               : escapeOpen
-                ? `▶ ${ESCAPE_LABEL} — הלכו אל המשימה האחרונה`
+                ? `▶ ${ESCAPE_LABEL} — דלת לחדר סודי בסוף השביל`
                 : `🔒 סיימו את כל התחנות לפתיחת ${ESCAPE_LABEL}`,
       );
     } else if (free) {
@@ -810,7 +810,7 @@ export class MainScene extends Phaser.Scene {
     } else if (escapeDone) {
       this.hintText.setText(`🏅 סיימתם את ${ESCAPE_LABEL} — המדליה שלכם!`);
     } else if (escapeOpen) {
-      this.hintText.setText(`▶ ${ESCAPE_LABEL} — הלכו אל המשימה האחרונה בסוף השביל`);
+      this.hintText.setText(`▶ ${ESCAPE_LABEL} — דלת לחדר סודי בסוף השביל`);
     } else {
       this.hintText.setText(`🔒 סיימו את כל התחנות לפתיחת ${ESCAPE_LABEL}`);
     }

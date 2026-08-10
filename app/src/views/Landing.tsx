@@ -4,6 +4,7 @@ import { isCompleteSession, type StudentSession } from '../lib/api';
 import { HeroBg } from '../ui/PageShell';
 import { asset } from '../lib/basePath';
 import { FullscreenFab } from '../ui/FullscreenToggle';
+import { feedbackComposeUrl } from '../ui/Feedback';
 
 export default function Landing({
   session,
@@ -162,7 +163,9 @@ export default function Landing({
             משחק זה נוצר על ידי יותם חדד ©
           </p>
           <a
-            href="mailto:yosefyotam@gmail.com"
+            href={feedbackComposeUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               display: 'inline-block',
               color: 'rgba(255,255,255,0.88)',
@@ -176,6 +179,7 @@ export default function Landing({
               direction: 'ltr',
               unicodeBidi: 'isolate',
               cursor: 'pointer',
+              pointerEvents: 'auto',
             }}
           >
             yosefyotam@gmail.com

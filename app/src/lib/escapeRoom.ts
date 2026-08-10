@@ -7,7 +7,7 @@ export const ESCAPE_ACTIVITY_ID = 'escape-beit-midrash';
 /** Player-facing mission name (last station on the journey). */
 export const ESCAPE_LABEL = 'הצופן הארמי';
 /** Short blurb under the mission name on map / station cards. */
-export const ESCAPE_BLURB = 'משימה אחרונה · מנעול · מכתב בארמית';
+export const ESCAPE_BLURB = 'מנעול · דלת · חדר סודי מחכה…';
 
 /** Stars awarded when the letter finale is completed. */
 export const ESCAPE_STAR_SCORE = 3;

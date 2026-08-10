@@ -152,7 +152,7 @@ function GoalMedalOverlay({
         </div>
         <p style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, color: '#6b5a3e', lineHeight: 1.5 }}>
           {allComplete
-            ? 'סיימתם את המשימה האחרונה — הנה סיכום ההישגים שלכם'
+            ? `פענחתם את ${ESCAPE_LABEL} — הנה סיכום ההישגים שלכם`
             : 'המשיכו לתחנות — כאן יוצג סיכום ההישגים שלכם'}
         </p>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10, gap: 6, fontSize: 28 }}>
@@ -233,7 +233,7 @@ function EscapeGuideOverlay({
           היכנסו ל{ESCAPE_LABEL}
         </div>
         <div style={{ fontSize: 13.5, fontWeight: 700, color: '#6b5a3e', marginTop: 4, lineHeight: 1.4 }}>
-          סיימתם את כל התחנות — הלכו אחרי החץ אל המשימה האחרונה
+          סיימתם את כל התחנות — הלכו אחרי החץ אל הצופן הארמי
         </div>
       </div>
       <div

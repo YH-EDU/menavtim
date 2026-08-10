@@ -644,7 +644,7 @@ function ContinuousJourneyTrail({
             כל הכבוד — היכנסו להצופן הארמי!
           </div>
           <div style={{ fontSize: 14, fontWeight: 700, color: '#6b4f26', marginTop: 6, lineHeight: 1.45 }}>
-            סיימתם את כל התחנות. הלכו אל המשימה האחרונה בסוף השביל.
+            סיימתם את כל התחנות. דלת לחדר סודי מחכה בסוף השביל.
           </div>
         </div>
       )}

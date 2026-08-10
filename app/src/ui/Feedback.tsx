@@ -2,8 +2,19 @@ import React from 'react';
 
 const FEEDBACK_MAIL = 'yosefyotam@gmail.com';
 
+/** Browser Gmail compose — more reliable than mailto: when no desktop mail app is set. */
+export function feedbackComposeUrl(subject = 'פידבק למשחק מנווטים בארמית') {
+  const params = new URLSearchParams({
+    view: 'cm',
+    fs: '1',
+    to: FEEDBACK_MAIL,
+    su: subject,
+  });
+  return `https://mail.google.com/mail/?${params.toString()}`;
+}
+
 export function feedbackMailto(subject = 'פידבק למשחק מנווטים בארמית') {
-  return `mailto:${FEEDBACK_MAIL}?subject=${encodeURIComponent(subject)}`;
+  return feedbackComposeUrl(subject);
 }
 
 /** כפתור משוב קטן — למורים ולתרגול חופשי */
@@ -19,7 +30,9 @@ export function FeedbackButton({
 }) {
   return (
     <a
-      href={feedbackMailto()}
+      href={feedbackComposeUrl()}
+      target="_blank"
+      rel="noopener noreferrer"
       className={compact ? 'btn small' : 'btn small'}
       style={{
         textDecoration: 'none',
@@ -31,6 +44,8 @@ export function FeedbackButton({
         border: light ? '1.5px solid rgba(255,255,255,0.55)' : '1.5px solid rgba(15,118,110,0.35)',
         boxShadow: light ? 'none' : 'var(--shadow)',
         backdropFilter: light ? 'blur(6px)' : undefined,
+        pointerEvents: 'auto',
+        cursor: 'pointer',
         ...style,
       }}
     >

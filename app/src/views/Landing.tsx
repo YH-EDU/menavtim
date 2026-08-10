@@ -98,21 +98,20 @@ export default function Landing() {
             position: 'fixed',
             left: 'max(12px, env(safe-area-inset-left))',
             bottom: 'max(12px, env(safe-area-inset-bottom))',
-            zIndex: 10,
+            zIndex: 30,
             maxWidth: 'min(300px, calc(100vw - 24px))',
             padding: '8px 10px',
             borderRadius: 8,
             background: 'rgba(0,0,0,0.38)',
             backdropFilter: 'blur(4px)',
             textAlign: 'right',
-            pointerEvents: 'none',
           }}
         >
           <p
             style={{
               color: 'rgba(255,255,255,0.92)',
               fontSize: 13,
-              margin: '0 0 4px',
+              margin: '0 0 2px',
               lineHeight: 1.45,
               textShadow: '0 1px 4px rgba(0,0,0,0.55), 0 0 1px rgba(0,0,0,0.8)',
               fontWeight: 700,
@@ -120,11 +119,30 @@ export default function Landing() {
           >
             משחק זה נוצר על ידי יותם חדד ©
           </p>
+          <a
+            href="mailto:yosefyotam@gmail.com"
+            style={{
+              display: 'inline-block',
+              color: 'rgba(255,255,255,0.88)',
+              fontSize: 12,
+              fontWeight: 600,
+              lineHeight: 1.4,
+              padding: '4px 0 6px',
+              textDecoration: 'underline',
+              textUnderlineOffset: 2,
+              textShadow: '0 1px 4px rgba(0,0,0,0.55), 0 0 1px rgba(0,0,0,0.8)',
+              direction: 'ltr',
+              unicodeBidi: 'isolate',
+              cursor: 'pointer',
+            }}
+          >
+            yosefyotam@gmail.com
+          </a>
           <p
             style={{
               color: 'rgba(255,255,255,0.85)',
               fontSize: 12,
-              margin: '0 0 6px',
+              margin: 0,
               lineHeight: 1.45,
               textShadow: '0 1px 4px rgba(0,0,0,0.55), 0 0 1px rgba(0,0,0,0.8)',
               fontWeight: 600,
@@ -132,24 +150,6 @@ export default function Landing() {
           >
             מבוסס על מנוע המשחקים של חפציה בן ארצי
           </p>
-          <a
-            href="mailto:yosefyotam@gmail.com"
-            style={{
-              display: 'inline-block',
-              pointerEvents: 'auto',
-              color: 'rgba(255,255,255,0.78)',
-              fontSize: 11,
-              fontWeight: 600,
-              lineHeight: 1.4,
-              textDecoration: 'underline',
-              textUnderlineOffset: 2,
-              textShadow: '0 1px 4px rgba(0,0,0,0.55), 0 0 1px rgba(0,0,0,0.8)',
-              direction: 'ltr',
-              unicodeBidi: 'isolate',
-            }}
-          >
-            yosefyotam@gmail.com
-          </a>
         </div>
       </div>
     </HeroBg>

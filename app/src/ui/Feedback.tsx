@@ -1,8 +1,8 @@
 import React from 'react';
 
-const FEEDBACK_MAIL = 'chepti@gmail.com';
+const FEEDBACK_MAIL = 'yosefyotam@gmail.com';
 
-export function feedbackMailto(subject = 'משוב — מנווטים בארמית') {
+export function feedbackMailto(subject = 'פידבק למשחק מנווטים בארמית') {
   return `mailto:${FEEDBACK_MAIL}?subject=${encodeURIComponent(subject)}`;
 }
 

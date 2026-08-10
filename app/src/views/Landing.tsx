@@ -3,6 +3,7 @@ import { nav } from '../App';
 import { HeroBg } from '../ui/PageShell';
 import { asset } from '../lib/basePath';
 import { FullscreenFab } from '../ui/FullscreenToggle';
+import { feedbackMailto } from '../ui/Feedback';
 
 export default function Landing() {
   return (
@@ -91,6 +92,22 @@ export default function Landing() {
             👩‍🏫 כניסת מורים
           </button>
         </div>
+
+        <a
+          href={feedbackMailto()}
+          style={{
+            marginTop: 22,
+            color: 'rgba(255,255,255,0.92)',
+            fontSize: 'clamp(14px, 3.5vw, 16px)',
+            fontWeight: 700,
+            textDecoration: 'underline',
+            textUnderlineOffset: 3,
+            textShadow: '0 1px 6px rgba(0,0,0,0.45)',
+            letterSpacing: 0.2,
+          }}
+        >
+          פידבקים והערות
+        </a>
 
         <div
           aria-label="ייחוסים"

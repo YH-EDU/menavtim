@@ -21,7 +21,6 @@ import { Stars, starsFor } from './ui';
 import { playWin } from '../lib/sound';
 import {
   cancelSpeech,
-  isSpeaking,
   setTtsEnabled,
   setTtsToastHandler,
   speechSupported,

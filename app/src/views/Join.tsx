@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import {
   joinClass,
   guestSession,
-  getRegisteredIdentityEmoji,
+  getRegisteredIdentityEmojis,
   hasGuestProgress,
   type StudentSession,
 } from '../lib/api';
@@ -93,24 +93,21 @@ export default function Join({
 
   const codeFromLink = linkCode.length > 0 && !isGuest;
 
-  const registeredEmoji = useMemo(
-    () => (nick.trim() ? getRegisteredIdentityEmoji(nick.trim()) : null),
+  const registeredEmojis = useMemo(
+    () => (nick.trim() ? getRegisteredIdentityEmojis(nick.trim()) : []),
     [nick],
   );
 
   const resumeHint = useMemo(() => {
     if (!nick.trim() || !identityEmoji) return null;
-    if (registeredEmoji && registeredEmoji !== identityEmoji) {
-      return { type: 'warn' as const, text: `לשם "${nick.trim()}" יש שמירה עם ${registeredEmoji} — בחרו אותו כדי להמשיך` };
-    }
     if (isGuest && hasGuestProgress(nick.trim(), identityEmoji)) {
       return { type: 'ok' as const, text: 'נמצאה שמירה — ממשיכים מהמקום שעצרתם! 🎉' };
     }
-    if (!isGuest && registeredEmoji === identityEmoji) {
+    if (!isGuest && hasGuestProgress(nick.trim(), identityEmoji)) {
       return { type: 'ok' as const, text: 'מזהים אתכם — ממשיכים מהמקום שעצרתם! 🎉' };
     }
     return null;
-  }, [nick, identityEmoji, registeredEmoji, isGuest]);
+  }, [nick, identityEmoji, isGuest]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -222,20 +219,15 @@ export default function Join({
           )}
         </button>
 
-        {registeredEmoji && !identityEmoji && (
+        {registeredEmojis.length > 0 && !identityEmoji && (
           <p style={{ fontSize: 13, color: 'var(--teal-dark)', margin: '8px 0 0', fontWeight: 600 }}>
-            יש שמירה לשם הזה עם {registeredEmoji} — בחרו אותו כדי להמשיך
+            לשם הזה יש שמירות עם {registeredEmojis.join(' ')} — בחרו אחד מהם להמשך, או אימוג׳י אחר למשחק חדש
           </p>
         )}
 
         {resumeHint && (
           <p
-            className={resumeHint.type === 'warn' ? 'err' : undefined}
-            style={
-              resumeHint.type === 'ok'
-                ? { color: 'var(--green)', fontSize: 14, margin: '10px 0 0', fontWeight: 700 }
-                : { marginTop: 10 }
-            }
+            style={{ color: 'var(--green)', fontSize: 14, margin: '10px 0 0', fontWeight: 700 }}
           >
             {resumeHint.text}
           </p>

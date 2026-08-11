@@ -1,8 +1,8 @@
 # מנווטים בארמית · Navigating Aramaic
 
-מסע משחקי ללימוד **ארמית** לדוברי עברית מודרנית — ילדים ונוער מנווטים בין תחנות לאורך שביל ארץ־ישראל, מהכרם ועד בית המדרש, ומסיימים ב**הצופן הארמי**.
+מסע משחקי ללימוד **ארמית** לדוברי עברית מודרנית — ילדים ונוער מנווטים בין תחנות לאורך שביל במבוך פשוט, עד בית המדרש, ומסיימים ב**הצופן הארמי**.
 
-A playful journey for Hebrew speakers learning **Aramaic** — kids navigate stations along an Israel-themed path, from vineyard to Beit Midrash, and finish with **the Aramaic Cipher** escape room.
+A playful journey for Hebrew speakers learning **Aramaic** — kids navigate stations along a simple maze path, reach the Beit Midrash, and finish with **the Aramaic Cipher** escape room.
 
 **Live demo:** [https://YH-EDU.github.io/menavtim/](https://YH-EDU.github.io/menavtim/)
 
@@ -14,9 +14,9 @@ A playful journey for Hebrew speakers learning **Aramaic** — kids navigate sta
 
 ## חזון חינוכי · Educational vision
 
-ארמית היא שפת התלמוד, התפילה והמקרא — אבל לרוב הלומדים היא "שפה זרה". **מנווטים בארמית** הופך את הלמידה למסע: הילד בוחר דמות, הולך על מפת Phaser אינטראקטיבית, ומגיע לתחנות פעילות קצרות. כל תחנה מלמדת מילה, ביטוי או מבנה — עם כוכבים, נקודות ומשוב מיידי. בסיום המסע מחכה חדר בריחה בבית המדרש.
+ארמית היא שפת התלמוד, התפילה והמקרא — אבל לרוב הלומדים היא "שפה זרה". **מנווטים בארמית** הופך את הלמידה למשחק מסע פשוט: הילד בוחר דמות, הולך על מפת מבוך אינטראקטיבית ב-Phaser, ומגיע לתחנות פעילות קצרות. כל תחנה מלמדת מילה, ביטוי או מבנה — עם כוכבים, נקודות ומשוב מיידי. בסיום המסע מחכה חדר בריחה בבית המדרש.
 
-Aramaic is the language of Talmud, prayer, and parts of Scripture — yet it often feels foreign to modern Hebrew speakers. **Navigating Aramaic** turns learning into a journey: pick a character, walk an interactive Phaser map, and reach short activity stations. Each station teaches a word, phrase, or pattern — with stars, points, and instant feedback. The journey ends with an escape room in the Beit Midrash.
+Aramaic is the language of Talmud, prayer, and parts of Scripture — yet it often feels foreign to modern Hebrew speakers. **Navigating Aramaic** turns learning into a simple journey game: pick a character, walk an interactive Phaser maze map, and reach short activity stations. Each station teaches a word, phrase, or pattern — with stars, points, and instant feedback. The journey ends with an escape room in the Beit Midrash.
 
 הפרויקט מבוסס על מנוע המשחקים של [חפציה בן ארצי](https://chepti.com) (מסע כתב רש״י) — אותן מכניקות ליבה, תוכן ארמית חדש.
 
@@ -28,7 +28,7 @@ Based on the game engine by [Chepti Ben Artzi](https://chepti.com) (Rashi script
 
 ### המסע · The path
 
-- **מפת מסע (Phaser)** — שביל ארץ־ישראל: כרם → גשר → טרסות → **בית מדרש**.
+- **מפת מסע (Phaser)** — שביל במבוך פשוט עם תחנות לאורך הדרך, עד **בית מדרש**.
 - **46 תחנות** לאורך 14 יחידות לימוד, מסודרות לפי סדר.
 - השחקן מנוע בחצים / מגע, נכנס לתחנה כשהוא לידה, ומשחק פעילות (חידון, זיכרון, סיפור, ועוד).
 - אחרי היחידות ומבחן הגמר — סיום המסע ב**הצופן הארמי** (חדר בריחה בבית המדרש).
@@ -193,7 +193,7 @@ mathgame/
 
 - **ניתוב:** hash-based (`#/map`, `#/play/...`) — עובד ב-GitHub Pages ללא הגדרות שרת.
 - **base path:** `/menavtim/` — חייב להתאים ב-`vite.config.ts` ובכל נתיבי `public/`.
-- **מפת Phaser:** `journeyMap.ts` בונה שביל, קירות, בית מדרש; `MainScene.ts` מצייר ומנהל אינטראקציה.
+- **מפת Phaser:** `journeyMap.ts` בונה מבוך (שביל + קירות) ובית מדרש; `MainScene.ts` מצייר ומנהל אינטראקציה.
 - **Overlay React:** תחנות ומדליה מוצגות כ-HTML מעל canvas Phaser (`PhaserStationOverlay`).
 
 ---

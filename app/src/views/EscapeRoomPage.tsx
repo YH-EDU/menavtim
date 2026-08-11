@@ -17,7 +17,8 @@ import {
 } from '../lib/escapeRoom';
 import { isFullscreenActive, subscribeFullscreenChange, toggleFullscreen } from '../lib/fullscreen';
 import type { ProgressData } from '../lib/api';
-import { LS_FLY_STARS } from './StarHud';
+import { LS_FLY_STARS } from '../lib/playStorage';
+import { focusActKey, identitySlug } from '../lib/playStorage';
 import { nav } from '../App';
 import { FullscreenChromeButton } from '../ui/FullscreenToggle';
 
@@ -97,7 +98,10 @@ export default function EscapeRoomPage({
         /* still return to map — progress may already be local */
       }
       sessionStorage.setItem(LS_FLY_STARS, String(starsFromMsg));
-      sessionStorage.setItem('aramit_focus_act', ESCAPE_ACTIVITY_ID);
+      sessionStorage.setItem(
+        focusActKey(identitySlug(session.nickname, session.emoji)),
+        ESCAPE_ACTIVITY_ID,
+      );
       onReported();
       window.setTimeout(() => nav('/map'), 1400);
     };

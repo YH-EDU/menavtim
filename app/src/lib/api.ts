@@ -5,6 +5,8 @@ import type { LetterEvents } from '../data/types';
 
 import { API_BASE } from './basePath';
 
+import { clearEphemeralPlayState, LS_LAST_ROUTE, SS_SESSION } from './playStorage';
+
 const API = API_BASE;
 
 export interface StudentSession {
@@ -32,8 +34,6 @@ export interface ProgressData {
   mapPos?: MapPosition;
 }
 
-const SS_SESSION = 'aramit_session';
-const LS_LAST_ROUTE = 'aramit_last_route';
 const LS_GUEST_REGISTRY = 'aramit_guest_registry';
 const LS_GUEST_MIGRATED = 'aramit_guest_migrated_v2';
 
@@ -211,12 +211,7 @@ export function loadSession(): StudentSession | null {
 export function clearActiveSession(): void {
   saveSession(null);
   clearLastRoute();
-  // מיקום/פוקוס על המפה שמורים ב-sessionStorage בלי מפתח משתמש — חייבים לנקות בהחלפת שחקן
-  try {
-    sessionStorage.removeItem('aramit_phaser_pos');
-    sessionStorage.removeItem('aramit_focus_act');
-    sessionStorage.removeItem('aramit_fly_stars');
-  } catch { /* ignore */ }
+  clearEphemeralPlayState();
 }
 
 /** סשן תקין — שם ואימוג'י (דמות) חובה לפני כניסה למסע */
@@ -288,11 +283,7 @@ async function get<T>(path: string, token?: string): Promise<T> {
 // ─── תלמיד ───
 
 export async function joinClass(code: string, nickname: string, emoji: string): Promise<StudentSession> {
-  try {
-    sessionStorage.removeItem('aramit_phaser_pos');
-    sessionStorage.removeItem('aramit_focus_act');
-    sessionStorage.removeItem('aramit_fly_stars');
-  } catch { /* ignore */ }
+  clearEphemeralPlayState();
   const r = await post<{ token: string; classId: number; className: string; freeNav: boolean }>(
     'student.php?a=join',
     { code, nickname, emoji }
@@ -308,12 +299,7 @@ export async function joinClass(code: string, nickname: string, emoji: string): 
 export function guestSession(nickname: string, emoji: string): StudentSession {
   const trimmed = nickname.trim();
   const idEmoji = emoji.trim();
-  // ניקוי מיקום מפה של השחקן הקודם באותה לשונית
-  try {
-    sessionStorage.removeItem('aramit_phaser_pos');
-    sessionStorage.removeItem('aramit_focus_act');
-    sessionStorage.removeItem('aramit_fly_stars');
-  } catch { /* ignore */ }
+  clearEphemeralPlayState();
   registerGuestIdentity(trimmed, idEmoji);
   const s: StudentSession = { token: 'guest', nickname: trimmed, emoji: idEmoji };
   saveSession(s);

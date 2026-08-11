@@ -1,15 +1,15 @@
-import React from 'react';
-import { UNITS } from '../data/units';
-import GameHost from '../games/GameHost';
-import { reportAttempt, type StudentSession } from '../lib/api';
-import type { ActivityResult } from '../data/types';
-import { starsFor } from '../games/ui';
-import { LS_FLY_STARS } from './StarHud';
-import { nav } from '../App';
 import { SoftPageShell } from '../ui/PageShell';
 import { FeedbackButton } from '../ui/Feedback';
 import { FullscreenCorner } from '../ui/FullscreenToggle';
 import { asset } from '../lib/basePath';
+import { starsFor } from '../games/ui';
+import { nav } from '../App';
+import { reportAttempt, type StudentSession } from '../lib/api';
+import type { ActivityResult } from '../data/types';
+import { UNITS } from '../data/units';
+import GameHost from '../games/GameHost';
+import React from 'react';
+import { focusActKey, identitySlug, LS_FLY_STARS } from '../lib/playStorage';
 
 export default function PlayView({
   unitId,
@@ -30,6 +30,8 @@ export default function PlayView({
     return null;
   }
 
+  const focusKey = focusActKey(identitySlug(session.nickname, session.emoji));
+
   const done = async (r: ActivityResult) => {
     try {
       await reportAttempt(session, activity.id, unit.id, r.score, r.max, r.letters);
@@ -38,7 +40,7 @@ export default function PlayView({
     }
     sessionStorage.setItem(LS_FLY_STARS, String(starsFor(r.score, r.max)));
     onReported();
-    sessionStorage.setItem('aramit_focus_act', activity.id);
+    sessionStorage.setItem(focusKey, activity.id);
     nav('/map');
   };
 
@@ -56,7 +58,7 @@ export default function PlayView({
             className="btn small"
             style={{ background: 'transparent', boxShadow: 'none', color: 'var(--teal-dark)', fontWeight: 700 }}
             onClick={() => {
-              sessionStorage.setItem('aramit_focus_act', activity.id);
+              sessionStorage.setItem(focusKey, activity.id);
               nav('/map');
             }}
           >

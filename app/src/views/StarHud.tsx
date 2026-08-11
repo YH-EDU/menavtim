@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { ProgressData } from '../lib/api';
 import { computeJourneyTotals } from '../lib/journeyTotals';
+import { LS_FLY_STARS } from '../lib/playStorage';
 
-export const LS_FLY_STARS = 'aramit_fly_stars';
-
+export { LS_FLY_STARS };
 interface FlyingStar {
   id: number;
   fromX: number;

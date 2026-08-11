@@ -150,6 +150,11 @@ export default function JourneyPhaser({
 
       onSaveMapPos: persistMapPos,
 
+      playerIdentity: {
+        nickname: sessionRef.current.nickname,
+        emoji: sessionRef.current.emoji,
+      },
+
       onInteract: (unitId, activityId) => {
         if (activityId === ESCAPE_ACTIVITY_ID) {
           pauseJourneyGame(gameRef.current);

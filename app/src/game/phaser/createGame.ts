@@ -13,6 +13,8 @@ export interface JourneyGameOptions {
   onInteract: OnMissionInteract;
   overlayBridge?: JourneyOverlayBridge;
   onSaveMapPos?: (pos: MapPosition) => void;
+  /** לשמירת מיקום/פוקוס לפי שחקן — מונע דליפה בין משתמשים */
+  playerIdentity?: { nickname: string; emoji: string };
 }
 
 function focusGameCanvas(game: Phaser.Game) {
@@ -65,7 +67,13 @@ export function createJourneyGame(opts: JourneyGameOptions): Phaser.Game {
     progress: opts.progress,
     onInteract: opts.onInteract,
     onSaveMapPos: opts.onSaveMapPos,
-  } satisfies { progress: ProgressData; onInteract: OnMissionInteract; onSaveMapPos?: (pos: MapPosition) => void });
+    playerIdentity: opts.playerIdentity,
+  } satisfies {
+    progress: ProgressData;
+    onInteract: OnMissionInteract;
+    onSaveMapPos?: (pos: MapPosition) => void;
+    playerIdentity?: { nickname: string; emoji: string };
+  });
 
   if (opts.overlayBridge) {
     game.registry.set(OVERLAY_BRIDGE_KEY, opts.overlayBridge);

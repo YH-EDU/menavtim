@@ -1,11 +1,17 @@
 import type { MapPosition, ProgressData } from '../../lib/api';
 import {
+  focusActKey,
+  identitySlug,
+  phaserPosKey,
+} from '../../lib/playStorage';
+import {
   computeResumePosition,
   findNearestSafePosition,
   type PathPoint,
 } from './journeyMap';
 import { PHASER_MISSIONS } from './stations';
 
+/** @deprecated legacy unscoped keys — cleared on user switch */
 export const LS_FOCUS_ACT = 'aramit_focus_act';
 export const LS_PHASER_POS = 'aramit_phaser_pos';
 
@@ -16,9 +22,17 @@ export interface WorldPos {
   faceY?: number;
 }
 
-export function savePhaserPlayerState(x: number, y: number, activityId: string) {
-  sessionStorage.setItem(LS_FOCUS_ACT, activityId);
-  sessionStorage.setItem(LS_PHASER_POS, JSON.stringify({ x, y }));
+export function savePhaserPlayerState(
+  x: number,
+  y: number,
+  activityId: string,
+  identity?: { nickname: string; emoji: string },
+) {
+  const id = identity ? identitySlug(identity.nickname, identity.emoji) : '';
+  const focusKey = id ? focusActKey(id) : LS_FOCUS_ACT;
+  const posKey = id ? phaserPosKey(id) : LS_PHASER_POS;
+  sessionStorage.setItem(focusKey, activityId);
+  sessionStorage.setItem(posKey, JSON.stringify({ x, y }));
 }
 
 function stationUnlocked(idx: number, progress: ProgressData): boolean {
@@ -65,7 +79,7 @@ function persistedMapPosition(
 
 /**
  * Resolve where to place the player after returning from a mission or on fresh load.
- * Session keys win (same tab); persisted mapPos restores cross-session resume.
+ * Scoped session keys win (same tab); persisted mapPos restores cross-session resume.
  */
 export function resolveRestorePosition(
   stationPositions: { activityId: string; px: number; py: number }[],
@@ -73,10 +87,16 @@ export function resolveRestorePosition(
   centerline: PathPoint[],
   pathCells: Set<string>,
   progress: ProgressData,
+  identity?: { nickname: string; emoji: string },
 ): WorldPos | null {
-  const focusId = sessionStorage.getItem(LS_FOCUS_ACT);
+  const id = identity ? identitySlug(identity.nickname, identity.emoji) : '';
+  const focusKey = id ? focusActKey(id) : LS_FOCUS_ACT;
+  const posKey = id ? phaserPosKey(id) : LS_PHASER_POS;
+
+  const focusId = sessionStorage.getItem(focusKey) || (!id ? sessionStorage.getItem(LS_FOCUS_ACT) : null);
   if (focusId) {
-    sessionStorage.removeItem(LS_FOCUS_ACT);
+    sessionStorage.removeItem(focusKey);
+    if (!id) sessionStorage.removeItem(LS_FOCUS_ACT);
     const idx = stationPositions.findIndex((s) => s.activityId === focusId);
     if (idx >= 0) {
       const completed = !!progress.completed[focusId];
@@ -103,8 +123,9 @@ export function resolveRestorePosition(
     }
   }
 
-  const raw = sessionStorage.getItem(LS_PHASER_POS);
-  sessionStorage.removeItem(LS_PHASER_POS);
+  const raw = sessionStorage.getItem(posKey) || (!id ? sessionStorage.getItem(LS_PHASER_POS) : null);
+  sessionStorage.removeItem(posKey);
+  if (!id) sessionStorage.removeItem(LS_PHASER_POS);
   if (raw) {
     try {
       const p = JSON.parse(raw) as WorldPos;
@@ -124,7 +145,12 @@ export function resolveRestorePosition(
   return null;
 }
 
-export function clearSavedPhaserState() {
+export function clearSavedPhaserState(identity?: { nickname: string; emoji: string }) {
+  if (identity) {
+    const id = identitySlug(identity.nickname, identity.emoji);
+    sessionStorage.removeItem(phaserPosKey(id));
+    sessionStorage.removeItem(focusActKey(id));
+  }
   sessionStorage.removeItem(LS_PHASER_POS);
   sessionStorage.removeItem(LS_FOCUS_ACT);
 }

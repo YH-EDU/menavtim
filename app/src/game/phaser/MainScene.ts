@@ -49,6 +49,7 @@ export interface MainSceneData {
   progress: ProgressData;
   onInteract: OnMissionInteract;
   onSaveMapPos?: (pos: MapPosition) => void;
+  playerIdentity?: { nickname: string; emoji: string };
 }
 
 interface StationZone {
@@ -84,6 +85,7 @@ export class MainScene extends Phaser.Scene {
   private progress!: ProgressData;
   private onInteract!: OnMissionInteract;
   private onSaveMapPos?: (pos: MapPosition) => void;
+  private playerIdentity?: { nickname: string; emoji: string };
   private hintText!: Phaser.GameObjects.Text;
   private lastTouchId: string | null = null;
   private touchCooldown = 0;
@@ -112,6 +114,7 @@ export class MainScene extends Phaser.Scene {
     this.progress = data.progress;
     this.onInteract = data.onInteract;
     this.onSaveMapPos = data.onSaveMapPos;
+    this.playerIdentity = data.playerIdentity;
   }
 
   create() {
@@ -203,6 +206,7 @@ export class MainScene extends Phaser.Scene {
       journey.centerline,
       journey.pathCells,
       this.progress,
+      this.playerIdentity,
     );
     const startX = restored?.x ?? journey.spawn.px;
     const startY = restored?.y ?? journey.spawn.py;
@@ -574,7 +578,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   private openMission(unitId: string, activityId: string) {
-    savePhaserPlayerState(this.player.x, this.player.y, activityId);
+    savePhaserPlayerState(this.player.x, this.player.y, activityId, this.playerIdentity);
     this.persistMapPosition(true);
     this.player.clearInputState();
     this.touchCooldown = 800;

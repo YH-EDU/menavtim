@@ -12,6 +12,7 @@ import { asset } from '../lib/basePath';
 import {
   CHARACTERS,
   saveSelectedAvatar,
+  activateAvatarForIdentity,
   type CharacterId,
 } from '../game/phaser/characters';
 import EmojiPicker from '../ui/EmojiPicker';
@@ -115,10 +116,12 @@ export default function Join({
     if (!nick.trim()) { setErr('כתבו שם או כינוי'); return; }
     if (!identityEmoji) { setErr('בחרו סימן מזהה (אימוג\'י) — הוא "הסיסמה הקטנה" שלכם'); return; }
     if (!character) { setErr('בחרו דמות למסע'); return; }
-    saveSelectedAvatar(character);
+    saveSelectedAvatar(character, { nickname: nick.trim(), emoji: identityEmoji });
     if (isGuest) {
       try {
-        onJoined(guestSession(nick.trim(), identityEmoji));
+        const s = guestSession(nick.trim(), identityEmoji);
+        activateAvatarForIdentity(s.nickname, s.emoji);
+        onJoined(s);
       } catch (ex) {
         setErr(ex instanceof Error ? ex.message : 'שגיאה — נסו שוב');
       }
@@ -128,7 +131,9 @@ export default function Join({
     if (!joinCode) { setErr('כתבו את קוד הכיתה שקיבלתם מהמורה'); return; }
     setBusy(true);
     try {
-      onJoined(await joinClass(joinCode, nick.trim(), identityEmoji));
+      const s = await joinClass(joinCode, nick.trim(), identityEmoji);
+      activateAvatarForIdentity(s.nickname, s.emoji);
+      onJoined(s);
     } catch (ex) {
       setErr(ex instanceof Error ? ex.message : 'שגיאה — נסו שוב');
     } finally {

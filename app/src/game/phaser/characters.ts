@@ -3,6 +3,8 @@
 import { asset } from '../../lib/basePath';
 import { ASSET } from './keys';
 
+import { avatarStorageKey } from '../../lib/playStorage';
+
 export const LS_AVATAR = 'aramit_avatar';
 export const AVATAR_BASE = asset('/avatars').replace(/\/$/, '');
 
@@ -171,8 +173,33 @@ export function getSelectedAvatar(): CharacterId {
   return DEFAULT_CHARACTER;
 }
 
-export function saveSelectedAvatar(id: CharacterId): void {
+export function saveSelectedAvatar(
+  id: CharacterId,
+  identity?: { nickname: string; emoji: string },
+): void {
   sessionStorage.setItem(LS_AVATAR, id);
+  if (identity?.nickname && identity.emoji) {
+    try {
+      localStorage.setItem(avatarStorageKey(identity.nickname, identity.emoji), id);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+/** טוען דמות שמורה לשחקן ומפעיל אותה בסשן הנוכחי (או מנקה אם אין) */
+export function activateAvatarForIdentity(nickname: string, emoji: string): CharacterId | null {
+  try {
+    const raw = localStorage.getItem(avatarStorageKey(nickname, emoji));
+    if (raw && !LEGACY_IDS.has(raw) && CHARACTERS.some((c) => c.id === raw)) {
+      sessionStorage.setItem(LS_AVATAR, raw);
+      return raw as CharacterId;
+    }
+  } catch {
+    /* ignore */
+  }
+  sessionStorage.removeItem(LS_AVATAR);
+  return null;
 }
 
 export function hasSelectedAvatar(): boolean {

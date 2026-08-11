@@ -9,15 +9,18 @@ import { FullscreenCorner } from '../ui/FullscreenToggle';
 export default function CharacterSelect({
   onSelected,
   onCancel,
+  identity,
 }: {
   onSelected: (id: CharacterId) => void;
   onCancel?: () => void;
+  /** When set, avatar is stored under name+identity-emoji (cosmetic; does not change progress key) */
+  identity?: { nickname: string; emoji: string };
 }) {
   const [picked, setPicked] = useState<CharacterId | null>(null);
 
   const confirm = () => {
     if (!picked) return;
-    saveSelectedAvatar(picked);
+    saveSelectedAvatar(picked, identity);
     onSelected(picked);
   };
 

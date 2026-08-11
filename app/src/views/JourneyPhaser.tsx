@@ -29,6 +29,8 @@ import {
 
 } from '../game/phaser/characters';
 
+import { stashPhaserRemountPosition } from '../game/phaser/playerState';
+
 import {
 
   OverlayBridgeHost,
@@ -61,7 +63,13 @@ export default function JourneyPhaser({
   const progressRef = useRef(progress);
   const sessionRef = useRef(session);
 
-  progressRef.current = progress;
+  // Keep last known mapPos if App progress hasn't refreshed from storage yet
+  // (avatar remount / tab return would otherwise spawn at the maze start).
+  const prevMapPos = progressRef.current.mapPos;
+  progressRef.current = {
+    ...progress,
+    mapPos: progress.mapPos ?? prevMapPos,
+  };
   sessionRef.current = session;
 
   const persistMapPos = (pos: Parameters<typeof saveMapPosition>[1]) => {
@@ -198,7 +206,16 @@ export default function JourneyPhaser({
 
       const pos = captureJourneyPlayerPosition(gameRef.current);
 
-      if (pos) persistMapPos(pos);
+      if (pos) {
+        persistMapPos(pos);
+        // Remount (avatar change / cancel picker) must restore here — React
+        // progress.mapPos is often stale until the next fetchProgress.
+        stashPhaserRemountPosition(pos, {
+          nickname: sessionRef.current.nickname,
+          emoji: sessionRef.current.emoji,
+        });
+        progressRef.current = { ...progressRef.current, mapPos: pos };
+      }
 
       destroyJourneyGame(gameRef.current);
 
@@ -290,6 +307,7 @@ export default function JourneyPhaser({
 
     return (
       <CharacterSelect
+        identity={{ nickname: session.nickname, emoji: session.emoji }}
         onSelected={handleAvatarSelected}
         onCancel={
           hasSelectedAvatar()

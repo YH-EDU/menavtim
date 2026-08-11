@@ -35,6 +35,24 @@ export function savePhaserPlayerState(
   sessionStorage.setItem(posKey, JSON.stringify({ x, y }));
 }
 
+/**
+ * Stash map position for the next Phaser remount (e.g. after החלפת דמות).
+ * resolveRestorePosition reads this before progress.mapPos — needed because
+ * React progress often lags behind localStorage mapPos saves.
+ */
+export function stashPhaserRemountPosition(
+  pos: WorldPos,
+  identity?: { nickname: string; emoji: string },
+) {
+  if (!Number.isFinite(pos.x) || !Number.isFinite(pos.y)) return;
+  const id = identity ? identitySlug(identity.nickname, identity.emoji) : '';
+  const posKey = id ? phaserPosKey(id) : LS_PHASER_POS;
+  sessionStorage.setItem(
+    posKey,
+    JSON.stringify({ x: pos.x, y: pos.y, faceX: pos.faceX, faceY: pos.faceY }),
+  );
+}
+
 function stationUnlocked(idx: number, progress: ProgressData): boolean {
   if (progress.freeNav) return true;
   if (idx === 0) return true;

@@ -107,7 +107,7 @@ function TtsButton({
   const title = !supported
     ? 'הדפדפן לא תומך בהקראה קולית'
     : ttsOn
-      ? 'הקראה פעילה — הקישו לשמיעה · לחיצה ארוכה לכיבוי'
+      ? 'הקראה פעילה — הקישו שוב לכיבוי'
       : 'הקראה כבויה — הקישו להפעלה ושמיעה';
 
   const handleTap = () => {
@@ -119,16 +119,16 @@ function TtsButton({
       return;
     }
 
-    if (isSpeaking()) {
+    // לחיצה קצרה = הפעלה/כיבוי (קודם כיבוי היה רק בלחיצה ארוכה ולא היה ברור)
+    if (ttsOn) {
+      setTtsEnabled(false);
+      onTtsChange(false);
       cancelSpeech();
       return;
     }
 
-    if (!ttsOn) {
-      setTtsEnabled(true);
-      onTtsChange(true);
-    }
-
+    setTtsEnabled(true);
+    onTtsChange(true);
     onSpeak?.();
   };
 

@@ -211,6 +211,12 @@ export function loadSession(): StudentSession | null {
 export function clearActiveSession(): void {
   saveSession(null);
   clearLastRoute();
+  // מיקום/פוקוס על המפה שמורים ב-sessionStorage בלי מפתח משתמש — חייבים לנקות בהחלפת שחקן
+  try {
+    sessionStorage.removeItem('aramit_phaser_pos');
+    sessionStorage.removeItem('aramit_focus_act');
+    sessionStorage.removeItem('aramit_fly_stars');
+  } catch { /* ignore */ }
 }
 
 /** סשן תקין — שם ואימוג'י (דמות) חובה לפני כניסה למסע */
@@ -282,6 +288,11 @@ async function get<T>(path: string, token?: string): Promise<T> {
 // ─── תלמיד ───
 
 export async function joinClass(code: string, nickname: string, emoji: string): Promise<StudentSession> {
+  try {
+    sessionStorage.removeItem('aramit_phaser_pos');
+    sessionStorage.removeItem('aramit_focus_act');
+    sessionStorage.removeItem('aramit_fly_stars');
+  } catch { /* ignore */ }
   const r = await post<{ token: string; classId: number; className: string; freeNav: boolean }>(
     'student.php?a=join',
     { code, nickname, emoji }
@@ -297,6 +308,12 @@ export async function joinClass(code: string, nickname: string, emoji: string): 
 export function guestSession(nickname: string, emoji: string): StudentSession {
   const trimmed = nickname.trim();
   const idEmoji = emoji.trim();
+  // ניקוי מיקום מפה של השחקן הקודם באותה לשונית
+  try {
+    sessionStorage.removeItem('aramit_phaser_pos');
+    sessionStorage.removeItem('aramit_focus_act');
+    sessionStorage.removeItem('aramit_fly_stars');
+  } catch { /* ignore */ }
   registerGuestIdentity(trimmed, idEmoji);
   const s: StudentSession = { token: 'guest', nickname: trimmed, emoji: idEmoji };
   saveSession(s);

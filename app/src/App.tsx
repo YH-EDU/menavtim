@@ -61,7 +61,10 @@ export default function App() {
   const [progress, setProgress] = useState<ProgressData>({ letters: {}, completed: {} });
 
   const refreshProgress = useCallback(async () => {
-    if (!session) return;
+    if (!session) {
+      setProgress({ letters: {}, completed: {} });
+      return;
+    }
     try {
       setProgress(await fetchProgress(session));
     } catch {
@@ -69,9 +72,20 @@ export default function App() {
     }
   }, [session]);
 
+  // בהחלפת שחקן מאפסים מיד את ההתקדמות המוצגת, ואז טוענים את שלו
+  const sessionKey = session ? `${session.token}:${session.nickname}:${session.emoji}` : '';
   useEffect(() => {
-    refreshProgress();
-  }, [refreshProgress]);
+    if (!sessionKey) {
+      setProgress({ letters: {}, completed: {} });
+      return;
+    }
+    setProgress({
+      letters: {},
+      completed: {},
+      freeNav: session?.token === 'teacher-preview' ? true : !!session?.freeNav,
+    });
+    void refreshProgress();
+  }, [sessionKey, refreshProgress, session?.freeNav, session?.token]);
 
   // סנכרון סשן מ-sessionStorage (למשל תצוגת מורה שנפתחת מלוח המורה)
   useEffect(() => {

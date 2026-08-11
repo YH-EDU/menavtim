@@ -22,31 +22,15 @@ import { trackPage } from './lib/analytics';
 
 // ניתוב מבוסס hash — עובד בכל אחסון סטטי בלי הגדרות שרת.
 
-/** אם נכנסו למסך הבית עם סשן פעיל — משחזרים את המסך האחרון (רענון לא «סוגר» את המשחק). */
-function resolveInitialHash(): string {
-  const current = window.location.hash || '#/';
-  const route = current.replace(/^#\//, '').split('/').filter(Boolean)[0] || '';
-  const onLanding = route === '' || route === 'landing';
-  if (!onLanding) return current;
-
-  const s = loadSession();
-  if (!isCompleteSession(s)) return current;
-
-  const last = loadLastRoute();
-  const restored = last ? `#/${last}` : '#/map';
-  if (restored !== current) {
-    try {
-      const url = `${window.location.pathname}${window.location.search}${restored}`;
-      window.history.replaceState(null, '', url);
-    } catch {
-      window.location.hash = restored;
-    }
-  }
-  return restored;
-}
-
+/** כניסה לאתר תמיד במסך הראשי — בלי שחזור אוטומטי לדמויות/מפה. */
 function useHash(): string {
-  const [hash, setHash] = useState(resolveInitialHash);
+  const [hash, setHash] = useState(() => {
+    const current = window.location.hash || '#/';
+    const route = current.replace(/^#\//, '').split('/').filter(Boolean)[0] || '';
+    // פתיחה מחדש של האתר (בלי hash או עם landing) → מסך ראשי
+    if (route === '' || route === 'landing') return '#/';
+    return current;
+  });
   useEffect(() => {
     const fn = () => setHash(window.location.hash || '#/');
     window.addEventListener('hashchange', fn);

@@ -468,14 +468,17 @@ export function usePhaserOverlay(onStationClick: (unitId: string, activityId: st
     onSync: (data: JourneyOverlaySync) => {
       // Skip React updates when rounded screen positions / state haven't changed —
       // prevents marker jitter while the camera lerps during a run.
+      // Quantize positions in the signature too (already 2px-grid from Phaser) —
+      // ignore 1px flicker if any float leaks through.
+      const qx = (n: number) => Math.round(n / 2) * 2;
       const sig = [
-        data.stations.map((s) => `${s.activityId}:${s.screenX},${s.screenY},${s.unlocked?1:0}${s.completed?1:0}${s.isCurrent?1:0}`).join('|'),
-        data.unitLabels.map((u) => `${u.unitIndex}:${u.screenX},${u.screenY}`).join('|'),
+        data.stations.map((s) => `${s.activityId}:${qx(s.screenX)},${qx(s.screenY)},${s.unlocked?1:0}${s.completed?1:0}${s.isCurrent?1:0}`).join('|'),
+        data.unitLabels.map((u) => `${u.unitIndex}:${qx(u.screenX)},${qx(u.screenY)}`).join('|'),
         data.goalMedal
-          ? `${data.goalMedal.mode}:${data.goalMedal.screenX},${data.goalMedal.screenY},${data.goalMedal.visible?1:0}`
+          ? `${data.goalMedal.mode}:${qx(data.goalMedal.screenX)},${qx(data.goalMedal.screenY)},${data.goalMedal.visible?1:0}`
           : '-',
         data.escapeGuide
-          ? `${data.escapeGuide.screenX},${data.escapeGuide.screenY},${data.escapeGuide.visible?1:0}`
+          ? `${qx(data.escapeGuide.screenX)},${qx(data.escapeGuide.screenY)},${data.escapeGuide.visible?1:0}`
           : '-',
       ].join('#');
       if (sig === lastSig.current) return;

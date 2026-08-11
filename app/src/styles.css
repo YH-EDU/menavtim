@@ -96,12 +96,12 @@ h1, h2, h3 { margin: 0; }
 .btn.gold:hover { background: #b45309; }
 .btn.small { padding: 7px 16px; font-size: 14px; }
 
-/* הקראה — מתחת למסך-מלא, מעט ימינה (לא צמוד לשוליים) */
+/* הקראה — אותה שורה עליונה ליד מסך-מלא (משמאל) */
 .tts-controls {
   position: fixed;
-  top: max(62px, calc(env(safe-area-inset-top, 0px) + 52px));
-  /* physical left: RTL inset-inline-end; +~24px ימינה מהמיקום הקודם */
-  left: max(36px, calc(env(safe-area-inset-left, 0px) + 28px));
+  top: max(10px, env(safe-area-inset-top, 0px));
+  /* אחרי כפתור מסך-מלא (~48px) בפינה השמאלית */
+  left: max(58px, calc(env(safe-area-inset-left, 0px) + 52px));
   z-index: 500;
   display: flex;
   align-items: center;

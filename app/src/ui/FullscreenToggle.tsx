@@ -178,13 +178,15 @@ export function FullscreenChromeButton() {
           fontWeight: 700,
           display: 'inline-flex',
           alignItems: 'center',
-          gap: 6,
+          justifyContent: 'center',
+          gap: 0,
           minHeight: 40,
-          paddingInline: 10,
+          minWidth: 40,
+          width: 40,
+          padding: 0,
         }}
       >
         {active ? <MinimizeIcon size={18} /> : <MaximizeIcon size={18} />}
-        <span>{label}</span>
       </button>
       {hint && (
         <div

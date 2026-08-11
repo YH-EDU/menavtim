@@ -410,9 +410,10 @@ export class MainScene extends Phaser.Scene {
   private worldToScreen(worldX: number, worldY: number): { x: number; y: number } {
     const cam = this.cameras.main;
     // midPoint + zoom maps world → camera viewport pixels (stable with follow lerp).
+    // Quantize to 2px grid to reduce overlay jitter while the camera lerps during a run.
     const x = (worldX - cam.midPoint.x) * cam.zoom + cam.width * 0.5;
     const y = (worldY - cam.midPoint.y) * cam.zoom + cam.height * 0.5;
-    return { x: Math.round(x), y: Math.round(y) };
+    return { x: Math.round(x / 2) * 2, y: Math.round(y / 2) * 2 };
   }
 
   private syncOverlay() {

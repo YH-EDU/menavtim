@@ -45,6 +45,11 @@ export function createJourneyGame(opts: JourneyGameOptions): Phaser.Game {
     width: w,
     height: h,
     backgroundColor: '#6faf4a',
+    render: {
+      roundPixels: true,
+      antialias: true,
+      powerPreference: 'high-performance',
+    },
     physics: {
       default: 'arcade',
       arcade: { debug: false },

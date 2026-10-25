@@ -25,12 +25,11 @@ import {
   drawPathTexture,
   ensureVignette,
   indexPathCells,
-  startAmbience,
-  type MapAmbience,
 } from './phaseVisuals';
 import { phaseOf } from '../../data/phases';
 import type { PhaseId } from '../../data/types';
 
+import { PHASE_GUIDES } from './characters';
 import { Player } from './Player';
 
 import { missionPlacement, PHASER_MISSIONS } from './stations';
@@ -119,14 +118,9 @@ export class MainScene extends Phaser.Scene {
   private lastPersistedPos: MapPosition | null = null;
   private cellProgress = new Map<string, number>();
   private phaseBreaks: { index: number; phase: PhaseId }[] = [];
-  private fogGfx?: Phaser.GameObjects.Graphics;
-  private glowGfx?: Phaser.GameObjects.Graphics;
+  private fogImage?: Phaser.GameObjects.Image;
   private vignette?: Phaser.GameObjects.Image;
   private opening = false;
-  private ambience?: MapAmbience;
-  private guides: Phaser.GameObjects.Sprite[] = [];
-  private phaseTick = 0;
-  private playerPhase: PhaseId = 'he-ar';
 
   constructor() {
     super(SCENE.main);
@@ -210,8 +204,7 @@ export class MainScene extends Phaser.Scene {
       });
     });
     drawPathTexture(this, journey.pathCells, this.cellProgress, (index) => this.phaseAt(index));
-    this.fogGfx = this.add.graphics().setDepth(5);
-    this.glowGfx = this.add.graphics().setDepth(6);
+    this.redrawFog();
 
     this.drawMazeGate(journey.mazeExit, 1);
     this.drawGoalMarker(journey.goalMarker);
@@ -225,12 +218,7 @@ export class MainScene extends Phaser.Scene {
 
     this.physics.world.setBounds(0, 0, WORLD.width, WORLD.height);
     this.cameras.main.setBounds(0, 0, WORLD.width, WORLD.height);
-    const vw = this.scale.width;
-    const touch = isTouchDevice();
-    const zoom = touch
-      ? Phaser.Math.Clamp(vw / 340, 1.12, 1.48)
-      : Phaser.Math.Clamp(vw / 520, 1.35, 1.55);
-    this.cameras.main.setZoom(zoom);
+    this.cameras.main.setZoom(this.stableZoom());
 
     const stationPositions = PHASER_MISSIONS.map((m, idx) => ({
       activityId: m.activityId,
@@ -313,19 +301,14 @@ export class MainScene extends Phaser.Scene {
     this.scale.on('resize', () => {
       if (!isTouchDevice()) this.repositionDpad();
       const w = this.scale.width;
-      const z = isTouchDevice()
-        ? Phaser.Math.Clamp(w / 340, 1.12, 1.48)
-        : Phaser.Math.Clamp(w / 520, 1.35, 1.55);
-      this.cameras.main.setZoom(z);
+      this.cameras.main.setZoom(this.stableZoom());
       this.repositionHint();
       this.vignette?.setPosition(w / 2, this.scale.height / 2).setDisplaySize(w, this.scale.height);
-      this.ambience?.resize();
     });
     this.updateCurrentIdx();
     this.redrawFog();
     this.updateHint();
     this.vignette = ensureVignette(this);
-    this.ambience = startAmbience(this);
     this.placeGuides();
 
     this.cameras.main.scrollY = Math.max(0, startY - this.scale.height * 0.55);
@@ -455,13 +438,21 @@ export class MainScene extends Phaser.Scene {
     return w.__journeyOverlayBridge;
   }
 
+  /** זום קבוע (1.5 / 1.25) כדי שהמצלמה לא תשב על שברי פיקסל. */
+  private stableZoom(): number {
+    const vw = this.scale.width;
+    if (isTouchDevice()) return vw < 420 ? 1.25 : 1.5;
+    return 1.5;
+  }
+
   private worldToScreen(worldX: number, worldY: number): { x: number; y: number } {
     const cam = this.cameras.main;
-    // midPoint + zoom maps world → camera viewport pixels (stable with follow lerp).
-    // Quantize to 2px grid to reduce overlay jitter while the camera lerps during a run.
-    const x = (worldX - cam.midPoint.x) * cam.zoom + cam.width * 0.5;
-    const y = (worldY - cam.midPoint.y) * cam.zoom + cam.height * 0.5;
-    return { x: Math.round(x / 2) * 2, y: Math.round(y / 2) * 2 };
+    const scrollX = Math.round(cam.scrollX);
+    const scrollY = Math.round(cam.scrollY);
+    return {
+      x: Math.round((worldX - scrollX) * cam.zoom),
+      y: Math.round((worldY - scrollY) * cam.zoom),
+    };
   }
 
   private syncOverlay() {
@@ -637,8 +628,8 @@ export class MainScene extends Phaser.Scene {
   }
 
   private redrawFog() {
-    if (!this.fogGfx || !this.journeyPath) return;
-    drawPathFog(this.fogGfx, this.pathCells, this.cellProgress, this.revealIndex());
+    if (!this.journeyPath) return;
+    this.fogImage = drawPathFog(this, this.pathCells, this.cellProgress, this.revealIndex());
   }
 
   private openMission(unitId: string, activityId: string) {
@@ -660,33 +651,18 @@ export class MainScene extends Phaser.Scene {
   }
 
   private placeGuides() {
-    const labels: Record<PhaseId, string> = {
-      'he-ar': 'בכרם',
-      basic: 'על הגשר',
-      gemara: 'בבית המדרש',
-    };
     const seen = new Set<string>();
     for (const s of this.stations) {
       const phase = phaseOf(s.unitId);
       if (seen.has(phase)) continue;
       seen.add(phase);
-      const x = s.worldX + 48;
-      const y = s.worldY + 4;
-      const sprite = this.add.sprite(x, y, 'avatar-guide', 0);
-      sprite.setScale(0.4).setOrigin(0.5, 1).setDepth(9);
-      sprite.setData('baseY', y);
-      this.add.ellipse(x, y + 1, 22, 8, 0x1a1208, 0.35).setDepth(8);
-      this.add
-        .text(x, y - 58, labels[phase], {
-          fontFamily: 'Arial, sans-serif',
-          fontSize: '13px',
-          color: '#fff6dc',
-          backgroundColor: 'rgba(48,28,12,0.72)',
-          padding: { x: 6, y: 2 },
-        })
-        .setOrigin(0.5, 1)
-        .setDepth(11);
-      this.guides.push(sprite);
+      const guide = PHASE_GUIDES.find((g) => g.phase === phase);
+      if (!guide || !this.textures.exists(guide.key)) continue;
+      const x = s.worldX + 54;
+      const y = s.worldY + 6;
+      const sprite = this.add.image(x, y, guide.key);
+      sprite.setScale(0.32).setOrigin(0.5, 1).setDepth(9);
+      this.add.ellipse(x, y + 1, 18, 6, 0x1a1208, 0.28).setDepth(8);
     }
   }
 
@@ -850,44 +826,6 @@ export class MainScene extends Phaser.Scene {
     if (!this.physics.overlap(this.player, this.goalZone)) {
       this.goalInside = false;
     }
-
-    if (this.glowGfx) {
-      this.glowGfx.clear();
-      for (const s of this.stations) {
-        if (!s.unlocked) {
-          this.glowGfx.fillStyle(0x2a261c, 0.34);
-          this.glowGfx.fillCircle(s.worldX, s.worldY, 20);
-        }
-      }
-      const cur = this.currentIdx >= 0 ? this.stations[this.currentIdx] : undefined;
-      if (cur?.unlocked && !cur.completed) {
-        this.glowGfx.fillStyle(0xffc56b, 0.22);
-        this.glowGfx.fillCircle(cur.worldX, cur.worldY, 70);
-        this.glowGfx.fillStyle(0xfff1c4, 0.5);
-        this.glowGfx.fillCircle(cur.worldX, cur.worldY, 26);
-      }
-    }
-
-    const t = this.time.now / 380;
-    this.guides.forEach((g, i) => {
-      const base = g.getData('baseY') as number;
-      g.setY(base + Math.sin(t + i) * 2.2);
-      if (Math.floor(this.time.now / 180) % 2 === 0) g.setFrame(0);
-      else g.setFrame(1);
-    });
-
-    this.phaseTick += delta;
-    if (this.phaseTick > 280) {
-      this.phaseTick = 0;
-      this.playerPhase = this.phaseAt(this.nearestCenterlineIndex(this.player.x, this.player.y));
-    }
-    this.ambience?.update(
-      delta,
-      this.playerPhase,
-      this.player.body.velocity.lengthSq() > 4,
-      this.player.x,
-      this.player.y,
-    );
 
     this.syncOverlay();
   }

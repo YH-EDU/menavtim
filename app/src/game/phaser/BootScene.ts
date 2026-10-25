@@ -16,7 +16,6 @@ export class BootScene extends Phaser.Scene {
     this.load.image('paint-world', ASSET.paintWorld);
     this.load.image('paint-bridge', ASSET.paintBridge);
     this.load.image('paint-vine', ASSET.paintVine);
-    this.load.image('paint-cinema', ASSET.paintCinema);
     this.load.image('tuxemon-tiles', ASSET.tuxemon);
     preloadAvatarAssets(this);
   }

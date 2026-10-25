@@ -2,17 +2,15 @@
 
 All sprites are **CC0 or open-license** game art — free for personal and commercial use.
 
-## Tale set (prototype, original art)
+## Tale set (static guides, not walkers)
 
-| ID | Hebrew | Source | License |
-|----|--------|--------|---------|
-| `talmid` | תלמיד | Original illustration for this prototype | Original, for this game |
-| `talmida` | תלמידה | Original illustration for this prototype | Original, for this game |
-| `sofer` | סופר | Original illustration for this prototype | Original, for this game |
-| `gamal` | גמל | Original illustration for this prototype | Original, for this game |
-| `guide` | המדריך | Original illustration for this prototype | Original, for this game |
+These illustrations have no four-direction walk, so they stand beside the phase gates and are not selectable players. The walker list is the original four-direction packs below.
 
-Walk frames are three poses cut from each illustration. Files live in `tale/`.
+| File | Use | License |
+|------|-----|---------|
+| `tale/talmid-preview.png` | Guide at phase א | Original, for this game |
+| `tale/gamal-preview.png` | Guide at phase ב | Original, for this game |
+| `tale/guide-preview.png` | Guide at phase ג | Original, for this game |
 
 The maze path texture samples sand tiles from `public/phaser-rpg/tilesets/tuxemon-sample-32px-extruded.png` (Tuxemon sample tileset, upstream CC-BY-SA 3.0).
 

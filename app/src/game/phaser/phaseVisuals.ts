@@ -11,7 +11,6 @@ export const PAINT = {
   cinema: 'paint-cinema',
   spark: 'paint-spark',
   vignette: 'paint-vignette',
-  leaf: 'paint-leaf',
   tuxemon: 'tuxemon-tiles',
 } as const;
 
@@ -61,18 +60,6 @@ export function indexPathCells(pathCells: Set<string>, centerline: PathPoint[]):
 }
 
 export function drawPaintedBackdrop(scene: Phaser.Scene): void {
-  const full = (key: string, alpha: number) => {
-    if (!scene.textures.exists(key)) return;
-    scene.add
-      .image(WORLD.width / 2, WORLD.height / 2, key)
-      .setDepth(0)
-      .setAlpha(alpha)
-      .setDisplaySize(WORLD.width + 8, WORLD.height + 8);
-  };
-
-  // רצף קולנועי על כל המסע, ומעליו לוחות השלבים
-  full(PAINT.cinema, 0.72);
-
   const band = WORLD.height / 3;
   const place = (
     key: string,
@@ -87,15 +74,15 @@ export function drawPaintedBackdrop(scene: Phaser.Scene): void {
     img.setDisplaySize(WORLD.width + 4, band + 8);
   };
 
-  // צפון — בית המדרש. אמצע — הגשר לבבל. דרום — כרם ארץ ישראל.
-  place(PAINT.world, 0, 0.78, { x: 0, y: 0, w: 1024, h: 1100 });
-  place(PAINT.bridge, 1, 0.8);
-  place(PAINT.vine, 2, 0.82);
+  // לוח אחד לכל שלב, בלי שכבת קולנוע נוספת מעל.
+  place(PAINT.world, 0, 0.9, { x: 0, y: 0, w: 1024, h: 1100 });
+  place(PAINT.bridge, 1, 0.9);
+  place(PAINT.vine, 2, 0.9);
 
   const washes: { y: number; color: number; alpha: number }[] = [
-    { y: band / 2, color: 0x6b3418, alpha: 0.14 },
-    { y: band + band / 2, color: 0x1a3a66, alpha: 0.16 },
-    { y: band * 2 + band / 2, color: 0xc4a15a, alpha: 0.12 },
+    { y: band / 2, color: 0x6b3418, alpha: 0.08 },
+    { y: band + band / 2, color: 0x1a3a66, alpha: 0.08 },
+    { y: band * 2 + band / 2, color: 0xc4a15a, alpha: 0.07 },
   ];
   for (const w of washes) {
     scene.add
@@ -115,28 +102,6 @@ export function ensureSpark(scene: Phaser.Scene): void {
   g.destroy();
 }
 
-function ensureLeaf(scene: Phaser.Scene): void {
-  if (scene.textures.exists(PAINT.leaf)) return;
-  const canvas = scene.textures.createCanvas(PAINT.leaf, 72, 96);
-  if (!canvas) return;
-  const ctx = canvas.context;
-  ctx.clearRect(0, 0, 72, 96);
-  const leaf = (x: number, y: number, rot: number, color: string) => {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(rot);
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 8, 16, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  };
-  leaf(22, 28, -0.5, 'rgba(86, 112, 48, 0.95)');
-  leaf(48, 58, 0.4, 'rgba(120, 92, 48, 0.9)');
-  leaf(30, 78, 0.2, 'rgba(70, 98, 56, 0.85)');
-  canvas.refresh();
-}
-
 export function ensureVignette(scene: Phaser.Scene): Phaser.GameObjects.Image | undefined {
   if (!scene.textures.exists(PAINT.vignette)) {
     const canvas = scene.textures.createCanvas(PAINT.vignette, 256, 256);
@@ -151,7 +116,7 @@ export function ensureVignette(scene: Phaser.Scene): Phaser.GameObjects.Image | 
     canvas.refresh();
   }
   const img = scene.add.image(scene.scale.width / 2, scene.scale.height / 2, PAINT.vignette);
-  img.setScrollFactor(0).setDepth(40).setAlpha(0.92);
+  img.setScrollFactor(0).setDepth(40).setAlpha(0.55);
   img.setDisplaySize(scene.scale.width, scene.scale.height);
   return img;
 }
@@ -216,31 +181,39 @@ export function drawPathTexture(
     const phase = phaseAt(cellProgress.get(cell) ?? 0);
     const variant = Math.abs(tx * 3 + ty) % PATH_TILES.length;
     const sx = (phaseSlot[phase] * PATH_TILES.length + variant) * 32;
-    ctx.globalAlpha = 0.94;
     ctx.drawImage(off, sx, 0, 32, 32, tx * TILE_SIZE, ty * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-    ctx.globalAlpha = 0.2;
-    ctx.fillStyle = '#3a2814';
-    ctx.fillRect(tx * TILE_SIZE, ty * TILE_SIZE + TILE_SIZE - 3, TILE_SIZE, 3);
   }
   canvas.refresh();
   scene.add.image(WORLD.width / 2, WORLD.height / 2, 'path-baked').setDepth(2);
 }
 
+/** ערפל על השביל שעוד לא נפתח. נאפה למרקם אחד, לא לציור מחדש בכל פריים. */
 export function drawPathFog(
-  gfx: Phaser.GameObjects.Graphics,
+  scene: Phaser.Scene,
   pathCells: Set<string>,
   cellProgress: Map<string, number>,
   revealIndex: number,
-): void {
-  gfx.clear();
-  if (!Number.isFinite(revealIndex)) return;
-  gfx.fillStyle(0x1a140c, 0.72);
-  for (const cell of pathCells) {
-    const idx = cellProgress.get(cell);
-    if (idx == null || idx <= revealIndex) continue;
-    const [tx, ty] = cell.split(',').map(Number);
-    gfx.fillRect(tx * TILE_SIZE, ty * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+): Phaser.GameObjects.Image | undefined {
+  const key = 'fog-baked';
+  if (!scene.textures.exists(key)) scene.textures.createCanvas(key, WORLD.width, WORLD.height);
+  const tex = scene.textures.get(key) as Phaser.Textures.CanvasTexture;
+  const ctx = tex.context;
+  if (!ctx) return undefined;
+  ctx.clearRect(0, 0, WORLD.width, WORLD.height);
+  if (Number.isFinite(revealIndex)) {
+    ctx.fillStyle = 'rgba(26, 20, 12, 0.72)';
+    for (const cell of pathCells) {
+      const idx = cellProgress.get(cell);
+      if (idx == null || idx <= revealIndex) continue;
+      const [tx, ty] = cell.split(',').map(Number);
+      ctx.fillRect(tx * TILE_SIZE, ty * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+    }
   }
+  tex.refresh();
+
+  const existing = scene.children.getByName('path-fog') as Phaser.GameObjects.Image | null;
+  if (existing) return existing;
+  return scene.add.image(WORLD.width / 2, WORLD.height / 2, key).setName('path-fog').setDepth(5);
 }
 
 export function burstAt(scene: Phaser.Scene, x: number, y: number, phase: PhaseId): void {
@@ -260,79 +233,4 @@ export function burstAt(scene: Phaser.Scene, x: number, y: number, phase: PhaseI
       onComplete: () => img.destroy(),
     });
   }
-}
-
-const MOTE_TINT: Record<PhaseId, number> = {
-  'he-ar': 0xf6e27a,
-  basic: 0x9ec8ff,
-  gemara: 0xffc56b,
-};
-
-export interface MapAmbience {
-  update(delta: number, phase: PhaseId, moving: boolean, x: number, y: number): void;
-  resize(): void;
-}
-
-/** אבק הליכה, גחליליות, ועלים בקצה המסך. בריכה קבועה — בלי יצירה בכל פריים. */
-export function startAmbience(scene: Phaser.Scene): MapAmbience {
-  ensureSpark(scene);
-  ensureLeaf(scene);
-
-  const dust = Array.from({ length: 12 }, () => {
-    const img = scene.add.image(0, 0, PAINT.spark).setVisible(false).setDepth(9).setTint(0xd9c4a0).setScale(0.45);
-    return { img, life: 0 };
-  });
-  let dustAcc = 0;
-  let dustCursor = 0;
-
-  const motes = Array.from({ length: 16 }, (_, i) => {
-    const img = scene.add.image(0, 0, PAINT.spark).setScrollFactor(0).setDepth(35).setScale(0.28 + (i % 3) * 0.08);
-    return { img, seed: i * 1.7, speed: 0.35 + (i % 5) * 0.12 };
-  });
-
-  const h = () => scene.scale.height;
-  const w = () => scene.scale.width;
-  const left = scene.add.tileSprite(0, 0, 78, h(), PAINT.leaf).setOrigin(0, 0).setScrollFactor(0).setDepth(12).setAlpha(0.42);
-  const right = scene.add.tileSprite(w() - 78, 0, 78, h(), PAINT.leaf).setOrigin(0, 0).setScrollFactor(0).setDepth(12).setAlpha(0.42);
-
-  return {
-    resize() {
-      left.setSize(78, h());
-      right.setSize(78, h());
-      right.setX(w() - 78);
-    },
-    update(delta, phase, moving, x, y) {
-      left.tilePositionY -= delta * 0.018;
-      right.tilePositionY += delta * 0.014;
-      const tint = MOTE_TINT[phase];
-      const time = scene.time.now;
-      motes.forEach((m, i) => {
-        const px = ((Math.sin(time * 0.00035 * m.speed + m.seed) * 0.5 + 0.5) * w());
-        const py = ((time * 0.02 * m.speed + m.seed * 80) % (h() + 40)) - 20;
-        const drift = i % 2 === 0 ? px : w() - px;
-        m.img.setPosition(drift, py).setTint(tint).setAlpha(0.35 + (i % 4) * 0.1);
-      });
-
-      for (const d of dust) {
-        if (d.life <= 0) continue;
-        d.life -= delta;
-        d.img.setAlpha(Math.max(0, d.life / 420));
-        d.img.y -= delta * 0.02;
-        if (d.life <= 0) d.img.setVisible(false);
-      }
-      if (!moving) return;
-      dustAcc += delta;
-      if (dustAcc < 64) return;
-      dustAcc = 0;
-      const d = dust[dustCursor];
-      dustCursor = (dustCursor + 1) % dust.length;
-      d.life = 420;
-      d.img
-        .setPosition(x + (dustCursor % 5) - 2, y - 2)
-        .setVisible(true)
-        .setAlpha(0.55)
-        .setScale(0.35)
-        .setTint(tint);
-    },
-  };
 }

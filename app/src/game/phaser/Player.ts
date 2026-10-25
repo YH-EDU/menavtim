@@ -71,7 +71,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   private hornGfx: Phaser.GameObjects.Graphics | null = null;
   private shadow!: Phaser.GameObjects.Ellipse;
-  private breathe = 0;
 
   /** toonSide (Kenney Toon): last horizontal flip for walk_side */
   private toonLastFlipX = false;
@@ -91,7 +90,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setOrigin(def.origin.x, def.origin.y);
     this.applyBodySize();
     this.setCollideWorldBounds(true);
-    scene.cameras.main.startFollow(this, true, 0.12, 0.12);
+    const cam = scene.cameras.main;
+    cam.roundPixels = true;
+    cam.startFollow(this, true, 1, 1);
 
     const kb = scene.input.keyboard;
     if (kb) {
@@ -684,13 +685,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         break;
     }
 
-    this.breathe += delta * (moving ? 0.014 : 0.005);
-    const pulse = Math.sin(this.breathe) * (moving ? 0.07 : 0.028);
-    if (this.def.mode === 'bob' || this.def.mode === 'fourDir') {
-      this.setScale(this.def.scale * (1 - pulse * 0.35), this.def.scale * (1 + pulse));
-    }
     this.shadow.setPosition(this.x, this.y + 1);
-    this.shadow.setScale(1 - pulse * 0.8, 0.85);
     this.shadow.setDepth(this.depth - 1);
 
     if (this.fireSprite?.visible) {

@@ -312,6 +312,7 @@ export function PhaserStationOverlay({
       {unitLabels.map((u) => (
         <div
           key={`unit-${u.unitIndex}`}
+          id={`jn-unit-${u.unitIndex}`}
           style={{
             position: 'absolute',
             left: u.screenX,
@@ -364,6 +365,7 @@ export function PhaserStationOverlay({
         return (
           <div
             key={s.activityId}
+            id={`jn-st-${s.activityId}`}
             className={`trail-node-wrap${s.isCurrent ? ' trail-node-current' : ''}${!open ? ' trail-node-locked' : ''}`}
             style={{
               position: 'absolute',
@@ -462,28 +464,34 @@ export function usePhaserOverlay(onStationClick: (unitId: string, activityId: st
   const [sync, setSync] = useState<JourneyOverlaySync | null>(null);
   const clickRef = useRef(onStationClick);
   clickRef.current = onStationClick;
-  const lastSig = useRef('');
+  const lastState = useRef('');
 
   const bridge = useCallback(() => ({
     onSync: (data: JourneyOverlaySync) => {
-      // Skip React updates when rounded screen positions / state haven't changed —
-      // prevents marker jitter while the camera lerps during a run.
-      // Quantize positions in the signature too (already 2px-grid from Phaser) —
-      // ignore 1px flicker if any float leaks through.
-      const qx = (n: number) => Math.round(n / 2) * 2;
-      const sig = [
-        data.stations.map((s) => `${s.activityId}:${qx(s.screenX)},${qx(s.screenY)},${s.unlocked?1:0}${s.completed?1:0}${s.isCurrent?1:0}`).join('|'),
-        data.unitLabels.map((u) => `${u.unitIndex}:${qx(u.screenX)},${qx(u.screenY)}`).join('|'),
-        data.goalMedal
-          ? `${data.goalMedal.mode}:${qx(data.goalMedal.screenX)},${qx(data.goalMedal.screenY)},${data.goalMedal.visible?1:0}`
-          : '-',
-        data.escapeGuide
-          ? `${qx(data.escapeGuide.screenX)},${qx(data.escapeGuide.screenY)},${data.escapeGuide.visible?1:0}`
-          : '-',
+      // Positions are written straight onto the DOM so markers stay on the
+      // same frame as the camera. React only re-renders when lock/star state changes.
+      const stateSig = [
+        data.stations.map((s) => `${s.activityId}:${s.unlocked ? 1 : 0}${s.completed ? 1 : 0}${s.isCurrent ? 1 : 0}`).join('|'),
+        data.unitLabels.map((u) => u.unitIndex).join(','),
+        data.goalMedal ? `${data.goalMedal.mode}:${data.goalMedal.visible ? 1 : 0}` : '-',
+        data.escapeGuide ? (data.escapeGuide.visible ? 1 : 0) : '-',
       ].join('#');
-      if (sig === lastSig.current) return;
-      lastSig.current = sig;
-      setSync(data);
+      if (stateSig !== lastState.current) {
+        lastState.current = stateSig;
+        setSync(data);
+      }
+      for (const s of data.stations) {
+        const el = document.getElementById(`jn-st-${s.activityId}`);
+        if (!el) continue;
+        el.style.left = `${s.screenX}px`;
+        el.style.top = `${s.screenY}px`;
+      }
+      for (const u of data.unitLabels) {
+        const el = document.getElementById(`jn-unit-${u.unitIndex}`);
+        if (!el) continue;
+        el.style.left = `${u.screenX}px`;
+        el.style.top = `${u.screenY - 36}px`;
+      }
     },
     onStationClick: (unitId: string, activityId: string) => clickRef.current(unitId, activityId),
   }), []);

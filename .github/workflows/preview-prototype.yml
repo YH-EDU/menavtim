@@ -1,6 +1,10 @@
 # Preview for the prototype branch only.
 # Does NOT deploy GitHub Pages and does not run on main.
-# Publishes a static site to the orphan branch cursor/prototype-preview-eae0.
+# GitHub Pages is one site per repo (workflow deploy on main). A second
+# deploy-pages run would replace https://yh-edu.github.io/menavtim/.
+# This job only refreshes the orphan branch cursor/prototype-preview-eae0
+# and, when secrets exist, a Netlify draft alias. The orphan branch is not
+# itself a playable URL: GitHub and jsDelivr serve HTML as text/plain.
 
 name: Prototype preview
 
@@ -38,7 +42,23 @@ jobs:
           npm ci
           npm run build:preview
 
+      # Optional: a Netlify draft alias, only if the repo has these secrets.
+      # This does not replace a production Netlify site (`--alias` is a draft URL).
+      - name: Netlify draft alias if secrets exist
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          if [ -z "${NETLIFY_AUTH_TOKEN}" ] || [ -z "${NETLIFY_SITE_ID}" ]; then
+            echo "No NETLIFY_AUTH_TOKEN / NETLIFY_SITE_ID — skipping playable preview URL."
+            echo "GitHub cannot serve this branch as a second Pages site without replacing the live site."
+            exit 0
+          fi
+          npx --yes netlify-cli@17 deploy --dir=app/dist --site="$NETLIFY_SITE_ID" --alias=prototype-v2
+
       - name: Publish orphan preview branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           rm -rf /tmp/prototype-preview
@@ -50,4 +70,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git add -A
           git commit -m "Prototype preview"
-          git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/YH-EDU/menavtim.git" HEAD:cursor/prototype-preview-eae0
+          # Fresh git init has no Actions credential helper. Pass the token as a
+          # header so `set -u` can see it and the remote URL stays free of it.
+          git -c http.extraheader="AUTHORIZATION: bearer ${GITHUB_TOKEN}" \
+            push -f "https://github.com/YH-EDU/menavtim.git" HEAD:cursor/prototype-preview-eae0

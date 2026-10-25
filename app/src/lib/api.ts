@@ -25,6 +25,8 @@ export interface MapPosition {
   faceX?: number;
   faceY?: number;
   pathIndex?: number;
+  /** אינדקס מפת השלב (0–2). נשמר כדי לחזור לאותו שלב אחרי רענון. */
+  stageIndex?: number;
 }
 
 export interface ProgressData {

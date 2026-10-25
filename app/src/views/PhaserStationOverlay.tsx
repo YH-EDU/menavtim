@@ -44,6 +44,20 @@ function GoalMedalOverlay({
   const missing = totals.maxStars - totals.stars;
   const hasMaxStars = missing <= 0;
 
+  const nextStage = medal.gateKind === 'next-stage';
+  const lockedTitle = nextStage
+    ? `${medal.nextStageKicker ?? 'השלב הבא'} נעול`
+    : `${ESCAPE_LABEL} נעול`;
+  const lockedBody = nextStage
+    ? 'סיימו את כל תחנות השלב — או הפעילו מסלול חופשי — כדי להמשיך'
+    : 'סיימו את כל התחנות — או הפעילו מסלול חופשי — כדי להיכנס';
+  const enterTitle = nextStage
+    ? `המשיכו ל${medal.nextStageKicker ?? 'שלב הבא'}`
+    : `כניסה ל${ESCAPE_LABEL}`;
+  const enterBody = nextStage
+    ? medal.nextStageTitle ?? 'מפת שלב חדשה מחכה מעבר לדלת'
+    : ESCAPE_BLURB;
+
   if (mode === 'locked') {
     return (
       <div
@@ -71,9 +85,9 @@ function GoalMedalOverlay({
           }}
         >
           <div style={{ fontSize: 28, marginBottom: 4 }}>🔒</div>
-          <div style={{ fontSize: 17, fontWeight: 900, color: '#4a3416' }}>{ESCAPE_LABEL} נעול</div>
+          <div style={{ fontSize: 17, fontWeight: 900, color: '#4a3416' }}>{lockedTitle}</div>
           <p style={{ margin: '8px 0 0', fontSize: 13.5, fontWeight: 600, color: '#6b5a3e', lineHeight: 1.45 }}>
-            סיימו את כל התחנות — או הפעילו מסלול חופשי — כדי להיכנס
+            {lockedBody}
           </p>
         </div>
       </div>
@@ -109,12 +123,12 @@ function GoalMedalOverlay({
             cursor: 'pointer',
           }}
         >
-          <div style={{ fontSize: 36, lineHeight: 1, marginBottom: 4 }}>🚪</div>
+          <div style={{ fontSize: 36, lineHeight: 1, marginBottom: 4 }}>{nextStage ? '🗺️' : '🚪'}</div>
           <div style={{ fontSize: 19, fontWeight: 900, color: '#4a3416', marginBottom: 6 }}>
-            כניסה ל{ESCAPE_LABEL}
+            {enterTitle}
           </div>
           <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#6b5a3e', lineHeight: 1.45 }}>
-            {ESCAPE_BLURB}
+            {enterBody}
           </p>
         </button>
       </div>

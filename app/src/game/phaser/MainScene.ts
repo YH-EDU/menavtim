@@ -1,7 +1,5 @@
 import Phaser from 'phaser';
 import type { MapPosition, ProgressData } from '../../lib/api';
-import { UNIT_COLORS } from '../../lib/pathLayout';
-
 import { ASSET, LAYER, SCENE } from './keys';
 
 import {
@@ -23,7 +21,17 @@ import { phaseOf } from '../../data/phases';
 
 import { Player } from './Player';
 
-import { missionPlacement, PHASER_MISSIONS } from './stations';
+import {
+  clampStageIndex,
+  missionPlacementForStage,
+  missionsForStage,
+  STAGE_COUNT,
+  STAGE_GATE_UNIT_ID,
+  stageAdvanceActivityId,
+  stageLabelHe,
+  stageTitleHe,
+  type StageMission,
+} from './stages';
 
 import { computeJourneyTotals } from '../../lib/journeyTotals';
 import {
@@ -31,7 +39,6 @@ import {
   ESCAPE_LABEL,
   ESCAPE_UNIT_ID,
   escapeCompleted,
-  escapeUnlocked,
 } from '../../lib/escapeRoom';
 
 import { resolveRestorePosition, savePhaserPlayerState } from './playerState';
@@ -40,7 +47,6 @@ import {
   OVERLAY_BRIDGE_KEY,
   type GoalOverlayMode,
   type JourneyOverlayBridge,
-  type JourneyOverlaySync,
   type StationScreenState,
   type UnitLabelScreenState,
 } from './overlayBridge';
@@ -52,6 +58,8 @@ export interface MainSceneData {
   onInteract: OnMissionInteract;
   onSaveMapPos?: (pos: MapPosition) => void;
   playerIdentity?: { nickname: string; emoji: string };
+  /** אינדקס מפת השלב (0–2). ברירת מחדל 0. */
+  stageIndex?: number;
 }
 
 interface StationZone {
@@ -88,6 +96,8 @@ export class MainScene extends Phaser.Scene {
   private onInteract!: OnMissionInteract;
   private onSaveMapPos?: (pos: MapPosition) => void;
   private playerIdentity?: { nickname: string; emoji: string };
+  private stageIndex = 0;
+  private stageMissions: StageMission[] = [];
   private hintText!: Phaser.GameObjects.Text;
   private lastTouchId: string | null = null;
   private touchCooldown = 0;
@@ -116,16 +126,18 @@ export class MainScene extends Phaser.Scene {
     this.onInteract = data.onInteract;
     this.onSaveMapPos = data.onSaveMapPos;
     this.playerIdentity = data.playerIdentity;
+    this.stageIndex = clampStageIndex(data.stageIndex ?? 0);
+    this.stageMissions = missionsForStage(this.stageIndex);
   }
 
   create() {
     this.ensureKeyboardFocus();
 
-    const placement = missionPlacement();
-    const journey = buildJourneyPath(PHASER_MISSIONS.length, {
+    const placement = missionPlacementForStage(this.stageIndex);
+    const journey = buildJourneyPath(this.stageMissions.length, {
       counts: placement.counts,
       unitTitles: placement.unitTitles,
-      unitColors: UNIT_COLORS,
+      unitColors: placement.unitColors,
     });
     this.journeyPath = journey;
 
@@ -187,7 +199,7 @@ export class MainScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, WORLD.width, WORLD.height);
     this.cameras.main.setZoom(this.layoutZoom());
 
-    const stationPositions = PHASER_MISSIONS.map((m, idx) => ({
+    const stationPositions = this.stageMissions.map((m, idx) => ({
       activityId: m.activityId,
       px: journey.stations[idx].px,
       py: journey.stations[idx].py,
@@ -199,6 +211,7 @@ export class MainScene extends Phaser.Scene {
       journey.pathCells,
       this.progress,
       this.playerIdentity,
+      this.stageIndex,
     );
     const startX = restored?.x ?? journey.spawn.px;
     const startY = restored?.y ?? journey.spawn.py;
@@ -235,7 +248,7 @@ export class MainScene extends Phaser.Scene {
       worldY: b.point.py,
     }));
 
-    PHASER_MISSIONS.forEach((m, idx) => {
+    this.stageMissions.forEach((m, idx) => {
       const pt = journey.stations[idx];
       this.stations.push(this.createStation(m, idx, pt.px, pt.py));
     });
@@ -291,6 +304,7 @@ export class MainScene extends Phaser.Scene {
       faceX: facing.x,
       faceY: facing.y,
       pathIndex,
+      stageIndex: this.stageIndex,
     };
   }
 
@@ -445,9 +459,10 @@ export class MainScene extends Phaser.Scene {
       return { ...u, screenX: screen.x, screenY: screen.y };
     });
 
-    const missionsDone = this.stations.every((s) => s.completed);
-    const escapeDone = escapeCompleted(this.progress);
-    const escapeOpen = escapeUnlocked(this.progress);
+    const stageDone = this.stations.every((s) => s.completed);
+    const gateOpen = !!this.progress.freeNav || stageDone;
+    const isFinalStage = this.stageIndex >= STAGE_COUNT - 1;
+    const escapeDone = isFinalStage && escapeCompleted(this.progress);
     const nearGoal =
       Phaser.Math.Distance.Between(this.player.x, this.player.y, this.goalWorld.x, this.goalWorld.y) < 56;
     const { approachPath } = this.goalMarker;
@@ -456,12 +471,11 @@ export class MainScene extends Phaser.Scene {
     const goalScreen = this.worldToScreen(stageX, stageY);
 
     let mode: GoalOverlayMode = 'locked';
-    if (escapeDone) mode = 'medal';
-    else if (escapeOpen) mode = 'enter';
+    if (isFinalStage && escapeDone) mode = 'medal';
+    else if (gateOpen) mode = 'enter';
 
-    const showGoal = nearGoal && (mode !== 'locked' || missionsDone || this.currentIdx < 0);
-    /* Campaign cue: after every learning station, point to הצופן הארמי. */
-    const showEscapeGuide = missionsDone && !escapeDone;
+    const showGoal = nearGoal && (mode !== 'locked' || stageDone || this.currentIdx < 0);
+    const showEscapeGuide = isFinalStage && stageDone && !escapeDone;
 
     bridge.onSync({
       stations,
@@ -475,6 +489,9 @@ export class MainScene extends Phaser.Scene {
             mode,
             totals: computeJourneyTotals(this.progress),
             allComplete: escapeDone,
+            gateKind: isFinalStage ? 'escape' : 'next-stage',
+            nextStageTitle: isFinalStage ? undefined : stageTitleHe(this.stageIndex + 1),
+            nextStageKicker: isFinalStage ? undefined : stageLabelHe(this.stageIndex + 1),
           }
         : null,
       escapeGuide: showEscapeGuide
@@ -501,11 +518,16 @@ export class MainScene extends Phaser.Scene {
   private missionUnlocked(idx: number): boolean {
     if (this.progress.freeNav) return true;
     if (idx === 0) return true;
-    return !!this.progress.completed[PHASER_MISSIONS[idx - 1].activityId];
+    return !!this.progress.completed[this.stageMissions[idx - 1]?.activityId];
+  }
+
+  private stageGateOpen(): boolean {
+    if (this.progress.freeNav) return true;
+    return this.stations.length > 0 && this.stations.every((s) => s.completed);
   }
 
   private createStation(
-    m: (typeof PHASER_MISSIONS)[0],
+    m: StageMission,
     idx: number,
     x: number,
     y: number,
@@ -549,15 +571,24 @@ export class MainScene extends Phaser.Scene {
     const wasInside = this.goalInside;
     this.goalInside = true;
     if (wasInside) return;
-    if (escapeCompleted(this.progress)) return;
-    if (!escapeUnlocked(this.progress)) return;
+    if (!this.stageGateOpen()) return;
     if (this.touchCooldown > 0) return;
-    if (this.lastTouchId === ESCAPE_ACTIVITY_ID) return;
     if (this.spawnGrace > 0) return;
     if (!this.player.hasMoved) return;
 
-    this.lastTouchId = ESCAPE_ACTIVITY_ID;
-    this.openMission(ESCAPE_UNIT_ID, ESCAPE_ACTIVITY_ID);
+    const isFinalStage = this.stageIndex >= STAGE_COUNT - 1;
+    if (isFinalStage) {
+      if (escapeCompleted(this.progress)) return;
+      if (this.lastTouchId === ESCAPE_ACTIVITY_ID) return;
+      this.lastTouchId = ESCAPE_ACTIVITY_ID;
+      this.openMission(ESCAPE_UNIT_ID, ESCAPE_ACTIVITY_ID);
+      return;
+    }
+
+    const advanceId = stageAdvanceActivityId(this.stageIndex);
+    if (this.lastTouchId === advanceId) return;
+    this.lastTouchId = advanceId;
+    this.openMission(STAGE_GATE_UNIT_ID, advanceId);
   }
 
   private handleStationOverlap(station: StationZone) {
@@ -576,7 +607,13 @@ export class MainScene extends Phaser.Scene {
   }
 
   private openMission(unitId: string, activityId: string) {
-    savePhaserPlayerState(this.player.x, this.player.y, activityId, this.playerIdentity);
+    savePhaserPlayerState(
+      this.player.x,
+      this.player.y,
+      activityId,
+      this.playerIdentity,
+      this.stageIndex,
+    );
     this.persistMapPosition(true);
     this.player.clearInputState();
     this.touchCooldown = 800;
@@ -786,36 +823,40 @@ export class MainScene extends Phaser.Scene {
   private updateHint() {
     const free = this.progress.freeNav;
     const next = this.stations.find((s) => s.unlocked && !s.completed);
-    const escapeDone = escapeCompleted(this.progress);
-    const escapeOpen = escapeUnlocked(this.progress);
+    const gateOpen = this.stageGateOpen();
+    const isFinalStage = this.stageIndex >= STAGE_COUNT - 1;
+    const escapeDone = isFinalStage && escapeCompleted(this.progress);
+    const nextLabel = isFinalStage
+      ? ESCAPE_LABEL
+      : `${stageLabelHe(this.stageIndex + 1)} — ${stageTitleHe(this.stageIndex + 1)}`;
     if (isTouchDevice()) {
       this.hintText.setText(
         free
-          ? escapeOpen && !escapeDone
-            ? `📱 ${ESCAPE_LABEL} — הקישו לריצה · גררו לכיוון`
+          ? gateOpen && !escapeDone
+            ? `📱 ${nextLabel} — הקישו לריצה · גררו לכיוון`
             : '📱 הקישו להתחיל/לעצור · גררו לכיוון'
           : next
             ? `▶ ${next.idx + 1}. ${next.label} — הקישו לריצה · גררו לכיוון`
             : escapeDone
               ? `🏅 סיימתם את ${ESCAPE_LABEL} — המדליה שלכם!`
-              : escapeOpen
-                ? `▶ ${ESCAPE_LABEL} — דלת לחדר סודי בסוף השביל`
-                : `🔒 סיימו את כל התחנות לפתיחת ${ESCAPE_LABEL}`,
+              : gateOpen
+                ? `▶ ${nextLabel} — דלת בסוף השביל`
+                : `🔒 סיימו את תחנות ${stageLabelHe(this.stageIndex)} לפתיחת השער`,
       );
     } else if (free) {
       this.hintText.setText(
-        escapeOpen && !escapeDone
-          ? `🔓 ${ESCAPE_LABEL} פתוח · חצים / WASD · לחיצה לתנועה`
+        gateOpen && !escapeDone
+          ? `🔓 ${nextLabel} פתוח · חצים / WASD · לחיצה לתנועה`
           : '🔓 חצים / WASD · לחיצה לתנועה · לחיצה על תחנה לפתיחה',
       );
     } else if (next) {
       this.hintText.setText(`▶ ${next.idx + 1}. ${next.label} — הלכו אל התחנה הזוהרת`);
     } else if (escapeDone) {
       this.hintText.setText(`🏅 סיימתם את ${ESCAPE_LABEL} — המדליה שלכם!`);
-    } else if (escapeOpen) {
-      this.hintText.setText(`▶ ${ESCAPE_LABEL} — דלת לחדר סודי בסוף השביל`);
+    } else if (gateOpen) {
+      this.hintText.setText(`▶ ${nextLabel} — דלת בסוף השביל`);
     } else {
-      this.hintText.setText(`🔒 סיימו את כל התחנות לפתיחת ${ESCAPE_LABEL}`);
+      this.hintText.setText(`🔒 סיימו את תחנות ${stageLabelHe(this.stageIndex)} לפתיחת השער`);
     }
   }
 

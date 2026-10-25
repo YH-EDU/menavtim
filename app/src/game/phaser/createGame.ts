@@ -15,6 +15,8 @@ export interface JourneyGameOptions {
   onSaveMapPos?: (pos: MapPosition) => void;
   /** לשמירת מיקום/פוקוס לפי שחקן — מונע דליפה בין משתמשים */
   playerIdentity?: { nickname: string; emoji: string };
+  /** מפת שלב נוכחית (0–2) */
+  stageIndex?: number;
 }
 
 function focusGameCanvas(game: Phaser.Game) {
@@ -71,11 +73,13 @@ export function createJourneyGame(opts: JourneyGameOptions): Phaser.Game {
     onInteract: opts.onInteract,
     onSaveMapPos: opts.onSaveMapPos,
     playerIdentity: opts.playerIdentity,
+    stageIndex: opts.stageIndex ?? 0,
   } satisfies {
     progress: ProgressData;
     onInteract: OnMissionInteract;
     onSaveMapPos?: (pos: MapPosition) => void;
     playerIdentity?: { nickname: string; emoji: string };
+    stageIndex?: number;
   });
 
   if (opts.overlayBridge) {

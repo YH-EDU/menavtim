@@ -26,6 +26,8 @@ export interface UnitLabelScreenState {
 
 export type GoalOverlayMode = 'locked' | 'enter' | 'medal';
 
+export type GoalGateKind = 'escape' | 'next-stage';
+
 export interface GoalMedalScreenState {
   screenX: number;
   screenY: number;
@@ -33,6 +35,10 @@ export interface GoalMedalScreenState {
   mode: GoalOverlayMode;
   totals: JourneyTotals;
   allComplete: boolean;
+  /** שער לשלב הבא או לצופן הארמי */
+  gateKind?: GoalGateKind;
+  nextStageTitle?: string;
+  nextStageKicker?: string;
 }
 
 /** Point players toward הצופן הארמי after all learning stations are done. */

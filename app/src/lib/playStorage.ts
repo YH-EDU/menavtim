@@ -40,6 +40,15 @@ export function phaserPosKey(identity: string): string {
   return `aramit_phaser_pos__${identity}`;
 }
 
+/** מיקום זמני לפי שלב — כדי לא לערבב קואורדינטות בין מפות */
+export function phaserPosStageKey(identity: string, stageIndex: number): string {
+  return `aramit_phaser_pos__${identity}__s${stageIndex}`;
+}
+
+export function stageIndexKey(identity: string): string {
+  return `aramit_stage__${identity}`;
+}
+
 export function focusActKey(identity: string): string {
   return `aramit_focus_act__${identity}`;
 }
@@ -55,7 +64,11 @@ export function clearEphemeralPlayState(): void {
     for (let i = 0; i < sessionStorage.length; i++) {
       const k = sessionStorage.key(i);
       if (!k) continue;
-      if (k.startsWith('aramit_phaser_pos') || k.startsWith('aramit_focus_act')) {
+      if (
+        k.startsWith('aramit_phaser_pos') ||
+        k.startsWith('aramit_focus_act') ||
+        k.startsWith('aramit_stage__')
+      ) {
         toRemove.push(k);
       }
     }

@@ -9,6 +9,11 @@ export const LS_AVATAR = 'aramit_avatar';
 export const AVATAR_BASE = asset('/avatars').replace(/\/$/, '');
 
 export type CharacterId =
+  | 'talmid'
+  | 'talmida'
+  | 'sofer'
+  | 'gamal'
+  | 'guide'
   | 'misa'
   | 'knight'
   | 'fox'
@@ -18,7 +23,7 @@ export type CharacterId =
   | 'car'
   | 'rocket';
 
-export type AnimMode = 'fourDir' | 'toonSide' | 'rotate' | 'rocket';
+export type AnimMode = 'fourDir' | 'toonSide' | 'rotate' | 'rocket' | 'bob';
 
 export interface CharacterDef {
   id: CharacterId;
@@ -33,6 +38,8 @@ export interface CharacterDef {
   origin: { x: number; y: number };
   preview: string;
   taglineHe: string;
+  /** גיליון הליכה: 3 פריימים ברוחב קבוע. רישיון: איור מקורי לאב-טיפוס. */
+  sheet?: { png: string; frameWidth: number; frameHeight: number };
 }
 
 const ATLAS = `${AVATAR_BASE}/atlas`;
@@ -51,7 +58,74 @@ export const CAR_WHEEL_OFFSETS = [
 ] as const;
 
 /** Target on-screen height ≈ 44px (Misa reference). */
+const TALE = `${AVATAR_BASE}/tale`;
+
 export const CHARACTERS: CharacterDef[] = [
+  {
+    id: 'talmid',
+    nameHe: 'תלמיד',
+    emoji: '📜',
+    mode: 'bob',
+    textureKey: 'avatar-talmid',
+    sheet: { png: `${TALE}/talmid.png`, frameWidth: 48, frameHeight: 134 },
+    scale: 0.46,
+    body: { w: 14, h: 16, ox: 17, oy: 116 },
+    origin: { x: 0.5, y: 1 },
+    preview: `${TALE}/talmid-preview.png`,
+    taglineHe: 'טוניקה ושק קטן — יוצא לדרך בכרם.',
+  },
+  {
+    id: 'talmida',
+    nameHe: 'תלמידה',
+    emoji: '🌿',
+    mode: 'bob',
+    textureKey: 'avatar-talmida',
+    sheet: { png: `${TALE}/talmida.png`, frameWidth: 52, frameHeight: 134 },
+    scale: 0.46,
+    body: { w: 14, h: 16, ox: 19, oy: 116 },
+    origin: { x: 0.5, y: 1 },
+    preview: `${TALE}/talmida-preview.png`,
+    taglineHe: 'צמה ושמלה ארוכה — שותפה למסע.',
+  },
+  {
+    id: 'sofer',
+    nameHe: 'סופר',
+    emoji: '📖',
+    mode: 'bob',
+    textureKey: 'avatar-sofer',
+    sheet: { png: `${TALE}/sofer.png`, frameWidth: 52, frameHeight: 134 },
+    scale: 0.46,
+    body: { w: 14, h: 16, ox: 19, oy: 116 },
+    origin: { x: 0.5, y: 1 },
+    preview: `${TALE}/sofer-preview.png`,
+    taglineHe: 'מגילה קטנה בידיים — קורא וכותב.',
+  },
+  {
+    id: 'gamal',
+    nameHe: 'גמל',
+    emoji: '🐪',
+    mode: 'bob',
+    textureKey: 'avatar-gamal',
+    sheet: { png: `${TALE}/gamal.png`, frameWidth: 104, frameHeight: 134 },
+    scale: 0.4,
+    body: { w: 28, h: 16, ox: 38, oy: 116 },
+    origin: { x: 0.5, y: 1 },
+    preview: `${TALE}/gamal-preview.png`,
+    taglineHe: 'גמל צעיר עם אוכף — חוצה את הגשר.',
+  },
+  {
+    id: 'guide',
+    nameHe: 'המדריך',
+    emoji: '📚',
+    mode: 'bob',
+    textureKey: 'avatar-guide',
+    sheet: { png: `${TALE}/guide.png`, frameWidth: 61, frameHeight: 134 },
+    scale: 0.44,
+    body: { w: 16, h: 16, ox: 22, oy: 116 },
+    origin: { x: 0.5, y: 1 },
+    preview: `${TALE}/guide-preview.png`,
+    taglineHe: 'מורה עם ספר פתוח — מחכה בשערי השלבים.',
+  },
   {
     id: 'knight',
     nameHe: 'אביר',
@@ -156,7 +230,7 @@ export const CHARACTERS: CharacterDef[] = [
   },
 ];
 
-const DEFAULT_CHARACTER: CharacterId = 'knight';
+const DEFAULT_CHARACTER: CharacterId = 'talmid';
 
 const LEGACY_IDS = new Set(['spaceship', 'soccer', 'penguin', 'dog']);
 
@@ -219,11 +293,21 @@ export function preloadAvatarAssets(scene: {
   load: {
     atlas: (key: string, png: string, json: string) => void;
     image: (key: string, url: string) => void;
+    spritesheet: (
+      key: string,
+      url: string,
+      config: { frameWidth: number; frameHeight: number },
+    ) => void;
   };
 }): void {
   for (const c of CHARACTERS) {
     if (c.atlas) {
       scene.load.atlas(c.textureKey, c.atlas.png, c.atlas.json);
+    } else if (c.sheet) {
+      scene.load.spritesheet(c.textureKey, c.sheet.png, {
+        frameWidth: c.sheet.frameWidth,
+        frameHeight: c.sheet.frameHeight,
+      });
     }
   }
 

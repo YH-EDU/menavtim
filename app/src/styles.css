@@ -747,9 +747,9 @@ h1, h2, h3 { margin: 0; }
 }
 
 /* ── אב-טיפוס: שלבים, מנועים, חדרי צופן ── */
-.phase-he-ar { --teal: #0f766e; --teal-dark: #115e59; --teal-soft: #ccfbf1; --gold: #d97706; }
-.phase-basic { --teal: #1d4ed8; --teal-dark: #1e3a8a; --teal-soft: #dbeafe; --gold: #7c3aed; }
-.phase-gemara { --teal: #9a3412; --teal-dark: #7c2d12; --teal-soft: #ffedd5; --gold: #b45309; }
+.phase-he-ar { --teal: #8a5a2b; --teal-dark: #6b3e1f; --teal-soft: #f6e7c1; --gold: #c4862a; }
+.phase-basic { --teal: #1e4b8a; --teal-dark: #163666; --teal-soft: #d7e4f5; --gold: #d4a017; }
+.phase-gemara { --teal: #7a3e22; --teal-dark: #4a2414; --teal-soft: #f3e2c4; --gold: #e0b15a; }
 
 .phase-banner {
   border-radius: 16px;
@@ -763,9 +763,23 @@ h1, h2, h3 { margin: 0; }
 .phase-banner span { font-size: 12px; font-weight: 800; letter-spacing: 0.04em; opacity: 0.85; }
 .phase-banner strong { font-size: 20px; }
 .phase-banner small { font-size: 13px; line-height: 1.45; opacity: 0.92; }
-.phase-banner.phase-he-ar { background: linear-gradient(135deg, #0f766e, #b45309); }
-.phase-banner.phase-basic { background: linear-gradient(135deg, #1d4ed8, #6d28d9); }
-.phase-banner.phase-gemara { background: linear-gradient(135deg, #9a3412, #b45309); }
+.phase-banner.phase-he-ar { background: linear-gradient(135deg, #8a5a2b, #c4a15a); }
+.phase-banner.phase-basic { background: linear-gradient(135deg, #1e4b8a, #c4a35a); }
+.phase-banner.phase-gemara { background: linear-gradient(135deg, #5c2e1a, #e0b15a); }
+
+.station-enter { animation: station-enter 0.46s ease both; }
+@keyframes station-enter {
+  from { opacity: 0; transform: translateY(18px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+.engine-choice.is-right { animation: answer-bounce 0.42s ease; }
+@keyframes answer-bounce {
+  0% { transform: translateY(0) scale(1); }
+  40% { transform: translateY(-8px) scale(1.03); }
+  72% { transform: translateY(1px) scale(0.99); }
+  100% { transform: translateY(0) scale(1); }
+}
+.trail-node-locked { filter: grayscale(0.95); opacity: 0.58; }
 
 .engine-card {
   max-width: 560px;

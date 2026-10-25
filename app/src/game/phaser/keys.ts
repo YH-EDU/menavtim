@@ -15,6 +15,8 @@ export const ASSET = {
   paintWorld: asset(paintImagePaths()[PAINT.world]),
   paintBridge: asset(paintImagePaths()[PAINT.bridge]),
   paintVine: asset(paintImagePaths()[PAINT.vine]),
+  paintCinema: asset(paintImagePaths()[PAINT.cinema]),
+  tuxemon: asset(paintImagePaths()[PAINT.tuxemon]),
 } as const;
 
 export const LAYER = {

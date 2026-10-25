@@ -364,7 +364,7 @@ export function PhaserStationOverlay({
         return (
           <div
             key={s.activityId}
-            className={`trail-node-wrap${s.isCurrent ? ' trail-node-current' : ''}`}
+            className={`trail-node-wrap${s.isCurrent ? ' trail-node-current' : ''}${!open ? ' trail-node-locked' : ''}`}
             style={{
               position: 'absolute',
               left: s.screenX,

@@ -25,6 +25,8 @@ import {
   drawPathTexture,
   ensureVignette,
   indexPathCells,
+  startAmbience,
+  type MapAmbience,
 } from './phaseVisuals';
 import { phaseOf } from '../../data/phases';
 import type { PhaseId } from '../../data/types';
@@ -121,6 +123,10 @@ export class MainScene extends Phaser.Scene {
   private glowGfx?: Phaser.GameObjects.Graphics;
   private vignette?: Phaser.GameObjects.Image;
   private opening = false;
+  private ambience?: MapAmbience;
+  private guides: Phaser.GameObjects.Sprite[] = [];
+  private phaseTick = 0;
+  private playerPhase: PhaseId = 'he-ar';
 
   constructor() {
     super(SCENE.main);
@@ -146,7 +152,7 @@ export class MainScene extends Phaser.Scene {
 
     this.add
       .rectangle(WORLD.width / 2, WORLD.height / 2, WORLD.width, WORLD.height, 0x16301c)
-      .setDepth(0);
+      .setDepth(-1);
     drawPaintedBackdrop(this);
 
     const map = this.make.tilemap({
@@ -313,11 +319,14 @@ export class MainScene extends Phaser.Scene {
       this.cameras.main.setZoom(z);
       this.repositionHint();
       this.vignette?.setPosition(w / 2, this.scale.height / 2).setDisplaySize(w, this.scale.height);
+      this.ambience?.resize();
     });
     this.updateCurrentIdx();
     this.redrawFog();
     this.updateHint();
     this.vignette = ensureVignette(this);
+    this.ambience = startAmbience(this);
+    this.placeGuides();
 
     this.cameras.main.scrollY = Math.max(0, startY - this.scale.height * 0.55);
     this.cameras.main.fadeIn(420, 28, 22, 14);
@@ -641,13 +650,44 @@ export class MainScene extends Phaser.Scene {
     this.touchCooldown = 800;
     const st = this.stations.find((s) => s.activityId === activityId);
     if (st) {
-      this.cameras.main.pan(st.worldX, st.worldY, 180, 'Sine.easeInOut', true);
-      this.cameras.main.zoomTo(Math.min(2.05, this.cameras.main.zoom * 1.18), 180);
+      this.cameras.main.pan(st.worldX, st.worldY, 240, 'Sine.easeInOut', true);
+      this.cameras.main.zoomTo(Math.min(2.25, this.cameras.main.zoom * 1.28), 240);
     } else {
-      this.cameras.main.zoomTo(Math.min(2.05, this.cameras.main.zoom * 1.12), 180);
+      this.cameras.main.zoomTo(Math.min(2.25, this.cameras.main.zoom * 1.16), 220);
     }
-    this.cameras.main.fadeOut(200, 42, 28, 16);
-    this.time.delayedCall(190, () => this.onInteract(unitId, activityId));
+    this.cameras.main.fadeOut(280, 62, 40, 16);
+    this.time.delayedCall(260, () => this.onInteract(unitId, activityId));
+  }
+
+  private placeGuides() {
+    const labels: Record<PhaseId, string> = {
+      'he-ar': 'בכרם',
+      basic: 'על הגשר',
+      gemara: 'בבית המדרש',
+    };
+    const seen = new Set<string>();
+    for (const s of this.stations) {
+      const phase = phaseOf(s.unitId);
+      if (seen.has(phase)) continue;
+      seen.add(phase);
+      const x = s.worldX + 48;
+      const y = s.worldY + 4;
+      const sprite = this.add.sprite(x, y, 'avatar-guide', 0);
+      sprite.setScale(0.4).setOrigin(0.5, 1).setDepth(9);
+      sprite.setData('baseY', y);
+      this.add.ellipse(x, y + 1, 22, 8, 0x1a1208, 0.35).setDepth(8);
+      this.add
+        .text(x, y - 58, labels[phase], {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '13px',
+          color: '#fff6dc',
+          backgroundColor: 'rgba(48,28,12,0.72)',
+          padding: { x: 6, y: 2 },
+        })
+        .setOrigin(0.5, 1)
+        .setDepth(11);
+      this.guides.push(sprite);
+    }
   }
 
   private createDpad() {
@@ -813,14 +853,41 @@ export class MainScene extends Phaser.Scene {
 
     if (this.glowGfx) {
       this.glowGfx.clear();
+      for (const s of this.stations) {
+        if (!s.unlocked) {
+          this.glowGfx.fillStyle(0x2a261c, 0.34);
+          this.glowGfx.fillCircle(s.worldX, s.worldY, 20);
+        }
+      }
       const cur = this.currentIdx >= 0 ? this.stations[this.currentIdx] : undefined;
       if (cur?.unlocked && !cur.completed) {
-        this.glowGfx.fillStyle(0xffc56b, 0.2);
-        this.glowGfx.fillCircle(cur.worldX, cur.worldY, 64);
-        this.glowGfx.fillStyle(0xfff6dc, 0.42);
-        this.glowGfx.fillCircle(cur.worldX, cur.worldY, 24);
+        this.glowGfx.fillStyle(0xffc56b, 0.22);
+        this.glowGfx.fillCircle(cur.worldX, cur.worldY, 70);
+        this.glowGfx.fillStyle(0xfff1c4, 0.5);
+        this.glowGfx.fillCircle(cur.worldX, cur.worldY, 26);
       }
     }
+
+    const t = this.time.now / 380;
+    this.guides.forEach((g, i) => {
+      const base = g.getData('baseY') as number;
+      g.setY(base + Math.sin(t + i) * 2.2);
+      if (Math.floor(this.time.now / 180) % 2 === 0) g.setFrame(0);
+      else g.setFrame(1);
+    });
+
+    this.phaseTick += delta;
+    if (this.phaseTick > 280) {
+      this.phaseTick = 0;
+      this.playerPhase = this.phaseAt(this.nearestCenterlineIndex(this.player.x, this.player.y));
+    }
+    this.ambience?.update(
+      delta,
+      this.playerPhase,
+      this.player.body.velocity.lengthSq() > 4,
+      this.player.x,
+      this.player.y,
+    );
 
     this.syncOverlay();
   }
@@ -937,6 +1004,7 @@ export class MainScene extends Phaser.Scene {
         this.persistMapPosition(true);
       }
       burstAt(this, atStation.worldX, atStation.worldY, phaseOf(atStation.unitId));
+      this.cameras.main.flash(420, 255, 214, 96);
     }
 
     this.updateCurrentIdx();

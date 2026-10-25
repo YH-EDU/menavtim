@@ -28,9 +28,9 @@ export const PHASES: PhaseMeta[] = [
     kicker: 'שלב א׳',
     subtitle: 'מילים מוכרות, סיומת א׳, תחיליות, וארמית שכבר חיה בתוך העברית.',
     background: '/bg-stage1.jpg',
-    swatches: ['#0f766e', '#d97706', '#15803d', '#b45309', '#0d9488', '#a16207'],
-    path: 0xe4d2a8,
-    wash: 'rgba(180, 120, 40, 0.18)',
+    swatches: ['#8a5a2b', '#6b7c3a', '#b5682a', '#a67c3d', '#5f6b3a', '#c4862a'],
+    path: 0xe7c98a,
+    wash: 'rgba(196, 146, 64, 0.2)',
   },
   {
     id: 'basic',
@@ -39,9 +39,9 @@ export const PHASES: PhaseMeta[] = [
     kicker: 'שלב ב׳',
     subtitle: 'אוצר מילים, כינויי גוף, פעלים, ודפוסי דקדוק קצרים.',
     background: '/bg-stage2.jpg',
-    swatches: ['#1d4ed8', '#7c3aed', '#0369a1', '#6d28d9', '#0e7490', '#4338ca'],
-    path: 0xd5dde8,
-    wash: 'rgba(37, 99, 168, 0.16)',
+    swatches: ['#1e4b8a', '#2a6f8f', '#c4a35a', '#163666', '#3d6e99', '#8d6b2f'],
+    path: 0xb7c6dc,
+    wash: 'rgba(30, 70, 130, 0.18)',
   },
   {
     id: 'gemara',
@@ -50,9 +50,9 @@ export const PHASES: PhaseMeta[] = [
     kicker: 'שלב ג׳',
     subtitle: 'מילות סוגיא, שאלה ותשובה, שלד, ושורות גמרא קצרות.',
     background: '/bg-activity-maze.jpg',
-    swatches: ['#9a3412', '#b45309', '#7f1d1d', '#a16207', '#92400e', '#78350f'],
-    path: 0xedd4b8,
-    wash: 'rgba(120, 53, 15, 0.16)',
+    swatches: ['#7a3e22', '#c4a15a', '#5c2e1a', '#a16207', '#8d4a2b', '#e0b15a'],
+    path: 0xe6c49a,
+    wash: 'rgba(122, 62, 34, 0.18)',
   },
 ];
 

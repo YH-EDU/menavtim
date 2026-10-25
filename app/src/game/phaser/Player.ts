@@ -70,6 +70,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private wheelSpinAngle = 0;
 
   private hornGfx: Phaser.GameObjects.Graphics | null = null;
+  private shadow!: Phaser.GameObjects.Ellipse;
+  private breathe = 0;
 
   /** toonSide (Kenney Toon): last horizontal flip for walk_side */
   private toonLastFlipX = false;
@@ -98,6 +100,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     } else {
       this.cursors = {} as Keys;
     }
+
+    this.shadow = scene.add.ellipse(x, y + 2, 26, 9, 0x1a1208, 0.38);
+    this.shadow.setDepth(9);
 
     this.createAnims();
     this.setIdlePose();
@@ -135,7 +140,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  private static initialFrame(def: CharacterDef): string | undefined {
+  private static initialFrame(def: CharacterDef): string | number | undefined {
+    if (def.mode === 'bob') return 0;
     switch (def.mode) {
       case 'fourDir':
         return def.id === 'misa' ? MISA.idle.down : fourDirIdleFrame('down');
@@ -196,6 +202,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     } else if (this.def.mode === 'toonSide') {
       mk(this.animKey('walk_side'), ['walk0', 'walk1', 'walk2', 'walk3', 'walk4', 'walk5', 'walk6', 'walk7'], 12);
+    } else if (this.def.mode === 'bob') {
+      this.ensureAnim(
+        this.animKey('walk'),
+        [1, 0, 2, 0].map((frame) => ({ key: this.def.textureKey, frame })),
+        8,
+        force,
+      );
     }
   }
 
@@ -411,6 +424,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (this.fireSprite) this.fireSprite.setVisible(false);
         if (this.fireSprite2) this.fireSprite2.setVisible(false);
         break;
+      case 'bob':
+        this.setFlipX(this.facing === 'left');
+        this.setTexture(this.def.textureKey, 0);
+        this.setScale(this.def.scale);
+        break;
     }
   }
 
@@ -508,6 +526,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     } else {
       this.setAngle(0);
     }
+  }
+
+  private updateBob(moving: boolean, facing: Facing) {
+    this.facing = facing;
+    this.setFlipX(facing === 'left');
+    if (moving) this.playWalkAnim(this.animKey('walk'));
+    else this.setIdlePose();
   }
 
   private updateRocket(moving: boolean, vx: number, vy: number, delta: number) {
@@ -654,7 +679,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case 'rocket':
         this.updateRocket(moving, vx, vy, delta);
         break;
+      case 'bob':
+        this.updateBob(moving, facing);
+        break;
     }
+
+    this.breathe += delta * (moving ? 0.014 : 0.005);
+    const pulse = Math.sin(this.breathe) * (moving ? 0.07 : 0.028);
+    if (this.def.mode === 'bob' || this.def.mode === 'fourDir') {
+      this.setScale(this.def.scale * (1 - pulse * 0.35), this.def.scale * (1 + pulse));
+    }
+    this.shadow.setPosition(this.x, this.y + 1);
+    this.shadow.setScale(1 - pulse * 0.8, 0.85);
+    this.shadow.setDepth(this.depth - 1);
 
     if (this.fireSprite?.visible) {
       this.fireSprite.setDepth(this.depth - 1);
@@ -672,6 +709,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   destroy(fromScene?: boolean) {
+    this.shadow?.destroy(fromScene);
     this.hornGfx?.destroy(fromScene);
     this.hornGfx = null;
     this.fireSprite?.destroy(fromScene);

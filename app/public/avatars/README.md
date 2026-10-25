@@ -2,7 +2,21 @@
 
 All sprites are **CC0 or open-license** game art — free for personal and commercial use.
 
-## Characters (8)
+## Tale set (prototype, original art)
+
+| ID | Hebrew | Source | License |
+|----|--------|--------|---------|
+| `talmid` | תלמיד | Original illustration for this prototype | Original, for this game |
+| `talmida` | תלמידה | Original illustration for this prototype | Original, for this game |
+| `sofer` | סופר | Original illustration for this prototype | Original, for this game |
+| `gamal` | גמל | Original illustration for this prototype | Original, for this game |
+| `guide` | המדריך | Original illustration for this prototype | Original, for this game |
+
+Walk frames are three poses cut from each illustration. Files live in `tale/`.
+
+The maze path texture samples sand tiles from `public/phaser-rpg/tilesets/tuxemon-sample-32px-extruded.png` (Tuxemon sample tileset, upstream CC-BY-SA 3.0).
+
+## Characters (older packs)
 
 | ID | Hebrew | Pack | URL |
 |----|--------|------|-----|

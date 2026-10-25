@@ -91,14 +91,15 @@ export function drawSolidColorMap(
           : idx === TILE.path
             ? COLORS.path
             : idx === TILE.wall && !isHidden
-              ? COLORS.wall
+              ? 0x3a4634
               : COLORS.background;
+      // השביל מצויר במרקם. הקירות רכים כדי שהציור שמתחת ייראה.
       const alpha =
         idx === TILE.path
-          ? 0.94
+          ? 0
           : idx === TILE.wall && !isHidden
-            ? 0.78
-            : 0.12;
+            ? 0.32
+            : 0;
       gfx.fillStyle(color, alpha);
       gfx.fillRect(tx * TILE_SIZE, ty * TILE_SIZE, TILE_SIZE, TILE_SIZE);
     }

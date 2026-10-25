@@ -52,16 +52,18 @@ function CharacterPicker({
               textAlign: 'center',
             }}
           >
-            <div
+            <img
+              src={c.preview}
+              alt=""
               style={{
-                fontSize: 68,
-                lineHeight: 1,
-                marginBottom: 6,
-                filter: selected ? 'drop-shadow(0 4px 8px rgba(0,0,0,0.15))' : 'none',
+                width: 72,
+                height: 78,
+                objectFit: 'contain',
+                margin: '0 auto 4px',
+                display: 'block',
+                filter: selected ? 'drop-shadow(0 4px 8px rgba(0,0,0,0.18))' : 'none',
               }}
-            >
-              {c.emoji}
-            </div>
+            />
             <div style={{ fontSize: 13.5, fontWeight: 800, color: '#4a3416', marginTop: 2 }}>
               {c.nameHe}
             </div>

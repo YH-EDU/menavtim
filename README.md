@@ -4,7 +4,9 @@
 
 A playful journey for Hebrew speakers learning **Aramaic** — kids navigate stations along a simple maze path, reach the Beit Midrash, and finish with **the Aramaic Cipher** escape room.
 
-**Live demo:** [https://YH-EDU.github.io/menavtim/](https://YH-EDU.github.io/menavtim/)
+**Live demo (main):** [https://YH-EDU.github.io/menavtim/](https://YH-EDU.github.io/menavtim/)
+
+**אב-טיפוס (הענף הזה בלבד):** שלושה שלבים — מעברית לארמית, ארמית בסיסית, לקראת הגמרא. יחידות הליבה נשארות; נוספים מנועים (תחילית בורחת, מי מדבר, מכונת הנטיות, מילת מפתח, שאלה ותשובה, שלד סוגיא), מגילות, משימת הצלה, וחדרי צופן מונחי-נתונים. חדר «הצופן הארמי» המקורי נשאר סיום המסע. הפריסה החיה של `main` לא משתנה מהענף הזה.
 
 **Netlify (כתובת נקייה):** פריסה מוכנה (`npm run deploy:netlify`) — ממתינה להגדרת דומיין/חשבון Netlify.
 

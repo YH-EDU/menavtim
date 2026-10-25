@@ -18,6 +18,16 @@ import {
 } from './journeyMap';
 
 import { drawSolidColorMap, tileGid, tileIndexForCell } from './mapTiles';
+import {
+  burstAt,
+  drawPaintedBackdrop,
+  drawPathFog,
+  drawPathTexture,
+  ensureVignette,
+  indexPathCells,
+} from './phaseVisuals';
+import { phaseOf } from '../../data/phases';
+import type { PhaseId } from '../../data/types';
 
 import { Player } from './Player';
 
@@ -105,6 +115,12 @@ export class MainScene extends Phaser.Scene {
   private touchDragging = false;
   private mapPosSaveTimer = 0;
   private lastPersistedPos: MapPosition | null = null;
+  private cellProgress = new Map<string, number>();
+  private phaseBreaks: { index: number; phase: PhaseId }[] = [];
+  private fogGfx?: Phaser.GameObjects.Graphics;
+  private glowGfx?: Phaser.GameObjects.Graphics;
+  private vignette?: Phaser.GameObjects.Image;
+  private opening = false;
 
   constructor() {
     super(SCENE.main);
@@ -129,8 +145,9 @@ export class MainScene extends Phaser.Scene {
     this.journeyPath = journey;
 
     this.add
-      .rectangle(WORLD.width / 2, WORLD.height / 2, WORLD.width, WORLD.height, COLORS.background)
+      .rectangle(WORLD.width / 2, WORLD.height / 2, WORLD.width, WORLD.height, 0x16301c)
       .setDepth(0);
+    drawPaintedBackdrop(this);
 
     const map = this.make.tilemap({
       tileWidth: TILE_SIZE,
@@ -175,6 +192,20 @@ export class MainScene extends Phaser.Scene {
     );
 
     this.pathCells = journey.pathCells;
+    this.cellProgress = indexPathCells(journey.pathCells, journey.centerline);
+    let lastPhase = '';
+    PHASER_MISSIONS.forEach((m, idx) => {
+      const phase = phaseOf(m.unitId);
+      if (phase === lastPhase) return;
+      lastPhase = phase;
+      this.phaseBreaks.push({
+        index: journey.stationCenterlineIndices[idx] ?? 0,
+        phase,
+      });
+    });
+    drawPathTexture(this, journey.pathCells, this.cellProgress, (index) => this.phaseAt(index));
+    this.fogGfx = this.add.graphics().setDepth(5);
+    this.glowGfx = this.add.graphics().setDepth(6);
 
     this.drawMazeGate(journey.mazeExit, 1);
     this.drawGoalMarker(journey.goalMarker);
@@ -281,11 +312,15 @@ export class MainScene extends Phaser.Scene {
         : Phaser.Math.Clamp(w / 520, 1.35, 1.55);
       this.cameras.main.setZoom(z);
       this.repositionHint();
+      this.vignette?.setPosition(w / 2, this.scale.height / 2).setDisplaySize(w, this.scale.height);
     });
     this.updateCurrentIdx();
+    this.redrawFog();
     this.updateHint();
+    this.vignette = ensureVignette(this);
 
     this.cameras.main.scrollY = Math.max(0, startY - this.scale.height * 0.55);
+    this.cameras.main.fadeIn(420, 28, 22, 14);
 
     this.events.on('wake', () => this.onSceneActive());
     this.events.on('resume', () => this.onSceneActive());
@@ -577,12 +612,42 @@ export class MainScene extends Phaser.Scene {
     this.openMission(station.unitId, station.activityId);
   }
 
+  private phaseAt(index: number): PhaseId {
+    let phase: PhaseId = 'he-ar';
+    for (const b of this.phaseBreaks) {
+      if (index >= b.index) phase = b.phase;
+    }
+    return phase;
+  }
+
+  private revealIndex(): number {
+    if (this.progress.freeNav) return Number.POSITIVE_INFINITY;
+    if (this.currentIdx < 0) return Number.POSITIVE_INFINITY;
+    const cl = this.journeyPath?.stationCenterlineIndices[this.currentIdx] ?? 0;
+    return cl + 10;
+  }
+
+  private redrawFog() {
+    if (!this.fogGfx || !this.journeyPath) return;
+    drawPathFog(this.fogGfx, this.pathCells, this.cellProgress, this.revealIndex());
+  }
+
   private openMission(unitId: string, activityId: string) {
+    if (this.opening) return;
+    this.opening = true;
     savePhaserPlayerState(this.player.x, this.player.y, activityId, this.playerIdentity);
     this.persistMapPosition(true);
     this.player.clearInputState();
     this.touchCooldown = 800;
-    this.onInteract(unitId, activityId);
+    const st = this.stations.find((s) => s.activityId === activityId);
+    if (st) {
+      this.cameras.main.pan(st.worldX, st.worldY, 180, 'Sine.easeInOut', true);
+      this.cameras.main.zoomTo(Math.min(2.05, this.cameras.main.zoom * 1.18), 180);
+    } else {
+      this.cameras.main.zoomTo(Math.min(2.05, this.cameras.main.zoom * 1.12), 180);
+    }
+    this.cameras.main.fadeOut(200, 42, 28, 16);
+    this.time.delayedCall(190, () => this.onInteract(unitId, activityId));
   }
 
   private createDpad() {
@@ -746,6 +811,17 @@ export class MainScene extends Phaser.Scene {
       this.goalInside = false;
     }
 
+    if (this.glowGfx) {
+      this.glowGfx.clear();
+      const cur = this.currentIdx >= 0 ? this.stations[this.currentIdx] : undefined;
+      if (cur?.unlocked && !cur.completed) {
+        this.glowGfx.fillStyle(0xffc56b, 0.2);
+        this.glowGfx.fillCircle(cur.worldX, cur.worldY, 64);
+        this.glowGfx.fillStyle(0xfff6dc, 0.42);
+        this.glowGfx.fillCircle(cur.worldX, cur.worldY, 24);
+      }
+    }
+
     this.syncOverlay();
   }
 
@@ -860,9 +936,11 @@ export class MainScene extends Phaser.Scene {
         this.lastValidPos = { x: resume.x, y: resume.y };
         this.persistMapPosition(true);
       }
+      burstAt(this, atStation.worldX, atStation.worldY, phaseOf(atStation.unitId));
     }
 
     this.updateCurrentIdx();
+    this.redrawFog();
     this.updateHint();
     this.syncOverlay();
   }

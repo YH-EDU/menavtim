@@ -1,4 +1,5 @@
 import { asset } from '../../lib/basePath';
+import { PAINT, paintImagePaths } from './phaseVisuals';
 
 export const SCENE = {
   boot: 'Boot',
@@ -11,6 +12,9 @@ export const ASSET = {
   playerAtlas: 'player-atlas',
   playerAtlasImage: asset('/phaser-rpg/atlas/atlas.png'),
   playerAtlasJson: asset('/phaser-rpg/atlas/atlas.json'),
+  paintWorld: asset(paintImagePaths()[PAINT.world]),
+  paintBridge: asset(paintImagePaths()[PAINT.bridge]),
+  paintVine: asset(paintImagePaths()[PAINT.vine]),
 } as const;
 
 export const LAYER = {

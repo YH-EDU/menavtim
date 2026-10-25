@@ -271,6 +271,176 @@ export interface SentenceBuilderActivity {
   sentences: BuilderSentence[];
 }
 
+/** תחילית שברחה מהמילה — בוחרים איזו תחילית מחזירה את המשמעות */
+export interface PrefixRound {
+  /** המילה בלי התחילית */
+  stem: string;
+  /** המשמעות של המילה עם התחילית */
+  meaning: string;
+  /** התחילית הנכונה, כפי שמוצגת */
+  prefix: string;
+  decoys: string[];
+  reveal: string;
+}
+
+export interface PrefixActivity {
+  type: 'prefix';
+  id: string;
+  title: string;
+  instructions: string;
+  rounds: PrefixRound[];
+}
+
+/** מי מדבר — מזהים את הגוף מתוך המשפט */
+export interface SpeakerRound {
+  line: string;
+  options: string[];
+  correct: number;
+  /** מילה למעקב שליטה */
+  letter?: string;
+  reveal: string;
+}
+
+export interface SpeakerActivity {
+  type: 'speaker';
+  id: string;
+  title: string;
+  instructions: string;
+  rounds: SpeakerRound[];
+}
+
+/** מכונת הנטיות — כינוי + פועל */
+export interface ConjugateRound {
+  pronounHe: string;
+  pronounAr: string;
+  options: string[];
+  correct: number;
+  letter?: string;
+  reveal: string;
+}
+
+export interface ConjugateActivity {
+  type: 'conjugate';
+  id: string;
+  title: string;
+  instructions: string;
+  verb: string;
+  verbMeaning: string;
+  rounds: ConjugateRound[];
+}
+
+/** מילת המפתח במשפט או בסוגיא */
+export interface KeywordRound {
+  sentence: string;
+  question: string;
+  words: string[];
+  correct: number;
+  reveal: string;
+}
+
+export interface KeywordActivity {
+  type: 'keyword';
+  id: string;
+  title: string;
+  instructions: string;
+  rounds: KeywordRound[];
+}
+
+/** שאלה ארמית ותשובה מתאימה */
+export interface QnaRound {
+  question: string;
+  gloss: string;
+  options: string[];
+  correct: number;
+  reveal: string;
+}
+
+export interface QnaActivity {
+  type: 'qna';
+  id: string;
+  title: string;
+  instructions: string;
+  rounds: QnaRound[];
+}
+
+/** שלד הסוגיה — לסדר את מהלכי הסוגיא */
+export interface SkeletonBeat {
+  role: string;
+  line: string;
+  gloss: string;
+}
+
+export interface SkeletonActivity {
+  type: 'skeleton';
+  id: string;
+  title: string;
+  instructions: string;
+  beats: SkeletonBeat[];
+}
+
+/** מגילה לפענוח — המילים נכתבות על הקלף בסדר הנכון */
+export interface ScrollActivity {
+  type: 'scroll';
+  id: string;
+  title: string;
+  instructions: string;
+  scrollName: string;
+  hebrew: string;
+  words: string[];
+  reveal: string;
+}
+
+/** משימת הצלה קצרה — כמה בחירות בתוך סיפור */
+export interface RescueStep {
+  emoji: string;
+  scene: string;
+  prompt: string;
+  options: string[];
+  correct: number;
+  success: string;
+  letter?: string;
+}
+
+export interface RescueActivity {
+  type: 'rescue';
+  id: string;
+  title: string;
+  instructions: string;
+  steps: RescueStep[];
+}
+
+/** רגע סיפור בין תחנות */
+export interface MomentPanel {
+  emoji: string;
+  text: string;
+}
+
+export interface MomentActivity {
+  type: 'moment';
+  id: string;
+  title: string;
+  instructions: string;
+  panels: MomentPanel[];
+  question?: {
+    prompt: string;
+    options: string[];
+    correct: number;
+    explain: string;
+  };
+}
+
+/**
+ * חדר צופן מבוסס-נתונים. התוכן עצמו ב-escapeRoomsData.
+ * קל למחוק: מסירים את הפעילות ואת רשומת החדר.
+ */
+export interface CipherActivity {
+  type: 'cipher';
+  id: string;
+  title: string;
+  instructions: string;
+  roomId: string;
+}
+
 export type Activity =
   | IntroActivity
   | FlashcardsActivity
@@ -287,7 +457,19 @@ export type Activity =
   | DiscoverActivity
   | AnnotateActivity
   | TrueFalseActivity
-  | SentenceBuilderActivity;
+  | SentenceBuilderActivity
+  | PrefixActivity
+  | SpeakerActivity
+  | ConjugateActivity
+  | KeywordActivity
+  | QnaActivity
+  | SkeletonActivity
+  | ScrollActivity
+  | RescueActivity
+  | MomentActivity
+  | CipherActivity;
+
+export type PhaseId = 'he-ar' | 'basic' | 'gemara';
 
 export interface Unit {
   id: string;
@@ -297,4 +479,6 @@ export interface Unit {
   /** מילים/מושגים חדשים ביחידה (למפה ולמורה) */
   newLetters: string[];
   activities: Activity[];
+  /** שלב המסע. נקבע בצירוף תוכנית האב-טיפוס. */
+  phase?: PhaseId;
 }

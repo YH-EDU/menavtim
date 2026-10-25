@@ -26,6 +26,7 @@ export function SoftPageShell({
   seed,
   opacity = 0.38,
   overlay = 'rgba(248, 245, 238, 0.55)',
+  className,
 }: {
   children: React.ReactNode;
   image?: string;
@@ -34,10 +35,11 @@ export function SoftPageShell({
   opacity?: number;
   /** שכבת נייר מעל הרקע לקריאות */
   overlay?: string;
+  className?: string;
 }) {
   const bg = image || pickSoftBg(seed || '');
   return (
-    <div style={{ position: 'relative', minHeight: '100vh' }}>
+    <div className={className} style={{ position: 'relative', minHeight: '100vh' }}>
       <div
         aria-hidden
         style={{

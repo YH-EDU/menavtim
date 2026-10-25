@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { UNITS } from '../data/units';
+import { phaseMeta } from '../data/phases';
+import { asset } from '../lib/basePath';
 import { LETTERS } from '../data/letters';
 import { reportAttempt, type ProgressData, type StudentSession } from '../lib/api';
 import { isSkipped, SKIP_RECORD } from '../lib/progressUtil';
@@ -26,6 +28,16 @@ const TYPE_COLORS: Record<string, string> = {
   annotate: '#dc2626',
   truefalse: '#c026d3',
   builder: '#0284c7',
+  prefix: '#d97706',
+  speaker: '#1d4ed8',
+  conjugate: '#6d28d9',
+  keyword: '#9a3412',
+  qna: '#b45309',
+  skeleton: '#7f1d1d',
+  scroll: '#a16207',
+  rescue: '#0369a1',
+  moment: '#0f766e',
+  cipher: '#92400e',
 };
 
 export default function UnitView({
@@ -56,8 +68,9 @@ export default function UnitView({
     }
   };
 
+  const phase = phaseMeta(unit.phase);
   return (
-    <SoftPageShell seed={unitId || 'unit'}>
+    <SoftPageShell className={`phase-shell phase-${phase.id}`} image={asset(phase.background)} seed={unitId || 'unit'}>
     <FullscreenCorner />
     <div style={{ maxWidth: 680, margin: '0 auto', padding: '20px 16px 60px' }}>
       <button className="btn small" style={{ background: 'transparent', boxShadow: 'none', color: 'var(--teal-dark)', fontWeight: 700 }} onClick={() => nav('/map')}>
@@ -65,6 +78,7 @@ export default function UnitView({
       </button>
       <div style={{ textAlign: 'center', margin: '10px 0 24px' }}>
         <div style={{ fontSize: 52 }}>{unit.icon}</div>
+        <p className="engine-kicker">{phase.kicker} · {phase.title}</p>
         <h1 style={{ fontSize: 28 }}>{unit.title}</h1>
         <p style={{ color: 'var(--ink-soft)', marginTop: 4 }}>{unit.subtitle}</p>
         {unit.newLetters.length > 0 && unit.newLetters.length <= 4 && (

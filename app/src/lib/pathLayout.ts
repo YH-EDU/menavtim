@@ -1,4 +1,5 @@
 import { UNITS } from '../data/units';
+import { phaseSwatch } from '../data/phases';
 import { asset } from './basePath';
 
 export interface Pt { x: number; y: number }
@@ -6,11 +7,8 @@ export interface Pt { x: number; y: number }
 export const BG = asset('/bg-journey-continuous.jpg');
 /** גובה÷רוחב של תמונת המסע (1024×1536) */
 export const BG_RATIO = 1536 / 1024;
-export const UNIT_COLORS = [
-  '#0d9488', '#f59e0b', '#8b5cf6', '#e05252', '#3b82f6',
-  '#ec4899', '#16a34a', '#a16207', '#0284c7', '#c026d3',
-  '#059669', '#d97706', '#7c3aed', '#be123c',
-];
+/** צבע תחנה לפי שלב המסע — אורך המערך תמיד כמספר היחידות */
+export const UNIT_COLORS = UNITS.map((u, i) => phaseSwatch(u.phase, i));
 
 /** גרסה — מתעלמים משמירות ישנות אם שינינו את ברירת המחדל בקוד */
 export const LS_PATH = 'aramit_station_pos_v8_eretz';

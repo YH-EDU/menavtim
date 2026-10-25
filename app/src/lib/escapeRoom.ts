@@ -1,5 +1,17 @@
 import type { ProgressData } from './api';
 import { PHASER_MISSIONS } from '../game/phaser/stations';
+import { CIPHER_ROOMS, cipherRoom, isCipherRoomId } from '../data/escapeRoomsData';
+
+export { CIPHER_ROOMS, cipherRoom, isCipherRoomId };
+
+/**
+ * חדרי צופן מבוססי-נתונים (שער לכל שלב + בניית סוגיא).
+ * חדר הסיום «הצופן הארמי» נשאר ה-iframe המקורי — ESCAPE_ACTIVITY_ID.
+ * מחיקה: רוקנו את CIPHER_ROOMS והסירו את יחידות gate-* מ-prototypeContent.
+ */
+export function dataDrivenEscapeRooms() {
+  return CIPHER_ROOMS;
+}
 import { starsFor } from '../games/ui';
 import { isSkipped } from './progressUtil';
 

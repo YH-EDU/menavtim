@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { UNITS } from '../data/units';
+import { PHASES } from '../data/phases';
 import { vocalize } from '../data/letters';
 import { setGuestFreeNav, type StudentSession, type ProgressData } from '../lib/api';
 import { unitDoneCount, unitUnlocked, unitCompleted, allCompleted, overallPercent } from '../lib/progressUtil';
@@ -314,7 +315,17 @@ export default function JourneyMap({
           const unlocked = unitUnlocked(progress, i);
           const done = unitDoneCount(progress, unit);
           const completed = unitCompleted(progress, unit);
+          const phase = PHASES.find((p) => p.id === unit.phase);
+          const showPhase = i === 0 || UNITS[i - 1].phase !== unit.phase;
           return (
+            <React.Fragment key={unit.id}>
+            {showPhase && phase && (
+              <div className={`phase-banner phase-${phase.id}`}>
+                <span>{phase.kicker}</span>
+                <strong>{phase.title}</strong>
+                <small>{phase.subtitle}</small>
+              </div>
+            )}
             <button
               key={unit.id}
               onClick={() => unlocked && nav(`/unit/${unit.id}`)}
@@ -376,6 +387,7 @@ export default function JourneyMap({
                 {completed ? '✓ הושלם' : unlocked ? `${done}/${unit.activities.length}` : ''}
               </div>
             </button>
+            </React.Fragment>
           );
         })}
         {(() => {

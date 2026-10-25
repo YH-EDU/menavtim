@@ -17,6 +17,18 @@ import Discover from './Discover';
 import Annotate from './Annotate';
 import TrueFalse from './TrueFalse';
 import SentenceBuilder from './SentenceBuilder';
+import {
+  ConjugateMachine,
+  KeywordGame,
+  PrefixChase,
+  QuestionAnswer,
+  RescueMission,
+  ScrollDecode,
+  SpeakerGame,
+  StoryMoment,
+  SugyaSkeleton,
+} from './PrototypeGames';
+import CipherRoom from '../views/CipherRoom';
 import { Stars, starsFor } from './ui';
 import { playWin } from '../lib/sound';
 import {
@@ -224,6 +236,10 @@ export default function GameHost({
     });
   };
 
+  if (!result && activity.type === 'cipher') {
+    return <CipherRoom roomId={activity.roomId} onFinish={finish} />;
+  }
+
   if (result) {
     const stars = starsFor(result.score, result.max);
     return (
@@ -267,6 +283,16 @@ export default function GameHost({
       case 'annotate': return <Annotate activity={activity} onFinish={finish} />;
       case 'truefalse': return <TrueFalse activity={activity} onFinish={finish} />;
       case 'builder': return <SentenceBuilder activity={activity} onFinish={finish} />;
+      case 'prefix': return <PrefixChase activity={activity} onFinish={finish} />;
+      case 'speaker': return <SpeakerGame activity={activity} onFinish={finish} />;
+      case 'conjugate': return <ConjugateMachine activity={activity} onFinish={finish} />;
+      case 'keyword': return <KeywordGame activity={activity} onFinish={finish} />;
+      case 'qna': return <QuestionAnswer activity={activity} onFinish={finish} />;
+      case 'skeleton': return <SugyaSkeleton activity={activity} onFinish={finish} />;
+      case 'scroll': return <ScrollDecode activity={activity} onFinish={finish} />;
+      case 'rescue': return <RescueMission activity={activity} onFinish={finish} />;
+      case 'moment': return <StoryMoment activity={activity} onFinish={finish} />;
+      case 'cipher': return null;
     }
   };
 

@@ -1,0 +1,53 @@
+# Preview for the prototype branch only.
+# Does NOT deploy GitHub Pages and does not run on main.
+# Publishes a static site to the orphan branch cursor/prototype-preview-eae0.
+
+name: Prototype preview
+
+on:
+  push:
+    branches:
+      - cursor/prototype-v2-eae0
+    paths:
+      - 'app/**'
+      - '.github/workflows/preview-prototype.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prototype-preview
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Build relative-base preview
+        working-directory: app
+        run: |
+          npm ci
+          npm run build:preview
+
+      - name: Publish orphan preview branch
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/prototype-preview
+          mkdir -p /tmp/prototype-preview
+          cp -a app/dist/. /tmp/prototype-preview/
+          cd /tmp/prototype-preview
+          git init -b cursor/prototype-preview-eae0
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add -A
+          git commit -m "Prototype preview"
+          git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/YH-EDU/menavtim.git" HEAD:cursor/prototype-preview-eae0

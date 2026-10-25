@@ -7,6 +7,7 @@ import { nav } from '../App';
 import { reportAttempt, type StudentSession } from '../lib/api';
 import type { ActivityResult } from '../data/types';
 import { UNITS } from '../data/units';
+import { phaseMeta } from '../data/phases';
 import GameHost from '../games/GameHost';
 import React from 'react';
 import { focusActKey, identitySlug, LS_FLY_STARS } from '../lib/playStorage';
@@ -44,11 +45,13 @@ export default function PlayView({
     nav('/map');
   };
 
+  const phase = phaseMeta(unit.phase);
   return (
     <SoftPageShell
-      image={asset('/bg-activity-maze.jpg')}
-      opacity={0.44}
-      overlay="rgba(248, 245, 238, 0.58)"
+      className={`phase-shell phase-${phase.id}`}
+      image={asset(phase.background)}
+      opacity={0.5}
+      overlay="rgba(248, 245, 238, 0.62)"
       seed={activity.id}
     >
       <FullscreenCorner />

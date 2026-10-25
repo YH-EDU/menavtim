@@ -93,7 +93,13 @@ export function drawSolidColorMap(
             : idx === TILE.wall && !isHidden
               ? COLORS.wall
               : COLORS.background;
-      gfx.fillStyle(color, 1);
+      const alpha =
+        idx === TILE.path
+          ? 0.94
+          : idx === TILE.wall && !isHidden
+            ? 0.78
+            : 0.12;
+      gfx.fillStyle(color, alpha);
       gfx.fillRect(tx * TILE_SIZE, ty * TILE_SIZE, TILE_SIZE, TILE_SIZE);
     }
   }

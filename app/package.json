@@ -7,6 +7,7 @@
     "dev": "vite",
     "prebuild": "node scripts/ensure-escape-room.mjs",
     "build": "tsc -b && vite build",
+    "build:preview": "VITE_BASE=./ tsc -b && VITE_BASE=./ vite build && node scripts/prepare-preview.mjs",
     "build:escape": "node scripts/build-escape-room.mjs",
     "build:netlify": "node scripts/build-netlify.mjs",
     "preview": "vite preview",

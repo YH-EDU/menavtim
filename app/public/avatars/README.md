@@ -2,19 +2,7 @@
 
 All sprites are **CC0 or open-license** game art — free for personal and commercial use.
 
-## Tale set (static guides, not walkers)
-
-These illustrations have no four-direction walk, so they stand beside the phase gates and are not selectable players. The walker list is the original four-direction packs below.
-
-| File | Use | License |
-|------|-----|---------|
-| `tale/talmid-preview.png` | Guide at phase א | Original, for this game |
-| `tale/gamal-preview.png` | Guide at phase ב | Original, for this game |
-| `tale/guide-preview.png` | Guide at phase ג | Original, for this game |
-
-The maze path texture samples sand tiles from `public/phaser-rpg/tilesets/tuxemon-sample-32px-extruded.png` (Tuxemon sample tileset, upstream CC-BY-SA 3.0).
-
-## Characters (older packs)
+## Characters
 
 | ID | Hebrew | Pack | URL |
 |----|--------|------|-----|
@@ -26,6 +14,8 @@ The maze path texture samples sand tiles from `public/phaser-rpg/tilesets/tuxemo
 | `horse` | חד־קרן | LPC Horse Extended — 6-frame 4-dir walk (white) | https://opengameart.org/content/lpc-horse-extended |
 | `car` | מכונית | Kenney Racing Pack — drive-bob + rotate | https://opengameart.org/content/racing-pack |
 | `rocket` | חללית | Kenney Space Shooter Redux — ship + fire FX | https://opengameart.org/content/space-shooter-redux |
+
+The maze path is the original flat solid-color walk (no noisy tile texture). Optional illustrated files under `tale/` are not used as walkers.
 
 ## License
 
@@ -39,30 +29,5 @@ The maze path texture samples sand tiles from `public/phaser-rpg/tilesets/tuxemo
 
 ## Files
 
-- `atlas/` — Phaser JSON atlases + PNG sheets used in-game
-- `previews/` — character-select card images (single sharp frame, ~64px)
-- `_downloads/` — original zip archives (dev reference, not required at runtime)
-
-## Rebuild atlases
-
-After updating `_downloads/` packs:
-
-```bash
-node scripts/build-avatar-atlases.mjs
-```
-
-## Direct download URLs
-
-- Shield Maiden: https://opengameart.org/sites/default/files/npc-nordic-shieldmaiden1.png
-- Kenney Robot Pack: https://opengameart.org/sites/default/files/Robot%20pack.zip
-- LPC Horses: https://opengameart.org/sites/default/files/horse-1.1.zip
-- Kenney Racing Pack: https://opengameart.org/sites/default/files/racing-pack.zip
-- Kenney Space Shooter Redux: https://opengameart.org/sites/default/files/SpaceShooterRedux.zip
-- Fox rework: https://opengameart.org/sites/default/files/fox-1.1.zip
-- Cats Rework: https://opengameart.org/sites/default/files/cat-1.0.zip
-
-## Notes
-
-**Robot** uses `toonSide` mode: Kenney Toon side-view walk + flipX for left/right; static back/down for up/down. **Car & rocket** use `rotate` / `rocket` modes.
-
-**Replaced assets:** Tiny Characters (blurry upscaled אבירה) and Square Characters Monster (bull-like robot) were removed.
+- `atlas/<id>/` — Phaser texture atlases for walkers
+- `previews/<id>.png` — crisp native-resolution picker images (rendered with `image-rendering: pixelated`)

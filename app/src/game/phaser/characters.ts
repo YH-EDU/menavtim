@@ -25,13 +25,6 @@ export type CharacterId =
 
 export type AnimMode = 'fourDir' | 'toonSide' | 'rotate' | 'rocket' | 'bob';
 
-/** דמויות האיור עומדות ליד שערי השלב. אין להן הליכה לארבעה כיוונים, אז הן לא שחקן. */
-export const PHASE_GUIDES: { phase: 'he-ar' | 'basic' | 'gemara'; key: string; url: string }[] = [
-  { phase: 'he-ar', key: 'npc-vine', url: `${AVATAR_BASE}/tale/talmid-preview.png` },
-  { phase: 'basic', key: 'npc-bridge', url: `${AVATAR_BASE}/tale/gamal-preview.png` },
-  { phase: 'gemara', key: 'npc-study', url: `${AVATAR_BASE}/tale/guide-preview.png` },
-];
-
 export interface CharacterDef {
   id: CharacterId;
   nameHe: string;
@@ -242,7 +235,6 @@ export function preloadAvatarAssets(scene: {
   for (const c of CHARACTERS) {
     if (c.atlas) scene.load.atlas(c.textureKey, c.atlas.png, c.atlas.json);
   }
-  for (const g of PHASE_GUIDES) scene.load.image(g.key, g.url);
 
   const carBase = `${ATLAS}/car`;
   scene.load.image(CAR_BODY_KEY, `${carBase}/body.png`);

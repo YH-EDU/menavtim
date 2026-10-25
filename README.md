@@ -254,10 +254,6 @@ mathgame/
 | חד־קרן | LPC Horse Extended (bluecarrot16) | CC-BY / GPL / OGA-BY |
 | מכונית | Kenney Racing Pack | CC0 |
 | חללית | Kenney Space Shooter Redux | CC0 |
-| תלמיד, גמל, המדריך (דמויות עומדות ליד שערי השלב, לא שחקן) | איורים מקוריים לאב-טיפוס (`app/public/avatars/tale/`) | מקורי, לשימוש במשחק |
-
-שביל המפה משתמש באריחי חול מתוך `tuxemon-sample-32px-extruded.png` שכבר בריפו (Tuxemon, רישיון במעלה הזרם CC-BY-SA 3.0).
-
 פירוט מלא: `app/public/avatars/README.md`
 
 ### Kenney & OpenGameArt

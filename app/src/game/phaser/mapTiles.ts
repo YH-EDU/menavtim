@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 
-import { COLORS, MAP_HEIGHT, MAP_WIDTH, TILE, TILE_SIZE, WORLD, type PlazaRect } from './journeyMap';
+import { COLORS, MAP_HEIGHT, MAP_WIDTH, TILE, TILE_SIZE, type PlazaRect } from './journeyMap';
 
 /** Generate a 3-tile solid-color tileset texture (path, wall, background). */
 export function generateMapTileset(scene: Phaser.Scene, key: string): void {
@@ -65,10 +65,7 @@ function isInsidePavedCorridor(tx: number, ty: number, pavedCorridors?: PlazaRec
   );
 }
 
-/**
- * Soft wall tint, baked once. The path and grass stay transparent so the
- * painted backdrop and the textured path show through.
- */
+/** Reliable solid-color map draw — avoids tileset/GID rendering quirks in Phaser 4. */
 export function drawSolidColorMap(
   scene: Phaser.Scene,
   pathCells: Set<string>,
@@ -77,29 +74,29 @@ export function drawSolidColorMap(
   hiddenWallCells?: Set<string>,
   grassPlazas?: PlazaRect[],
   pavedCorridors?: PlazaRect[],
-): Phaser.GameObjects.Image | undefined {
-  const key = 'wall-baked';
-  if (scene.textures.exists(key)) scene.textures.remove(key);
-  const canvas = scene.textures.createCanvas(key, WORLD.width, WORLD.height);
-  if (!canvas) return undefined;
-  const ctx = canvas.context;
-  ctx.clearRect(0, 0, WORLD.width, WORLD.height);
-  ctx.fillStyle = 'rgba(58, 70, 52, 0.4)';
+): Phaser.GameObjects.Graphics {
+  const gfx = scene.add.graphics().setDepth(depth);
 
   for (let ty = 0; ty < MAP_HEIGHT; ty++) {
     for (let tx = 0; tx < MAP_WIDTH; tx++) {
       const cell = `${tx},${ty}`;
-      if (hiddenWallCells?.has(cell)) continue;
-      if (pathCells.has(cell)) continue;
+      const isHidden = hiddenWallCells?.has(cell);
       const onGrass =
         isInsideGrassPlaza(tx, ty, grassPlazas) &&
         !isInsidePavedCorridor(tx, ty, pavedCorridors);
-      if (onGrass) continue;
-      if (!wallCells.has(cell)) continue;
-      ctx.fillRect(tx * TILE_SIZE, ty * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+      const idx = tileIndexForCell(tx, ty, pathCells, wallCells, hiddenWallCells);
+      const color =
+        onGrass
+          ? COLORS.background
+          : idx === TILE.path
+            ? COLORS.path
+            : idx === TILE.wall && !isHidden
+              ? COLORS.wall
+              : COLORS.background;
+      gfx.fillStyle(color, 1);
+      gfx.fillRect(tx * TILE_SIZE, ty * TILE_SIZE, TILE_SIZE, TILE_SIZE);
     }
   }
 
-  canvas.refresh();
-  return scene.add.image(WORLD.width / 2, WORLD.height / 2, key).setDepth(depth);
+  return gfx;
 }

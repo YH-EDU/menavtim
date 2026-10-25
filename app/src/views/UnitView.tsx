@@ -70,7 +70,13 @@ export default function UnitView({
 
   const phase = phaseMeta(unit.phase);
   return (
-    <SoftPageShell className={`phase-shell phase-${phase.id}`} image={asset(phase.background)} seed={unitId || 'unit'}>
+    <SoftPageShell
+      className={`phase-shell phase-${phase.id}`}
+      image={asset(phase.background)}
+      opacity={0.3}
+      overlay="rgba(248, 245, 238, 0.74)"
+      seed={unitId || 'unit'}
+    >
     <FullscreenCorner />
     <div style={{ maxWidth: 680, margin: '0 auto', padding: '20px 16px 60px' }}>
       <button className="btn small" style={{ background: 'transparent', boxShadow: 'none', color: 'var(--teal-dark)', fontWeight: 700 }} onClick={() => nav('/map')}>

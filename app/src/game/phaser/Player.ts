@@ -90,9 +90,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setOrigin(def.origin.x, def.origin.y);
     this.applyBodySize();
     this.setCollideWorldBounds(true);
-    const cam = scene.cameras.main;
-    cam.roundPixels = true;
-    cam.startFollow(this, true, 1, 1);
+    scene.cameras.main.roundPixels = true;
+    scene.cameras.main.startFollow(this, true, 0.12, 0.12);
 
     const kb = scene.input.keyboard;
     if (kb) {

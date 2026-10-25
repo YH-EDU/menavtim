@@ -13,10 +13,6 @@ export class BootScene extends Phaser.Scene {
 
   preload() {
     this.load.atlas(ASSET.playerAtlas, ASSET.playerAtlasImage, ASSET.playerAtlasJson);
-    this.load.image('paint-world', ASSET.paintWorld);
-    this.load.image('paint-bridge', ASSET.paintBridge);
-    this.load.image('paint-vine', ASSET.paintVine);
-    this.load.image('tuxemon-tiles', ASSET.tuxemon);
     preloadAvatarAssets(this);
   }
 

@@ -82,19 +82,18 @@ export default function CharacterSelect({
                 textAlign: 'center',
               }}
             >
-              <img
-                src={c.preview}
-                alt=""
+              <div
                 style={{
-                  width: 88,
-                  height: 96,
-                  objectFit: 'contain',
-                  margin: '0 auto 6px',
-                  display: 'block',
-                  transform: selected ? 'scale(1.06)' : 'none',
+                  fontSize: 72,
+                  lineHeight: 1,
+                  marginBottom: 10,
+                  transition: 'transform 0.15s ease',
+                  transform: selected ? 'scale(1.08)' : 'none',
                   filter: selected ? 'drop-shadow(0 6px 12px rgba(0,0,0,0.2))' : 'drop-shadow(0 2px 6px rgba(0,0,0,0.1))',
                 }}
-              />
+              >
+                {c.emoji}
+              </div>
               <div style={{ fontSize: 17, fontWeight: 900, color: '#4a3416', marginTop: 4 }}>
                 {c.nameHe}
               </div>

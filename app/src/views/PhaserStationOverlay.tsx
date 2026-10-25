@@ -123,6 +123,7 @@ function GoalMedalOverlay({
 
   return (
     <div
+      id="jn-goal"
       style={{
         position: 'absolute',
         left: medal.screenX,
@@ -237,6 +238,7 @@ function EscapeGuideOverlay({
         </div>
       </div>
       <div
+        id="jn-escape"
         aria-hidden
         style={{
           position: 'absolute',
@@ -298,6 +300,7 @@ export function PhaserStationOverlay({
 
   return (
     <div
+      data-journey-overlay
       aria-hidden={false}
       style={{
         position: 'absolute',
@@ -366,7 +369,7 @@ export function PhaserStationOverlay({
           <div
             key={s.activityId}
             id={`jn-st-${s.activityId}`}
-            className={`trail-node-wrap${s.isCurrent ? ' trail-node-current' : ''}${!open ? ' trail-node-locked' : ''}`}
+            className={`trail-node-wrap${s.isCurrent ? ' trail-node-current' : ''}`}
             style={{
               position: 'absolute',
               left: s.screenX,
@@ -491,6 +494,16 @@ export function usePhaserOverlay(onStationClick: (unitId: string, activityId: st
         if (!el) continue;
         el.style.left = `${u.screenX}px`;
         el.style.top = `${u.screenY - 36}px`;
+      }
+      const goal = document.getElementById('jn-goal');
+      if (goal && data.goalMedal) {
+        goal.style.left = `${data.goalMedal.screenX}px`;
+        goal.style.top = `${data.goalMedal.screenY}px`;
+      }
+      const escape = document.getElementById('jn-escape');
+      if (escape && data.escapeGuide) {
+        escape.style.left = `${data.escapeGuide.screenX}px`;
+        escape.style.top = `${data.escapeGuide.screenY}px`;
       }
     },
     onStationClick: (unitId: string, activityId: string) => clickRef.current(unitId, activityId),

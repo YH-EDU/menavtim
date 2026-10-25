@@ -50,12 +50,12 @@ export default function PlayView({
     <SoftPageShell
       className={`phase-shell phase-${phase.id}`}
       image={asset(phase.background)}
-      opacity={0.5}
-      overlay="rgba(248, 245, 238, 0.62)"
+      opacity={0.34}
+      overlay="rgba(248, 245, 238, 0.72)"
       seed={activity.id}
     >
       <FullscreenCorner />
-      <div className="station-enter" style={{ maxWidth: 760, margin: '0 auto', padding: '20px 16px 60px' }}>
+      <div style={{ maxWidth: 760, margin: '0 auto', padding: '20px 16px 60px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
           <button
             className="btn small"

@@ -30,7 +30,7 @@ export const PHASES: PhaseMeta[] = [
     background: '/bg-stage1.jpg',
     swatches: ['#8a5a2b', '#6b7c3a', '#b5682a', '#a67c3d', '#5f6b3a', '#c4862a'],
     path: 0xe7c98a,
-    wash: 'rgba(196, 146, 64, 0.2)',
+    wash: 'rgba(196, 146, 64, 0.08)',
   },
   {
     id: 'basic',
@@ -41,7 +41,7 @@ export const PHASES: PhaseMeta[] = [
     background: '/bg-stage2.jpg',
     swatches: ['#1e4b8a', '#2a6f8f', '#c4a35a', '#163666', '#3d6e99', '#8d6b2f'],
     path: 0xb7c6dc,
-    wash: 'rgba(30, 70, 130, 0.18)',
+    wash: 'rgba(30, 70, 130, 0.07)',
   },
   {
     id: 'gemara',
@@ -52,7 +52,7 @@ export const PHASES: PhaseMeta[] = [
     background: '/bg-activity-maze.jpg',
     swatches: ['#7a3e22', '#c4a15a', '#5c2e1a', '#a16207', '#8d4a2b', '#e0b15a'],
     path: 0xe6c49a,
-    wash: 'rgba(122, 62, 34, 0.18)',
+    wash: 'rgba(122, 62, 34, 0.07)',
   },
 ];
 

@@ -70,7 +70,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git add -A
           git commit -m "Prototype preview"
-          # Fresh git init has no Actions credential helper. Pass the token as a
-          # header so `set -u` can see it and the remote URL stays free of it.
-          git -c http.extraheader="AUTHORIZATION: bearer ${GITHUB_TOKEN}" \
-            push -f "https://github.com/YH-EDU/menavtim.git" HEAD:cursor/prototype-preview-eae0
+          # A fresh git init has no Actions credential helper, so the token has
+          # to travel in the remote URL. Actions masks the secret in the log.
+          git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/YH-EDU/menavtim.git" HEAD:cursor/prototype-preview-eae0

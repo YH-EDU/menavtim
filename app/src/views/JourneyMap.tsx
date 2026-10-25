@@ -29,11 +29,13 @@ export default function JourneyMap({
   progress,
   onLogout,
   onSessionChange,
+  onReported,
 }: {
   session: StudentSession;
   progress: ProgressData;
   onLogout: (to?: string) => void;
   onSessionChange: (s: StudentSession) => void;
+  onReported?: () => void;
 }) {
   const totals = computeJourneyTotals(progress);
   const finished = allCompleted(progress);
@@ -101,6 +103,7 @@ export default function JourneyMap({
           progress={progress}
           forcePicker={avatarPicker}
           onPickerClosed={() => setAvatarPicker(false)}
+          onReported={onReported}
         />
 
         {/* שם + כוכבים — עמודה אחת מוצמדת לקצה המסך (ימין); הכוכב מתחת לתג השם */}

@@ -45,12 +45,14 @@ function GoalMedalOverlay({
   const hasMaxStars = missing <= 0;
 
   const nextStage = medal.gateKind === 'next-stage';
+  const scorePct = medal.stageScorePercent ?? 0;
+  const needPct = medal.masteryThresholdPercent ?? 70;
   const lockedTitle = nextStage
     ? `${medal.nextStageKicker ?? 'השלב הבא'} נעול`
     : `${ESCAPE_LABEL} נעול`;
   const lockedBody = nextStage
-    ? 'סיימו את כל תחנות השלב — או הפעילו מסלול חופשי — כדי להמשיך'
-    : 'סיימו את כל התחנות — או הפעילו מסלול חופשי — כדי להיכנס';
+    ? `השליטה בשלב היא ${scorePct}% (נדרשים ${needPct}%). חזרו לתחנות החלשות ונסו שוב — ואז השער ייפתח.`
+    : `השליטה בשלב היא ${scorePct}% (נדרשים ${needPct}%). חזרו לתחנות החלשות ונסו שוב — ואז תוכלו להיכנס.`;
   const enterTitle = nextStage
     ? `המשיכו ל${medal.nextStageKicker ?? 'שלב הבא'}`
     : `כניסה ל${ESCAPE_LABEL}`;

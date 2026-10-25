@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import type { ProgressData, StudentSession } from '../lib/api';
-import { saveMapPosition } from '../lib/api';
+import { reportAttempt, saveMapPosition } from '../lib/api';
 import { nav } from '../App';
 import {
   createJourneyGame,
@@ -21,6 +21,9 @@ import {
   isStageAdvanceActivity,
   parseStageAdvance,
   STAGE_COUNT,
+  STAGE_GATE_UNIT_ID,
+  stageAdvanceActivityId,
+  stageGateOpen,
   stageHudLabel,
   stageLabelHe,
   stageTitleHe,
@@ -90,11 +93,13 @@ export default function JourneyPhaser({
   progress,
   forcePicker = false,
   onPickerClosed,
+  onReported,
 }: {
   session: StudentSession;
   progress: ProgressData;
   forcePicker?: boolean;
   onPickerClosed?: () => void;
+  onReported?: () => void;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
@@ -135,15 +140,23 @@ export default function JourneyPhaser({
 
   // מוודאים שהשלב השמור עדיין מותר אחרי עדכון התקדמות.
   useEffect(() => {
-    if (!stageUnlocked(stageIndex, progress)) {
-      const next = loadCurrentStage(progress, {
+    if (advancingRef.current || transitionTo != null) return;
+    // ממזגים רשומות מקומיות (למשל stage-advance) שעדיין לא חזרו מהרענון
+    const merged: ProgressData = {
+      ...progress,
+      completed: { ...progress.completed, ...progressRef.current.completed },
+      freeNav: progress.freeNav ?? progressRef.current.freeNav,
+    };
+    progressRef.current = { ...merged, mapPos: progress.mapPos ?? progressRef.current.mapPos };
+    if (!stageUnlocked(stageIndex, merged)) {
+      const next = loadCurrentStage(merged, {
         nickname: session.nickname,
         emoji: session.emoji,
       });
       setStageIndex(next);
       saveCurrentStage(next, { nickname: session.nickname, emoji: session.emoji });
     }
-  }, [progress, stageIndex, session.nickname, session.emoji]);
+  }, [progress, stageIndex, session.nickname, session.emoji, transitionTo]);
 
   const advanceToStage = useCallback((next: number) => {
     const target = clampStageIndex(next);
@@ -183,12 +196,34 @@ export default function JourneyPhaser({
     nav('/escape');
   };
 
+  const recordStageAdvance = async (fromStage: number) => {
+    const activityId = stageAdvanceActivityId(fromStage);
+    const p = progressRef.current;
+    if (!stageGateOpen(fromStage, p)) return false;
+    try {
+      await reportAttempt(sessionRef.current, activityId, STAGE_GATE_UNIT_ID, 1, 1, {});
+    } catch {
+      // ממשיכים עם עדכון מקומי כדי לא לחסום את המעבר
+    }
+    progressRef.current = {
+      ...p,
+      completed: { ...p.completed, [activityId]: { score: 1, max: 1 } },
+    };
+    onReported?.();
+    return true;
+  };
+
   const handleGoalEnter = () => {
     if (stageRef.current >= STAGE_COUNT - 1) {
       enterEscape();
       return;
     }
-    advanceToStage(stageRef.current + 1);
+    void (async () => {
+      const from = stageRef.current;
+      const ok = await recordStageAdvance(from);
+      if (!ok) return;
+      advanceToStage(from + 1);
+    })();
   };
 
   const handleStationClick = (unitId: string, activityId: string) => {
@@ -197,8 +232,12 @@ export default function JourneyPhaser({
       return;
     }
     if (isStageAdvanceActivity(activityId)) {
-      const from = parseStageAdvance(activityId);
-      advanceToStage((from ?? stageRef.current) + 1);
+      const from = parseStageAdvance(activityId) ?? stageRef.current;
+      void (async () => {
+        const ok = await recordStageAdvance(from);
+        if (!ok) return;
+        advanceToStage(from + 1);
+      })();
       return;
     }
     pauseJourneyGame(gameRef.current);
@@ -240,8 +279,12 @@ export default function JourneyPhaser({
           return;
         }
         if (isStageAdvanceActivity(activityId)) {
-          const from = parseStageAdvance(activityId);
-          advanceToStage((from ?? stageRef.current) + 1);
+          const from = parseStageAdvance(activityId) ?? stageRef.current;
+          void (async () => {
+            const ok = await recordStageAdvance(from);
+            if (!ok) return;
+            advanceToStage(from + 1);
+          })();
           return;
         }
         pauseJourneyGame(gameRef.current);

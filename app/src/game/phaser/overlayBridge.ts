@@ -39,6 +39,9 @@ export interface GoalMedalScreenState {
   gateKind?: GoalGateKind;
   nextStageTitle?: string;
   nextStageKicker?: string;
+  /** ציון שליטה נוכחי באחוזים (למסר נעילת שער) */
+  stageScorePercent?: number;
+  masteryThresholdPercent?: number;
 }
 
 /** Point players toward הצופן הארמי after all learning stations are done. */

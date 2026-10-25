@@ -5,12 +5,20 @@ import { UNITS } from '../../data/units';
 import { UNIT_COLORS } from '../../lib/pathLayout';
 import { PHASER_MISSIONS, type MissionStation } from './stations';
 
+/** תואם ל־ESCAPE_ACTIVITY_ID — בלי ייבוא מעגלי מ־escapeRoom. */
+const STAGE_FINAL_ESCAPE_ID = 'escape-beit-midrash';
+
 /** סדר שלושת מפות השלב */
 export const STAGE_ORDER: PhaseId[] = ['he-ar', 'basic', 'gemara'];
 
 export const STAGE_COUNT = STAGE_ORDER.length;
 
 export const STAGE_GATE_UNIT_ID = 'stage-gate';
+
+/** שלב נחשב לשליטה (ושער/שלב הבא) רק מעל הסף הזה — קל לשינוי. */
+export const MASTERY_THRESHOLD = 0.7;
+
+export type StageCardStatus = 'current' | 'locked' | 'completed';
 
 export type StageMission = Omit<MissionStation, 'px' | 'py'>;
 
@@ -65,18 +73,78 @@ export function stageMissionsCompleted(stageIndex: number, progress: ProgressDat
   return missions.every((m) => !!progress.completed[m.activityId]);
 }
 
+/** יחס הצלחה לפעילות בודדת (0 אם אין רשומה). */
+export function activitySuccessRatio(progress: ProgressData, activityId: string): number {
+  const rec = progress.completed[activityId];
+  if (!rec || !(rec.max > 0)) return 0;
+  return Math.max(0, Math.min(1, rec.score / rec.max));
+}
+
+/**
+ * ציון שלב = ממוצע אחוזי הצלחה בכל תחנות השלב.
+ * תחנה בלי תוצאה נספרת כ־0 — נשמר ב־progress.completed הקיים.
+ */
+export function stageScore(stageIndex: number, progress: ProgressData): number {
+  const missions = missionsForStage(stageIndex);
+  if (missions.length === 0) return 1;
+  let sum = 0;
+  for (const m of missions) {
+    sum += activitySuccessRatio(progress, m.activityId);
+  }
+  return sum / missions.length;
+}
+
+export function stageScorePercent(stageIndex: number, progress: ProgressData): number {
+  return Math.round(stageScore(stageIndex, progress) * 100);
+}
+
+export function stageHasMastery(stageIndex: number, progress: ProgressData): boolean {
+  if (progress.freeNav) return true;
+  return stageScore(stageIndex, progress) >= MASTERY_THRESHOLD;
+}
+
+/** המשימה הסופית של השלב: מעבר לשלב הבא, או הצופן הארמי בשלב האחרון. */
+export function stageFinalTaskId(stageIndex: number): string {
+  if (stageIndex >= STAGE_COUNT - 1) return STAGE_FINAL_ESCAPE_ID;
+  return stageAdvanceActivityId(stageIndex);
+}
+
+export function stageFinalTaskDone(stageIndex: number, progress: ProgressData): boolean {
+  return !!progress.completed[stageFinalTaskId(stageIndex)];
+}
+
+/** שלב הושלם רק אחרי משימה סופית + שליטה ≥ סף. */
+export function stageCleared(stageIndex: number, progress: ProgressData): boolean {
+  if (progress.freeNav) {
+    return stageFinalTaskDone(stageIndex, progress) || stageMissionsCompleted(stageIndex, progress);
+  }
+  return stageHasMastery(stageIndex, progress) && stageFinalTaskDone(stageIndex, progress);
+}
+
+/** השער בסוף השלב נפתח רק כשיש שליטה מספקת. */
+export function stageGateOpen(stageIndex: number, progress: ProgressData): boolean {
+  if (progress.freeNav) return true;
+  return stageHasMastery(stageIndex, progress);
+}
+
 export function stageUnlocked(stageIndex: number, progress: ProgressData): boolean {
   if (progress.freeNav) return true;
   if (stageIndex <= 0) return true;
-  return stageMissionsCompleted(stageIndex - 1, progress);
+  return stageCleared(stageIndex - 1, progress);
 }
 
 /** השלב הראשון הפתוח שעדיין לא הושלם; אם הכול הושלם — השלב האחרון (לשער הצופן). */
 export function resolvePlayableStage(progress: ProgressData): number {
   for (let i = 0; i < STAGE_COUNT; i++) {
-    if (stageUnlocked(i, progress) && !stageMissionsCompleted(i, progress)) return i;
+    if (stageUnlocked(i, progress) && !stageCleared(i, progress)) return i;
   }
   return STAGE_COUNT - 1;
+}
+
+export function stageCardStatus(stageIndex: number, progress: ProgressData): StageCardStatus {
+  if (stageCleared(stageIndex, progress)) return 'completed';
+  if (!stageUnlocked(stageIndex, progress)) return 'locked';
+  return 'current';
 }
 
 export function clampStageIndex(stageIndex: number): number {

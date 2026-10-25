@@ -23,12 +23,15 @@ import { Player } from './Player';
 
 import {
   clampStageIndex,
+  MASTERY_THRESHOLD,
   missionPlacementForStage,
   missionsForStage,
   STAGE_COUNT,
   STAGE_GATE_UNIT_ID,
   stageAdvanceActivityId,
+  stageGateOpen as stageGateIsOpen,
   stageLabelHe,
+  stageScorePercent,
   stageTitleHe,
   type StageMission,
 } from './stages';
@@ -460,7 +463,9 @@ export class MainScene extends Phaser.Scene {
     });
 
     const stageDone = this.stations.every((s) => s.completed);
-    const gateOpen = !!this.progress.freeNav || stageDone;
+    const gateOpen = this.stageGateOpen();
+    const scorePct = stageScorePercent(this.stageIndex, this.progress);
+    const masteryPct = Math.round(MASTERY_THRESHOLD * 100);
     const isFinalStage = this.stageIndex >= STAGE_COUNT - 1;
     const escapeDone = isFinalStage && escapeCompleted(this.progress);
     const nearGoal =
@@ -475,7 +480,7 @@ export class MainScene extends Phaser.Scene {
     else if (gateOpen) mode = 'enter';
 
     const showGoal = nearGoal && (mode !== 'locked' || stageDone || this.currentIdx < 0);
-    const showEscapeGuide = isFinalStage && stageDone && !escapeDone;
+    const showEscapeGuide = isFinalStage && gateOpen && !escapeDone;
 
     bridge.onSync({
       stations,
@@ -492,6 +497,8 @@ export class MainScene extends Phaser.Scene {
             gateKind: isFinalStage ? 'escape' : 'next-stage',
             nextStageTitle: isFinalStage ? undefined : stageTitleHe(this.stageIndex + 1),
             nextStageKicker: isFinalStage ? undefined : stageLabelHe(this.stageIndex + 1),
+            stageScorePercent: scorePct,
+            masteryThresholdPercent: masteryPct,
           }
         : null,
       escapeGuide: showEscapeGuide
@@ -522,8 +529,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   private stageGateOpen(): boolean {
-    if (this.progress.freeNav) return true;
-    return this.stations.length > 0 && this.stations.every((s) => s.completed);
+    return stageGateIsOpen(this.stageIndex, this.progress);
   }
 
   private createStation(
@@ -829,6 +835,9 @@ export class MainScene extends Phaser.Scene {
     const nextLabel = isFinalStage
       ? ESCAPE_LABEL
       : `${stageLabelHe(this.stageIndex + 1)} — ${stageTitleHe(this.stageIndex + 1)}`;
+    const scorePct = stageScorePercent(this.stageIndex, this.progress);
+    const needPct = Math.round(MASTERY_THRESHOLD * 100);
+    const masteryHint = `🔒 שליטה ${scorePct}% · נדרשים ${needPct}% — חזרו לתחנות חלשות`;
     if (isTouchDevice()) {
       this.hintText.setText(
         free
@@ -841,7 +850,7 @@ export class MainScene extends Phaser.Scene {
               ? `🏅 סיימתם את ${ESCAPE_LABEL} — המדליה שלכם!`
               : gateOpen
                 ? `▶ ${nextLabel} — דלת בסוף השביל`
-                : `🔒 סיימו את תחנות ${stageLabelHe(this.stageIndex)} לפתיחת השער`,
+                : masteryHint,
       );
     } else if (free) {
       this.hintText.setText(
@@ -856,7 +865,7 @@ export class MainScene extends Phaser.Scene {
     } else if (gateOpen) {
       this.hintText.setText(`▶ ${nextLabel} — דלת בסוף השביל`);
     } else {
-      this.hintText.setText(`🔒 סיימו את תחנות ${stageLabelHe(this.stageIndex)} לפתיחת השער`);
+      this.hintText.setText(masteryHint);
     }
   }
 

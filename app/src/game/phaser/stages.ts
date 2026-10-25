@@ -5,9 +5,6 @@ import { UNITS } from '../../data/units';
 import { UNIT_COLORS } from '../../lib/pathLayout';
 import { PHASER_MISSIONS, type MissionStation } from './stations';
 
-/** תואם ל־ESCAPE_ACTIVITY_ID — בלי ייבוא מעגלי מ־escapeRoom. */
-const STAGE_FINAL_ESCAPE_ID = 'escape-beit-midrash';
-
 /** סדר שלושת מפות השלב */
 export const STAGE_ORDER: PhaseId[] = ['he-ar', 'basic', 'gemara'];
 
@@ -18,9 +15,23 @@ export const STAGE_GATE_UNIT_ID = 'stage-gate';
 /** שלב נחשב לשליטה (ושער/שלב הבא) רק מעל הסף הזה — קל לשינוי. */
 export const MASTERY_THRESHOLD = 0.7;
 
+/** יחידות שער/סיום — לא תחנות על המפה; נפתחות רק ביעד הסופי. */
+export const STAGE_FINALE_UNIT_IDS = ['gate-aleph', 'gate-scroll', 'gate-sugya'] as const;
+
+export const STAGE_FINALE_ROOMS = [
+  { stageIndex: 0, unitId: 'gate-aleph', activityId: 'room-aleph', roomId: 'room-aleph' },
+  { stageIndex: 1, unitId: 'gate-scroll', activityId: 'room-scroll', roomId: 'room-scroll' },
+  { stageIndex: 2, unitId: 'gate-sugya', activityId: 'room-sugya', roomId: 'room-sugya' },
+] as const;
+
+/** יחידות שער — לא תחנות על המפה; נפתחות רק ביעד הסופי של השלב */
+const EXCLUDED_FROM_STAGE_MAP = new Set<string>([...STAGE_FINALE_UNIT_IDS]);
+
 export type StageCardStatus = 'current' | 'locked' | 'completed';
 
 export type StageMission = Omit<MissionStation, 'px' | 'py'>;
+
+export type StageGoalLook = 'gate' | 'scroll' | 'house';
 
 export function stagePhaseId(stageIndex: number): PhaseId {
   return STAGE_ORDER[Math.max(0, Math.min(STAGE_COUNT - 1, stageIndex))] ?? 'he-ar';
@@ -32,6 +43,27 @@ export function stageLabelHe(stageIndex: number): string {
 
 export function stageTitleHe(stageIndex: number): string {
   return phaseMeta(stagePhaseId(stageIndex)).title;
+}
+
+export function stageFinale(stageIndex: number) {
+  const i = clampStageIndex(stageIndex);
+  return STAGE_FINALE_ROOMS[i] ?? STAGE_FINALE_ROOMS[0];
+}
+
+export function stageGoalLook(stageIndex: number): StageGoalLook {
+  const i = clampStageIndex(stageIndex);
+  if (i <= 0) return 'gate';
+  if (i === 1) return 'scroll';
+  return 'house';
+}
+
+export function isStageFinaleActivity(activityId: string): boolean {
+  return STAGE_FINALE_ROOMS.some((r) => r.activityId === activityId);
+}
+
+export function stageIndexForFinaleActivity(activityId: string): number | null {
+  const hit = STAGE_FINALE_ROOMS.find((r) => r.activityId === activityId);
+  return hit ? hit.stageIndex : null;
 }
 
 export function stageAdvanceActivityId(fromStage: number): string {
@@ -47,16 +79,20 @@ export function parseStageAdvance(activityId: string): number | null {
   return m ? Number(m[1]) : null;
 }
 
-/** תחנות הלמידה של שלב אחד (לפי phaseOf). */
+/** תחנות הלמידה של שלב אחד (לפי phaseOf) — בלי חדרי שער. */
 export function missionsForStage(stageIndex: number): StageMission[] {
   const phase = stagePhaseId(stageIndex);
-  return PHASER_MISSIONS.filter((m) => phaseOf(m.unitId) === phase);
+  return PHASER_MISSIONS.filter(
+    (m) => phaseOf(m.unitId) === phase && !EXCLUDED_FROM_STAGE_MAP.has(m.unitId),
+  );
 }
 
 /** פריסת יחידות למפת שלב — counts/titles/colors מיושרים לשלב בלבד. */
 export function missionPlacementForStage(stageIndex: number) {
   const phase = stagePhaseId(stageIndex);
-  const units = UNITS.filter((u) => (u.phase ?? phaseOf(u.id)) === phase);
+  const units = UNITS.filter(
+    (u) => (u.phase ?? phaseOf(u.id)) === phase && !EXCLUDED_FROM_STAGE_MAP.has(u.id),
+  );
   return {
     counts: units.map((u) => u.activities.length),
     unitTitles: units.map((u) => u.title),
@@ -103,10 +139,9 @@ export function stageHasMastery(stageIndex: number, progress: ProgressData): boo
   return stageScore(stageIndex, progress) >= MASTERY_THRESHOLD;
 }
 
-/** המשימה הסופית של השלב: מעבר לשלב הבא, או הצופן הארמי בשלב האחרון. */
+/** המשימה הסופית של השלב: חדר הצופן של אותו שלב (לא הצופן הארמי הכללי). */
 export function stageFinalTaskId(stageIndex: number): string {
-  if (stageIndex >= STAGE_COUNT - 1) return STAGE_FINAL_ESCAPE_ID;
-  return stageAdvanceActivityId(stageIndex);
+  return stageFinale(stageIndex).activityId;
 }
 
 export function stageFinalTaskDone(stageIndex: number, progress: ProgressData): boolean {

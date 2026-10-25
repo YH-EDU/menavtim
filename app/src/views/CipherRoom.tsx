@@ -4,7 +4,8 @@ import { cipherRoom, type CipherBeat, type CipherRoomDef } from '../data/escapeR
 import { addLetterEvent } from '../lib/mastery';
 import { stripPunct } from '../data/letters';
 import { playCorrect, playWrong, playWin } from '../lib/sound';
-import { shuffleArray } from '../lib/shuffleOptions';
+import { shuffleArray, shuffleOptionsWithCorrect } from '../lib/shuffleOptions';
+import { Stars, starsFor } from '../games/ui';
 
 /**
  * חדר צופן גנרי. הנתונים ב-escapeRoomsData.
@@ -13,37 +14,52 @@ import { shuffleArray } from '../lib/shuffleOptions';
 
 type Phase = 'intro' | 'hunt' | 'puzzle' | 'dial' | 'order' | 'won';
 
+const ROOM_STAR_MAX = 3;
+
+function starScoreFromHints(hintsOpened: number, usedHint3: boolean): number {
+  if (hintsOpened <= 0) return 3;
+  if (!usedHint3) return 2;
+  return 1;
+}
+
 export default function CipherRoom({
   roomId,
+  continueLabel,
   onFinish,
 }: {
   roomId: string;
+  /** כיתוב כפתור הסיום — למשל «המשיכו לשלב הבא» */
+  continueLabel?: string;
   onFinish: (r: ActivityResult) => void;
 }) {
   const room = cipherRoom(roomId);
   if (!room) {
     return <p>החדר לא נמצא.</p>;
   }
-  return <CipherPlay room={room} onFinish={onFinish} />;
+  return <CipherPlay room={room} continueLabel={continueLabel} onFinish={onFinish} />;
 }
 
 function CipherPlay({
   room,
+  continueLabel,
   onFinish,
 }: {
   room: CipherRoomDef;
+  continueLabel?: string;
   onFinish: (r: ActivityResult) => void;
 }) {
   const [phase, setPhase] = useState<Phase>('intro');
   const [clueIdx, setClueIdx] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [hintLevel, setHintLevel] = useState(0);
-  const [score, setScore] = useState(0);
+  const [hintsOpened, setHintsOpened] = useState(0);
+  const [usedHint3, setUsedHint3] = useState(false);
   const [entered, setEntered] = useState<string[]>([]);
   const [dialMiss, setDialMiss] = useState(false);
   const [order, setOrder] = useState<CipherBeat[]>([]);
   const [orderBad, setOrderBad] = useState(false);
   const [events] = useState<LetterEvents>({});
+  const [finalStars, setFinalStars] = useState(ROOM_STAR_MAX);
 
   const clue = room.clues[clueIdx];
   const beats = useMemo(
@@ -52,24 +68,41 @@ function CipherPlay({
   );
   const shuffledBeats = useMemo(() => shuffleArray(beats), [beats]);
 
-  const maxScore = room.mode === 'sugya' ? room.clues.length + 1 : room.clues.length;
+  const sessionSeed = useMemo(() => 1 + Math.floor(Math.random() * 233279), [room.id]);
+  const shuffledChoice = useMemo(() => {
+    if (!clue) return { options: [] as string[], correct: 0 };
+    // ערבוב לכל כניסה לחדר — לא תמיד התשובה הראשונה
+    let seed = sessionSeed;
+    const key = `${room.id}:${clue.id}`;
+    for (let i = 0; i < key.length; i++) seed = (seed * 31 + key.charCodeAt(i)) % 233280;
+    return shuffleOptionsWithCorrect(clue.options, clue.correct, seed || 1);
+  }, [clue, room.id, sessionSeed]);
+
+  const openHint = () => {
+    if (!clue || hintLevel >= clue.hints.length) return;
+    const next = hintLevel + 1;
+    // רמז 3 רק אחרי 1 ו־2
+    if (next === 3 && hintLevel < 2) return;
+    setHintLevel(next);
+    setHintsOpened((n) => n + 1);
+    if (next >= 3) setUsedHint3(true);
+  };
 
   const finish = () => {
+    const stars = starScoreFromHints(hintsOpened, usedHint3);
+    setFinalStars(stars);
     playWin();
     setPhase('won');
   };
 
-  const nextClue = (gained: number) => {
+  const nextClue = () => {
     if (clueIdx + 1 >= room.clues.length) {
       if (room.mode === 'sugya') {
-        setScore(gained);
         setPhase('order');
       } else {
-        setScore(gained);
         finish();
       }
     } else {
-      setScore(gained);
       setClueIdx(clueIdx + 1);
       setPicked(null);
       setHintLevel(0);
@@ -79,17 +112,15 @@ function CipherPlay({
 
   const answer = (i: number) => {
     if (picked !== null || !clue) return;
-    const ok = i === clue.correct;
+    const ok = i === shuffledChoice.correct;
     setPicked(i);
     const word = stripPunct(clue.prompt.split(' ')[0] ?? clue.object);
     if (word) addLetterEvent(events, word, ok);
     if (ok) {
       playCorrect();
-      const gained = score + 1;
       window.setTimeout(() => {
         if (room.mode === 'digits') setPhase('dial');
-        else nextClue(gained);
-        setScore(gained);
+        else nextClue();
       }, 700);
     } else {
       playWrong();
@@ -106,7 +137,7 @@ function CipherPlay({
     }
     playCorrect();
     setEntered((list) => [...list, digit]);
-    nextClue(score);
+    nextClue();
   };
 
   const placeBeat = (beat: CipherBeat) => {
@@ -121,13 +152,16 @@ function CipherPlay({
     const next = [...order, beat];
     setOrder(next);
     if (next.length === beats.length) {
-      setScore(score + 1);
       finish();
     }
   };
 
+  const cta =
+    continueLabel ??
+    (room.id === 'room-sugya' ? 'המשיכו לצופן הארמי ←' : 'המשיכו לשלב הבא ←');
+
   return (
-    <div className={`cipher-room phase-${room.phaseId}`}>
+    <div className={`cipher-room phase-${room.phaseId}`} dir="rtl">
       <header className="cipher-top">
         <div>
           <p className="engine-kicker">{room.blurb}</p>
@@ -147,6 +181,9 @@ function CipherPlay({
       {phase === 'intro' && (
         <section className="cipher-panel">
           <p>{room.intro}</p>
+          <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-soft)', marginTop: 8 }}>
+            רמזים עולים בכוכבים: בלי רמזים — 3 כוכבים · רמזים עדינים — 2 · רמז שלישי — כוכב אחד.
+          </p>
           <button type="button" className="btn" onClick={() => setPhase('hunt')}>
             נכנסים לחדר
           </button>
@@ -155,7 +192,9 @@ function CipherPlay({
 
       {phase === 'hunt' && clue && (
         <section className="cipher-panel">
-          <p className="engine-kicker">חפשו את החפץ הזוהר · {clueIdx + 1} / {room.clues.length}</p>
+          <p className="engine-kicker">
+            חפשו את החפץ הזוהר · {clueIdx + 1} / {room.clues.length}
+          </p>
           <div className="cipher-objects">
             {room.clues.map((c, i) => (
               <button
@@ -175,29 +214,43 @@ function CipherPlay({
 
       {phase === 'puzzle' && clue && (
         <section className="cipher-panel">
-          <p className="cipher-object-name">{clue.emoji} {clue.object}</p>
+          <p className="cipher-object-name">
+            {clue.emoji} {clue.object}
+          </p>
           <p className="phrase-font engine-line">{clue.prompt}</p>
           <div className="engine-choices">
-            {clue.options.map((op, i) => {
+            {shuffledChoice.options.map((op, i) => {
               let cls = 'engine-choice';
-              if (picked !== null && i === clue.correct) cls += ' is-right';
+              if (picked !== null && i === shuffledChoice.correct) cls += ' is-right';
               else if (picked === i) cls += ' is-wrong';
               return (
-                <button key={op} type="button" className={cls} disabled={picked !== null && picked === clue.correct} onClick={() => answer(i)}>
+                <button
+                  key={`${op}-${i}`}
+                  type="button"
+                  className={cls}
+                  disabled={picked !== null && picked === shuffledChoice.correct}
+                  onClick={() => answer(i)}
+                >
                   {op}
                 </button>
               );
             })}
           </div>
-          {picked !== null && picked !== clue.correct && <p className="engine-reveal">{clue.explain}</p>}
+          {picked !== null && picked !== shuffledChoice.correct && (
+            <p className="engine-reveal">{clue.explain}</p>
+          )}
           <div className="cipher-hints">
             <button
               type="button"
               className="btn small"
               disabled={hintLevel >= clue.hints.length}
-              onClick={() => setHintLevel((n) => Math.min(clue.hints.length, n + 1))}
+              onClick={openHint}
             >
-              רמז {Math.min(hintLevel + 1, clue.hints.length)} / {clue.hints.length}
+              {hintLevel >= clue.hints.length
+                ? 'כל הרמזים נפתחו'
+                : hintLevel === 2
+                  ? `רמז 3 / 3 · עולה בכוכב`
+                  : `רמז ${hintLevel + 1} / ${clue.hints.length}`}
             </button>
             <ol>
               {clue.hints.slice(0, hintLevel).map((h) => (
@@ -205,7 +258,7 @@ function CipherPlay({
               ))}
             </ol>
           </div>
-          {picked !== null && picked !== clue.correct && (
+          {picked !== null && picked !== shuffledChoice.correct && (
             <button type="button" className="btn" onClick={() => setPicked(null)}>
               נסו שוב
             </button>
@@ -262,16 +315,28 @@ function CipherPlay({
       )}
 
       {phase === 'won' && (
-        <section className="cipher-panel cipher-won">
-          <div className="moment-emoji" aria-hidden>🏅</div>
+        <section className="cipher-panel cipher-won" dir="rtl">
+          <div className="moment-emoji" aria-hidden>
+            🏅
+          </div>
           <h2>{room.victoryTitle}</h2>
           <p>{room.victoryText}</p>
+          <div style={{ margin: '12px 0 6px', display: 'flex', justifyContent: 'center' }}>
+            <Stars n={starsFor(finalStars, ROOM_STAR_MAX)} />
+          </div>
+          <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink-soft)' }}>
+            {finalStars} מתוך {ROOM_STAR_MAX} כוכבים
+            {usedHint3 ? ' · השתמשתם ברמז השלישי' : hintsOpened > 0 ? ' · היו רמזים בדרך' : ' · בלי רמזים!'}
+          </p>
           <button
             type="button"
             className="btn"
-            onClick={() => onFinish({ score: maxScore, max: maxScore, letters: events })}
+            style={{ width: '100%', maxWidth: 320, fontWeight: 900 }}
+            onClick={() =>
+              onFinish({ score: finalStars, max: ROOM_STAR_MAX, letters: events })
+            }
           >
-            קבלו כוכבים והמשיכו
+            {cta}
           </button>
         </section>
       )}

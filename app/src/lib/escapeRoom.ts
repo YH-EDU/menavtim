@@ -1,6 +1,6 @@
 import type { ProgressData } from './api';
 import { PHASER_MISSIONS } from '../game/phaser/stations';
-import { STAGE_COUNT, stageGateOpen } from '../game/phaser/stages';
+import { STAGE_COUNT, stageFinalTaskDone } from '../game/phaser/stages';
 import { CIPHER_ROOMS, cipherRoom, isCipherRoomId } from '../data/escapeRoomsData';
 
 export { CIPHER_ROOMS, cipherRoom, isCipherRoomId };
@@ -42,10 +42,10 @@ export function escapeCompleted(progress: ProgressData): boolean {
   return !!progress.completed[ESCAPE_ACTIVITY_ID];
 }
 
-/** Unlocked after stage-3 mastery (≥ MASTERY_THRESHOLD), or always in free play / teacher preview. */
+/** נפתח אחרי ניצחון ב־room-sugya (סוף שלב ג׳), או תמיד במסלול חופשי. */
 export function escapeUnlocked(progress: ProgressData): boolean {
   if (progress.freeNav) return true;
-  return stageGateOpen(STAGE_COUNT - 1, progress);
+  return stageFinalTaskDone(STAGE_COUNT - 1, progress);
 }
 
 /** Full journey including escape-room letter finale. */

@@ -26,7 +26,7 @@ export interface UnitLabelScreenState {
 
 export type GoalOverlayMode = 'locked' | 'enter' | 'medal';
 
-export type GoalGateKind = 'escape' | 'next-stage';
+export type GoalGateKind = 'escape' | 'stage-room' | 'next-stage';
 
 export interface GoalMedalScreenState {
   screenX: number;
@@ -35,10 +35,12 @@ export interface GoalMedalScreenState {
   mode: GoalOverlayMode;
   totals: JourneyTotals;
   allComplete: boolean;
-  /** שער לשלב הבא או לצופן הארמי */
+  /** חדר שלב / צופן ארמי / מעבר ישן */
   gateKind?: GoalGateKind;
   nextStageTitle?: string;
   nextStageKicker?: string;
+  roomTitle?: string;
+  roomBlurb?: string;
   /** ציון שליטה נוכחי באחוזים (למסר נעילת שער) */
   stageScorePercent?: number;
   masteryThresholdPercent?: number;

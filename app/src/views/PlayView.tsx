@@ -10,7 +10,16 @@ import { UNITS } from '../data/units';
 import { phaseMeta } from '../data/phases';
 import GameHost from '../games/GameHost';
 import React from 'react';
-import { focusActKey, identitySlug, LS_FLY_STARS } from '../lib/playStorage';
+import {
+  focusActKey,
+  identitySlug,
+  LS_FLY_STARS,
+  SS_PENDING_STAGE_ADVANCE,
+} from '../lib/playStorage';
+import {
+  isStageFinaleActivity,
+  stageIndexForFinaleActivity,
+} from '../game/phaser/stages';
 
 export default function PlayView({
   unitId,
@@ -42,6 +51,17 @@ export default function PlayView({
     sessionStorage.setItem(LS_FLY_STARS, String(starsFor(r.score, r.max)));
     onReported();
     sessionStorage.setItem(focusKey, activity.id);
+
+    if (isStageFinaleActivity(activity.id)) {
+      const stageIdx = stageIndexForFinaleActivity(activity.id);
+      if (activity.id === 'room-sugya') {
+        nav('/escape');
+        return;
+      }
+      if (stageIdx != null) {
+        sessionStorage.setItem(SS_PENDING_STAGE_ADVANCE, String(stageIdx));
+      }
+    }
     nav('/map');
   };
 

@@ -20,6 +20,8 @@
 export const SS_SESSION = 'aramit_session';
 export const LS_LAST_ROUTE = 'aramit_last_route';
 export const LS_FLY_STARS = 'aramit_fly_stars';
+/** אחרי ניצחון בחדר שלב — מפת המסע מציגה מעבר לשלב הבא */
+export const SS_PENDING_STAGE_ADVANCE = 'aramit_pending_stage_advance';
 
 function normalizeNickname(nickname: string): string {
   return nickname.trim().replace(/\s+/g, ' ').toLowerCase();

@@ -237,7 +237,23 @@ export default function GameHost({
   };
 
   if (!result && activity.type === 'cipher') {
-    return <CipherRoom roomId={activity.roomId} onFinish={finish} />;
+    // מסך הניצחון של החדר כולל כוכבים וכפתור המשך — בלי כרטיס כפול כאן
+    const continueLabel =
+      activity.roomId === 'room-sugya'
+        ? 'המשיכו לצופן הארמי ←'
+        : activity.roomId === 'room-aleph' || activity.roomId === 'room-scroll'
+          ? 'המשיכו לשלב הבא ←'
+          : undefined;
+    return (
+      <CipherRoom
+        roomId={activity.roomId}
+        continueLabel={continueLabel}
+        onFinish={(r) => {
+          cancelSpeech();
+          onDone(r);
+        }}
+      />
+    );
   }
 
   if (result) {

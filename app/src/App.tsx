@@ -18,6 +18,7 @@ import ProgressView from './views/ProgressView';
 import Teacher from './views/Teacher';
 import PathEdit from './views/PathEdit';
 import EscapeRoomPage from './views/EscapeRoomPage';
+import { saveCurrentStage } from './game/phaser/playerState';
 import { trackPage } from './lib/analytics';
 
 // ניתוב מבוסס hash — עובד בכל אחסון סטטי בלי הגדרות שרת.
@@ -146,16 +147,27 @@ export default function App() {
     view = (
       <Landing
         session={session}
+        progress={progress}
         onResume={() => nav(`/${loadLastRoute() || 'map'}`)}
         onStartFresh={startFresh}
+        onOpenStage={(stageIndex) => {
+          if (!isCompleteSession(session)) {
+            startFresh('/join/guest');
+            return;
+          }
+          saveCurrentStage(stageIndex, { nickname: session.nickname, emoji: session.emoji });
+          nav('/map');
+        }}
       />
     );
   } else if (!isCompleteSession(session)) {
     view = needsSession ? null : (
       <Landing
         session={null}
+        progress={{ letters: {}, completed: {} }}
         onResume={() => nav('/map')}
         onStartFresh={startFresh}
+        onOpenStage={() => startFresh('/join/guest')}
       />
     );
   } else if (route === 'map') {
@@ -164,6 +176,7 @@ export default function App() {
         session={session}
         progress={progress}
         onLogout={logout}
+        onReported={refreshProgress}
         onSessionChange={async (s) => {
           setSession(s);
           try {
@@ -202,8 +215,17 @@ export default function App() {
     view = (
       <Landing
         session={session}
+        progress={progress}
         onResume={() => nav(`/${loadLastRoute() || 'map'}`)}
         onStartFresh={startFresh}
+        onOpenStage={(stageIndex) => {
+          if (!isCompleteSession(session)) {
+            startFresh('/join/guest');
+            return;
+          }
+          saveCurrentStage(stageIndex, { nickname: session.nickname, emoji: session.emoji });
+          nav('/map');
+        }}
       />
     );
   }

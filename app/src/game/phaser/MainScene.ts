@@ -23,15 +23,20 @@ import { Player } from './Player';
 
 import {
   clampStageIndex,
+  MASTERY_THRESHOLD,
   missionPlacementForStage,
   missionsForStage,
   STAGE_COUNT,
-  STAGE_GATE_UNIT_ID,
-  stageAdvanceActivityId,
+  stageFinale,
+  stageFinalTaskDone,
+  stageGateOpen as stageGateIsOpen,
+  stageGoalLook,
   stageLabelHe,
+  stageScorePercent,
   stageTitleHe,
   type StageMission,
 } from './stages';
+import { cipherRoom } from '../../data/escapeRoomsData';
 
 import { computeJourneyTotals } from '../../lib/journeyTotals';
 import {
@@ -186,7 +191,7 @@ export class MainScene extends Phaser.Scene {
     this.pathCells = journey.pathCells;
 
     this.drawMazeGate(journey.mazeExit, 1);
-    this.drawGoalMarker(journey.goalMarker);
+    this.drawGoalMarker(journey.goalMarker, stageGoalLook(this.stageIndex));
 
     this.goalMarker = journey.goalMarker;
     this.goalWorld = { x: journey.goalMarker.doorCell.px, y: journey.goalMarker.doorCell.py };
@@ -361,13 +366,53 @@ export class MainScene extends Phaser.Scene {
     gfx.fillRect(x - TILE_SIZE + 2, y - TILE_SIZE * 0.14, gateW + TILE_SIZE * 2 - 4, TILE_SIZE * 0.16);
   }
 
-  private drawGoalMarker(marker: GoalMarker) {
+  private drawGoalMarker(marker: GoalMarker, look: ReturnType<typeof stageGoalLook>) {
     const gfx = this.add.graphics().setDepth(2);
     const { body, roof, door, windows, approachPath } = marker;
 
     gfx.fillStyle(COLORS.path, 0.45);
     gfx.fillRect(approachPath.x, approachPath.y, approachPath.w, approachPath.h);
 
+    if (look === 'gate') {
+      // שער אבן גבוה — סוף שלב א׳
+      const gateX = door.x - TILE_SIZE * 1.2;
+      const gateW = door.w + TILE_SIZE * 2.4;
+      const gateH = body.h + roof.h * 0.55;
+      const gateY = body.y + body.h - gateH;
+      gfx.fillStyle(COLORS.goalStoneDark, 1);
+      gfx.fillRect(gateX, gateY, TILE_SIZE * 1.1, gateH);
+      gfx.fillRect(gateX + gateW - TILE_SIZE * 1.1, gateY, TILE_SIZE * 1.1, gateH);
+      gfx.fillStyle(COLORS.goalStone, 1);
+      gfx.fillRect(gateX, gateY, gateW, TILE_SIZE * 1.15);
+      gfx.fillStyle(COLORS.goalTrim, 1);
+      gfx.fillRect(gateX + 4, gateY + TILE_SIZE * 0.35, gateW - 8, TILE_SIZE * 0.35);
+      gfx.fillStyle(COLORS.goalWood, 1);
+      gfx.fillRect(door.x, door.y - TILE_SIZE * 0.4, door.w, door.h + TILE_SIZE * 0.4);
+      gfx.fillStyle(COLORS.goalAccent, 0.95);
+      gfx.fillCircle(door.x + door.w * 0.78, door.y + door.h * 0.35, 4);
+      return;
+    }
+
+    if (look === 'scroll') {
+      // חדר מגילה נמוך — סוף שלב ב׳
+      const chamberY = body.y + TILE_SIZE * 0.8;
+      const chamberH = body.h - TILE_SIZE * 0.4;
+      gfx.fillStyle(0xb7c6dc, 1);
+      gfx.fillRect(body.x + TILE_SIZE, chamberY, body.w - TILE_SIZE * 2, chamberH);
+      gfx.fillStyle(0x8d6b2f, 1);
+      gfx.fillRect(body.x + TILE_SIZE, chamberY, body.w - TILE_SIZE * 2, TILE_SIZE * 0.45);
+      gfx.fillStyle(COLORS.goalWindow, 1);
+      gfx.fillRect(door.x - TILE_SIZE * 0.3, chamberY + TILE_SIZE * 0.7, door.w + TILE_SIZE * 0.6, TILE_SIZE * 1.1);
+      gfx.lineStyle(2, COLORS.goalWood, 0.9);
+      gfx.strokeRect(door.x - TILE_SIZE * 0.3, chamberY + TILE_SIZE * 0.7, door.w + TILE_SIZE * 0.6, TILE_SIZE * 1.1);
+      gfx.fillStyle(COLORS.goalWood, 1);
+      gfx.fillRect(door.x, door.y, door.w, door.h);
+      gfx.fillStyle(COLORS.goalAccent, 0.9);
+      gfx.fillCircle(door.x + door.w * 0.82, door.y + door.h * 0.55, 3.5);
+      return;
+    }
+
+    // בית מדרש — סוף שלב ג׳
     gfx.fillStyle(COLORS.goalStone, 1);
     gfx.fillRect(body.x, body.y, body.w, body.h);
     gfx.fillStyle(COLORS.goalStoneDark, 0.35);
@@ -460,8 +505,13 @@ export class MainScene extends Phaser.Scene {
     });
 
     const stageDone = this.stations.every((s) => s.completed);
-    const gateOpen = !!this.progress.freeNav || stageDone;
+    const gateOpen = this.stageGateOpen();
+    const scorePct = stageScorePercent(this.stageIndex, this.progress);
+    const masteryPct = Math.round(MASTERY_THRESHOLD * 100);
     const isFinalStage = this.stageIndex >= STAGE_COUNT - 1;
+    const finale = stageFinale(this.stageIndex);
+    const roomDef = cipherRoom(finale.roomId);
+    const roomDone = stageFinalTaskDone(this.stageIndex, this.progress);
     const escapeDone = isFinalStage && escapeCompleted(this.progress);
     const nearGoal =
       Phaser.Math.Distance.Between(this.player.x, this.player.y, this.goalWorld.x, this.goalWorld.y) < 56;
@@ -472,11 +522,13 @@ export class MainScene extends Phaser.Scene {
 
     let mode: GoalOverlayMode = 'locked';
     if (isFinalStage && escapeDone) mode = 'medal';
-    else if (gateOpen) mode = 'enter';
+    else if (gateOpen && (!roomDone || (isFinalStage && roomDone && !escapeDone))) mode = 'enter';
+    else if (gateOpen && roomDone && !isFinalStage) mode = 'medal';
 
     const showGoal = nearGoal && (mode !== 'locked' || stageDone || this.currentIdx < 0);
-    const showEscapeGuide = isFinalStage && stageDone && !escapeDone;
+    const showEscapeGuide = isFinalStage && gateOpen && roomDone && !escapeDone;
 
+    const openEscapeNext = isFinalStage && roomDone && !escapeDone;
     bridge.onSync({
       stations,
       unitLabels,
@@ -489,9 +541,13 @@ export class MainScene extends Phaser.Scene {
             mode,
             totals: computeJourneyTotals(this.progress),
             allComplete: escapeDone,
-            gateKind: isFinalStage ? 'escape' : 'next-stage',
-            nextStageTitle: isFinalStage ? undefined : stageTitleHe(this.stageIndex + 1),
-            nextStageKicker: isFinalStage ? undefined : stageLabelHe(this.stageIndex + 1),
+            gateKind: openEscapeNext ? 'escape' : 'stage-room',
+            nextStageTitle: openEscapeNext ? undefined : roomDef?.title,
+            nextStageKicker: openEscapeNext ? undefined : stageLabelHe(this.stageIndex),
+            roomTitle: roomDef?.title,
+            roomBlurb: roomDef?.blurb,
+            stageScorePercent: scorePct,
+            masteryThresholdPercent: masteryPct,
           }
         : null,
       escapeGuide: showEscapeGuide
@@ -522,8 +578,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   private stageGateOpen(): boolean {
-    if (this.progress.freeNav) return true;
-    return this.stations.length > 0 && this.stations.every((s) => s.completed);
+    return stageGateIsOpen(this.stageIndex, this.progress);
   }
 
   private createStation(
@@ -576,8 +631,12 @@ export class MainScene extends Phaser.Scene {
     if (this.spawnGrace > 0) return;
     if (!this.player.hasMoved) return;
 
+    const finale = stageFinale(this.stageIndex);
+    const roomDone = stageFinalTaskDone(this.stageIndex, this.progress);
     const isFinalStage = this.stageIndex >= STAGE_COUNT - 1;
-    if (isFinalStage) {
+
+    // שלב ג׳ אחרי חדר הסוגיה → הצופן הארמי (סיום גדול)
+    if (isFinalStage && roomDone) {
       if (escapeCompleted(this.progress)) return;
       if (this.lastTouchId === ESCAPE_ACTIVITY_ID) return;
       this.lastTouchId = ESCAPE_ACTIVITY_ID;
@@ -585,10 +644,10 @@ export class MainScene extends Phaser.Scene {
       return;
     }
 
-    const advanceId = stageAdvanceActivityId(this.stageIndex);
-    if (this.lastTouchId === advanceId) return;
-    this.lastTouchId = advanceId;
-    this.openMission(STAGE_GATE_UNIT_ID, advanceId);
+    if (roomDone) return;
+    if (this.lastTouchId === finale.activityId) return;
+    this.lastTouchId = finale.activityId;
+    this.openMission(finale.unitId, finale.activityId);
   }
 
   private handleStationOverlap(station: StationZone) {
@@ -825,14 +884,19 @@ export class MainScene extends Phaser.Scene {
     const next = this.stations.find((s) => s.unlocked && !s.completed);
     const gateOpen = this.stageGateOpen();
     const isFinalStage = this.stageIndex >= STAGE_COUNT - 1;
+    const roomDone = stageFinalTaskDone(this.stageIndex, this.progress);
     const escapeDone = isFinalStage && escapeCompleted(this.progress);
-    const nextLabel = isFinalStage
-      ? ESCAPE_LABEL
-      : `${stageLabelHe(this.stageIndex + 1)} — ${stageTitleHe(this.stageIndex + 1)}`;
+    const finale = stageFinale(this.stageIndex);
+    const roomTitle = cipherRoom(finale.roomId)?.title ?? 'חדר הצופן';
+    const nextLabel =
+      isFinalStage && roomDone ? ESCAPE_LABEL : roomTitle;
+    const scorePct = stageScorePercent(this.stageIndex, this.progress);
+    const needPct = Math.round(MASTERY_THRESHOLD * 100);
+    const masteryHint = `🔒 שליטה ${scorePct}% · נדרשים ${needPct}% — חזרו לתחנות חלשות`;
     if (isTouchDevice()) {
       this.hintText.setText(
         free
-          ? gateOpen && !escapeDone
+          ? gateOpen && !(isFinalStage && escapeDone)
             ? `📱 ${nextLabel} — הקישו לריצה · גררו לכיוון`
             : '📱 הקישו להתחיל/לעצור · גררו לכיוון'
           : next
@@ -841,11 +905,11 @@ export class MainScene extends Phaser.Scene {
               ? `🏅 סיימתם את ${ESCAPE_LABEL} — המדליה שלכם!`
               : gateOpen
                 ? `▶ ${nextLabel} — דלת בסוף השביל`
-                : `🔒 סיימו את תחנות ${stageLabelHe(this.stageIndex)} לפתיחת השער`,
+                : masteryHint,
       );
     } else if (free) {
       this.hintText.setText(
-        gateOpen && !escapeDone
+        gateOpen && !(isFinalStage && escapeDone)
           ? `🔓 ${nextLabel} פתוח · חצים / WASD · לחיצה לתנועה`
           : '🔓 חצים / WASD · לחיצה לתנועה · לחיצה על תחנה לפתיחה',
       );
@@ -856,7 +920,7 @@ export class MainScene extends Phaser.Scene {
     } else if (gateOpen) {
       this.hintText.setText(`▶ ${nextLabel} — דלת בסוף השביל`);
     } else {
-      this.hintText.setText(`🔒 סיימו את תחנות ${stageLabelHe(this.stageIndex)} לפתיחת השער`);
+      this.hintText.setText(masteryHint);
     }
   }
 

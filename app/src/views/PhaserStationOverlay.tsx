@@ -44,19 +44,14 @@ function GoalMedalOverlay({
   const missing = totals.maxStars - totals.stars;
   const hasMaxStars = missing <= 0;
 
-  const nextStage = medal.gateKind === 'next-stage';
-  const lockedTitle = nextStage
-    ? `${medal.nextStageKicker ?? 'השלב הבא'} נעול`
-    : `${ESCAPE_LABEL} נעול`;
-  const lockedBody = nextStage
-    ? 'סיימו את כל תחנות השלב — או הפעילו מסלול חופשי — כדי להמשיך'
-    : 'סיימו את כל התחנות — או הפעילו מסלול חופשי — כדי להיכנס';
-  const enterTitle = nextStage
-    ? `המשיכו ל${medal.nextStageKicker ?? 'שלב הבא'}`
-    : `כניסה ל${ESCAPE_LABEL}`;
-  const enterBody = nextStage
-    ? medal.nextStageTitle ?? 'מפת שלב חדשה מחכה מעבר לדלת'
-    : ESCAPE_BLURB;
+  const isEscape = medal.gateKind === 'escape';
+  const roomTitle = medal.roomTitle ?? medal.nextStageTitle ?? 'חדר הצופן';
+  const scorePct = medal.stageScorePercent ?? 0;
+  const needPct = medal.masteryThresholdPercent ?? 70;
+  const lockedTitle = isEscape ? `${ESCAPE_LABEL} נעול` : `${roomTitle} נעול`;
+  const lockedBody = `השליטה בשלב היא ${scorePct}% (נדרשים ${needPct}%). חזרו לתחנות החלשות ונסו שוב — ואז השער ייפתח.`;
+  const enterTitle = isEscape ? `כניסה ל${ESCAPE_LABEL}` : `כניסה ל${roomTitle}`;
+  const enterBody = isEscape ? ESCAPE_BLURB : medal.roomBlurb ?? medal.nextStageTitle ?? 'חדר בריחה בסוף השלב';
 
   if (mode === 'locked') {
     return (
@@ -123,7 +118,7 @@ function GoalMedalOverlay({
             cursor: 'pointer',
           }}
         >
-          <div style={{ fontSize: 36, lineHeight: 1, marginBottom: 4 }}>{nextStage ? '🗺️' : '🚪'}</div>
+          <div style={{ fontSize: 36, lineHeight: 1, marginBottom: 4 }}>{isEscape ? '🚪' : '🗝️'}</div>
           <div style={{ fontSize: 19, fontWeight: 900, color: '#4a3416', marginBottom: 6 }}>
             {enterTitle}
           </div>

@@ -18,9 +18,10 @@ import {
 } from '../game/phaser/playerState';
 import {
   clampStageIndex,
-  isStageAdvanceActivity,
-  parseStageAdvance,
   STAGE_COUNT,
+  stageFinale,
+  stageFinalTaskDone,
+  stageGateOpen,
   stageHudLabel,
   stageLabelHe,
   stageTitleHe,
@@ -33,6 +34,7 @@ import {
 } from './PhaserStationOverlay';
 import CharacterSelect from './CharacterSelect';
 import { ESCAPE_ACTIVITY_ID } from '../lib/escapeRoom';
+import { SS_PENDING_STAGE_ADVANCE } from '../lib/playStorage';
 
 function StageTransition({
   stageIndex,
@@ -75,7 +77,7 @@ function StageTransition({
           {stageTitleHe(stageIndex)}
         </h2>
         <p style={{ margin: '0 0 18px', fontSize: 15, color: '#6b5a3e', lineHeight: 1.5, fontWeight: 600 }}>
-          מפת שלב חדשה נפתחה. המשיכו בשביל, סיימו את התחנות, והגיעו לשער שבסוף.
+          מפת שלב חדשה נפתחה. המשיכו בשביל, סיימו את התחנות, והגיעו לחדר הצופן שבסוף.
         </p>
         <button type="button" className="btn" style={{ width: '100%' }} onClick={onContinue}>
           המשך לשלב ←
@@ -90,11 +92,13 @@ export default function JourneyPhaser({
   progress,
   forcePicker = false,
   onPickerClosed,
+  onReported,
 }: {
   session: StudentSession;
   progress: ProgressData;
   forcePicker?: boolean;
   onPickerClosed?: () => void;
+  onReported?: () => void;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
@@ -135,15 +139,23 @@ export default function JourneyPhaser({
 
   // מוודאים שהשלב השמור עדיין מותר אחרי עדכון התקדמות.
   useEffect(() => {
-    if (!stageUnlocked(stageIndex, progress)) {
-      const next = loadCurrentStage(progress, {
+    if (advancingRef.current || transitionTo != null) return;
+    // ממזגים רשומות מקומיות (למשל stage-advance) שעדיין לא חזרו מהרענון
+    const merged: ProgressData = {
+      ...progress,
+      completed: { ...progress.completed, ...progressRef.current.completed },
+      freeNav: progress.freeNav ?? progressRef.current.freeNav,
+    };
+    progressRef.current = { ...merged, mapPos: progress.mapPos ?? progressRef.current.mapPos };
+    if (!stageUnlocked(stageIndex, merged)) {
+      const next = loadCurrentStage(merged, {
         nickname: session.nickname,
         emoji: session.emoji,
       });
       setStageIndex(next);
       saveCurrentStage(next, { nickname: session.nickname, emoji: session.emoji });
     }
-  }, [progress, stageIndex, session.nickname, session.emoji]);
+  }, [progress, stageIndex, session.nickname, session.emoji, transitionTo]);
 
   const advanceToStage = useCallback((next: number) => {
     const target = clampStageIndex(next);
@@ -183,12 +195,22 @@ export default function JourneyPhaser({
     nav('/escape');
   };
 
-  const handleGoalEnter = () => {
-    if (stageRef.current >= STAGE_COUNT - 1) {
+  const openStageFinale = (stageIndex: number) => {
+    const p = progressRef.current;
+    if (!stageGateOpen(stageIndex, p)) return;
+    const finale = stageFinale(stageIndex);
+    const roomDone = stageFinalTaskDone(stageIndex, p);
+    if (stageIndex >= STAGE_COUNT - 1 && roomDone) {
       enterEscape();
       return;
     }
-    advanceToStage(stageRef.current + 1);
+    if (roomDone) return;
+    pauseJourneyGame(gameRef.current);
+    nav(`/play/${finale.unitId}/${finale.activityId}`);
+  };
+
+  const handleGoalEnter = () => {
+    openStageFinale(stageRef.current);
   };
 
   const handleStationClick = (unitId: string, activityId: string) => {
@@ -196,14 +218,35 @@ export default function JourneyPhaser({
       enterEscape();
       return;
     }
-    if (isStageAdvanceActivity(activityId)) {
-      const from = parseStageAdvance(activityId);
-      advanceToStage((from ?? stageRef.current) + 1);
+    const finale = stageFinale(stageRef.current);
+    if (activityId === finale.activityId) {
+      openStageFinale(stageRef.current);
       return;
     }
     pauseJourneyGame(gameRef.current);
     nav(`/play/${unitId}/${activityId}`);
   };
+
+  // אחרי ניצחון בחדר שלב — מעבר למפה הבאה עם מסך מעבר בעברית
+  useEffect(() => {
+    if (showPicker || transitionTo != null || advancingRef.current) return;
+    const raw = sessionStorage.getItem(SS_PENDING_STAGE_ADVANCE);
+    if (raw == null || raw === '') return;
+    const from = clampStageIndex(Number(raw));
+    if (from >= STAGE_COUNT - 1) {
+      sessionStorage.removeItem(SS_PENDING_STAGE_ADVANCE);
+      return;
+    }
+    const merged: ProgressData = {
+      ...progress,
+      completed: { ...progress.completed, ...progressRef.current.completed },
+      freeNav: progress.freeNav ?? progressRef.current.freeNav,
+    };
+    if (!stageFinalTaskDone(from, merged)) return;
+    sessionStorage.removeItem(SS_PENDING_STAGE_ADVANCE);
+    progressRef.current = { ...merged, mapPos: progress.mapPos ?? progressRef.current.mapPos };
+    advanceToStage(from + 1);
+  }, [progress, showPicker, transitionTo, advanceToStage]);
 
   const { sync, bridgeFactory } = usePhaserOverlay(handleStationClick);
 
@@ -239,9 +282,9 @@ export default function JourneyPhaser({
           nav('/escape');
           return;
         }
-        if (isStageAdvanceActivity(activityId)) {
-          const from = parseStageAdvance(activityId);
-          advanceToStage((from ?? stageRef.current) + 1);
+        const finale = stageFinale(stageRef.current);
+        if (activityId === finale.activityId) {
+          openStageFinale(stageRef.current);
           return;
         }
         pauseJourneyGame(gameRef.current);

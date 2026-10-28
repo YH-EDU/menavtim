@@ -1,5 +1,6 @@
 -- מנווטים בארמית — סכמת שרת המורים (Supabase)
--- מריצים פעם אחת ב-SQL Editor. אפשר להריץ שוב: הטבלאות לא נדרסות, המדיניות נוצרת מחדש.
+-- אפשר להדביק את כל הקובץ שוב אחרי ריצה חלקית: טבלאות לא נדרסות,
+-- מדיניות וטריגרים ופונקציות נמחקים ונוצרים מחדש.
 --
 -- אבטחה (בקצרה):
 -- מורה נכנס עם Supabase Auth ורואה רק את הכיתות שלו.
@@ -8,7 +9,26 @@
 -- ומחזירה כרטיס אקראי. רק מי שמחזיק בכרטיס כותב את ההתקדמות של אותו תלמיד.
 -- הדפדפן (מפתח anon) לא קורא טבלאות ישירות בלי מדיניות, ולא כותב אליהן.
 
-create extension if not exists pgcrypto;
+-- pgcrypto על Supabase יושב בסכמה extensions, לא ב-public.
+-- הפונקציות למטה נועלות search_path ל-public, לכן כל קריאה מאומתת במפורש.
+create schema if not exists extensions;
+create extension if not exists pgcrypto with schema extensions;
+
+-- אם ריצה קודמת התקינה את pgcrypto ב-public, מעבירים אותה ל-extensions.
+do $$
+begin
+  if exists (
+    select 1
+    from pg_extension e
+    join pg_namespace n on n.oid = e.extnamespace
+    where e.extname = 'pgcrypto'
+      and n.nspname <> 'extensions'
+  ) then
+    alter extension pgcrypto set schema extensions;
+  end if;
+end $$;
+
+grant usage on schema extensions to postgres, service_role, anon, authenticated;
 
 -- ── פרופיל מורה (מקושר ל-auth.users) ──
 create table if not exists public.profiles (
@@ -70,6 +90,27 @@ create index if not exists students_class_idx on public.students (class_id);
 create index if not exists attempts_student_idx on public.attempts (student_id);
 create index if not exists student_sessions_student_idx on public.student_sessions (student_id);
 
+-- ── מחיקה לפני יצירה, כדי שאפשר להריץ שוב אחרי ריצה חלקית ──
+drop policy if exists profiles_select on public.profiles;
+drop policy if exists classes_select on public.classes;
+drop policy if exists classes_insert on public.classes;
+drop policy if exists classes_update on public.classes;
+drop policy if exists students_select on public.students;
+drop policy if exists attempts_select on public.attempts;
+drop policy if exists letter_stats_select on public.letter_stats;
+
+drop trigger if exists on_auth_user_created on auth.users;
+drop trigger if exists classes_assign_code on public.classes;
+
+drop function if exists public.student_map_pos(text, jsonb);
+drop function if exists public.student_attempt(text, text, text, integer, integer, jsonb);
+drop function if exists public.student_progress(text);
+drop function if exists public.join_class(text, text, text);
+drop function if exists public.student_from_token(text);
+drop function if exists public.assign_class_code();
+drop function if exists public.handle_new_teacher();
+drop function if exists public.caller_is_admin();
+
 -- ── עזרים ──
 create or replace function public.caller_is_admin()
 returns boolean
@@ -110,7 +151,6 @@ begin
 end;
 $$;
 
-drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_teacher();
@@ -141,7 +181,6 @@ begin
 end;
 $$;
 
-drop trigger if exists classes_assign_code on public.classes;
 create trigger classes_assign_code
   before insert on public.classes
   for each row execute function public.assign_class_code();
@@ -156,7 +195,10 @@ set search_path = public
 as $$
   select s.student_id
   from public.student_sessions s
-  where s.token_hash = encode(digest(coalesce(p_token, ''), 'sha256'), 'hex')
+  where s.token_hash = pg_catalog.encode(
+    extensions.digest(coalesce(p_token, '')::text, 'sha256'::text),
+    'hex'
+  )
   limit 1;
 $$;
 
@@ -210,9 +252,12 @@ begin
 
   update public.students set last_seen = now() where id = v_student.id;
 
-  v_token := encode(gen_random_bytes(24), 'hex');
+  v_token := pg_catalog.encode(extensions.gen_random_bytes(24), 'hex');
   insert into public.student_sessions (token_hash, student_id)
-  values (encode(digest(v_token, 'sha256'), 'hex'), v_student.id);
+  values (
+    pg_catalog.encode(extensions.digest(v_token::text, 'sha256'::text), 'hex'),
+    v_student.id
+  );
 
   return jsonb_build_object(
     'token', v_token,
@@ -411,31 +456,29 @@ grant select on table public.students to authenticated;
 grant select on table public.attempts to authenticated;
 grant select on table public.letter_stats to authenticated;
 
+-- עמודת identity דורשת שימוש בסדרה כשמורה יוצר כיתה מהדפדפן.
+grant usage, select on all sequences in schema public to authenticated;
+
 -- כתיבת התקדמות רק דרך הפונקציות למעלה (הן רצות כבעלים ועוקפות RLS).
 -- אין מדיניות insert/update לתלמיד או למורה על הטבלאות האלה.
 
-drop policy if exists profiles_select on public.profiles;
 create policy profiles_select on public.profiles
   for select to authenticated
   using (id = auth.uid() or public.caller_is_admin());
 
-drop policy if exists classes_select on public.classes;
 create policy classes_select on public.classes
   for select to authenticated
   using (teacher_id = auth.uid() or public.caller_is_admin());
 
-drop policy if exists classes_insert on public.classes;
 create policy classes_insert on public.classes
   for insert to authenticated
   with check (teacher_id = auth.uid());
 
-drop policy if exists classes_update on public.classes;
 create policy classes_update on public.classes
   for update to authenticated
   using (teacher_id = auth.uid())
   with check (teacher_id = auth.uid());
 
-drop policy if exists students_select on public.students;
 create policy students_select on public.students
   for select to authenticated
   using (
@@ -446,7 +489,6 @@ create policy students_select on public.students
     )
   );
 
-drop policy if exists attempts_select on public.attempts;
 create policy attempts_select on public.attempts
   for select to authenticated
   using (
@@ -459,7 +501,6 @@ create policy attempts_select on public.attempts
     )
   );
 
-drop policy if exists letter_stats_select on public.letter_stats;
 create policy letter_stats_select on public.letter_stats
   for select to authenticated
   using (
@@ -471,3 +512,6 @@ create policy letter_stats_select on public.letter_stats
         and (c.teacher_id = auth.uid() or public.caller_is_admin())
     )
   );
+
+-- בלי זה ה-API לא רואה פונקציות חדשות עד רענון ידני של הסכמה.
+notify pgrst, 'reload schema';

@@ -28,10 +28,16 @@ function makeClient(): SupabaseClient | null {
 /** null כשהמשתנים לא הוגדרו — אסור לקרוא לשרת המורים. */
 export const supabase = makeClient();
 
-/** אחרי התחברות גוגל חוזרים לכתובת האתר (בלי ה-hash של הניווט). */
+/**
+ * חזרה אחרי גוגל: כתובת האתר בלי hash.
+ * הנתב הוא hash (`#/teacher`). אם ה-hash ייכנס ל-redirectTo, פרמטר `code`
+ * עלול ליפול אחריו וסופאבייס לא יראה אותו. הקוד מגיע ב-query (`?code=`),
+ * והאפליקציה מעבירה אחר כך אל `#/teacher`.
+ * באתר החי זו `https://yh-edu.github.io/menavtim/`.
+ */
 export function teacherOAuthRedirectTo(): string {
   if (typeof window === 'undefined') return '';
-  return new URL(import.meta.env.BASE_URL || '/', window.location.origin).href;
+  return window.location.origin + import.meta.env.BASE_URL;
 }
 
 /** יש code של סופאבייס בכתובת — כדאי לפתוח את אזור המורים. */

@@ -499,11 +499,20 @@ async function profileFromAuth(): Promise<TeacherSession> {
   const { data: userData, error: userErr } = await sb.auth.getUser();
   if (userErr || !userData.user) throw asBackendError(userErr, 'יש להתחבר מחדש');
   const user = userData.user;
-  const { data, error } = await sb
-    .from('profiles')
-    .select('name, email, is_admin')
-    .eq('id', user.id)
-    .maybeSingle();
+  let data: { name: string; email: string; is_admin: boolean } | null = null;
+  let error: { message?: string } | null = null;
+  // הטריגר על auth.users יוצר את השורה. נסיון קצר נוסף אם הכניסה מגוגל הקדימה את הקריאה.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await sb
+      .from('profiles')
+      .select('name, email, is_admin')
+      .eq('id', user.id)
+      .maybeSingle();
+    data = res.data;
+    error = res.error;
+    if (error || data) break;
+    await new Promise((resolve) => window.setTimeout(resolve, 400));
+  }
   if (error || !data) throw asBackendError(error, 'הפרופיל לא נמצא. נסו להירשם שוב.');
   const session: TeacherSession = {
     token: user.id,
@@ -519,13 +528,9 @@ async function profileFromAuth(): Promise<TeacherSession> {
 /** אחרי רענון או חזרה מגוגל — משחזר מורה אם יש סשן סופאבייס. */
 export async function restoreTeacherSession(): Promise<TeacherSession | null> {
   if (!supabase || !isTeacherBackendConfigured()) return null;
-  try {
-    const { data, error } = await supabase.auth.getSession();
-    if (error || !data.session) return null;
-    return await profileFromAuth();
-  } catch {
-    return null;
-  }
+  const { data, error } = await supabase.auth.getSession();
+  if (error || !data.session) return null;
+  return await profileFromAuth();
 }
 
 export async function teacherRegister(name: string, email: string, password: string): Promise<TeacherSession> {

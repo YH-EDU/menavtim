@@ -141,9 +141,9 @@ begin
     coalesce(
       nullif(trim(new.raw_user_meta_data->>'name'), ''),
       nullif(trim(new.raw_user_meta_data->>'full_name'), ''),
-      split_part(coalesce(new.email, 'teacher'), '@', 1)
+      split_part(coalesce(nullif(new.email, ''), new.raw_user_meta_data->>'email', 'teacher'), '@', 1)
     ),
-    coalesce(new.email, '')
+    coalesce(nullif(new.email, ''), nullif(new.raw_user_meta_data->>'email', ''), '')
   )
   on conflict (id) do update
     set email = excluded.email;

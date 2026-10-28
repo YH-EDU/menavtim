@@ -74,20 +74,7 @@ export function SiteCredit({
         ...style,
       }}
     >
-      נוצר ע״י חפציה בן ארצי · חולמים תקשוב ·{' '}
-      <a
-        href="https://chepti.com"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          color: light ? 'rgba(255,255,255,0.95)' : 'var(--teal-dark)',
-          fontWeight: 700,
-          textDecoration: 'underline',
-          textUnderlineOffset: 2,
-        }}
-      >
-        chepti.com
-      </a>
+      נוצר ע״י חפציה בן ארצי · חולמים תקשוב
     </p>
   );
 }

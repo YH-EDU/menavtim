@@ -24,8 +24,10 @@ import {
   stageGateOpen,
   stageHudLabel,
   stageLabelHe,
+  stageMissionsDone,
   stageTitleHe,
   stageUnlocked,
+  testUnlockAll,
 } from '../game/phaser/stages';
 import {
   OverlayBridgeHost,
@@ -197,6 +199,7 @@ export default function JourneyPhaser({
 
   const openStageFinale = (stageIndex: number) => {
     const p = progressRef.current;
+    if (!p.freeNav && !stageMissionsDone(stageIndex, p)) return;
     if (!stageGateOpen(stageIndex, p)) return;
     const finale = stageFinale(stageIndex);
     const roomDone = stageFinalTaskDone(stageIndex, p);
@@ -248,7 +251,7 @@ export default function JourneyPhaser({
     advanceToStage(from + 1);
   }, [progress, showPicker, transitionTo, advanceToStage]);
 
-  const { sync, bridgeFactory } = usePhaserOverlay(handleStationClick);
+  const { sync, bridgeFactory, doorLock, dismissDoorLock } = usePhaserOverlay(handleStationClick);
 
   const handleAvatarSelected = (id: CharacterId) => {
     setAvatarId(id);
@@ -426,6 +429,71 @@ export default function JourneyPhaser({
       >
         {stageHudLabel(stageIndex)}
       </div>
+      {testUnlockAll() && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 'max(8px, env(safe-area-inset-top, 0px))',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 14,
+            pointerEvents: 'none',
+            background: '#ea580c',
+            color: '#fff',
+            borderRadius: 999,
+            padding: '6px 14px',
+            fontSize: 13,
+            fontWeight: 800,
+            boxShadow: '0 4px 14px rgba(120, 40, 0, 0.35)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          🧪 מצב בדיקה – כל השלבים פתוחים
+        </div>
+      )}
+      {doorLock && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="door-lock-title"
+          dir="rtl"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 30,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+            background: 'rgba(20, 16, 10, 0.45)',
+          }}
+        >
+          <div
+            style={{
+              width: 'min(420px, 100%)',
+              maxHeight: 'min(80vh, 560px)',
+              overflow: 'auto',
+              background: 'rgba(255, 254, 247, 0.98)',
+              border: '3px solid rgba(125, 82, 38, 0.75)',
+              borderRadius: 18,
+              padding: '18px 16px 14px',
+              boxShadow: '0 16px 40px rgba(20, 40, 10, 0.35)',
+            }}
+          >
+            <h2 id="door-lock-title" style={{ margin: '0 0 8px', fontSize: 20, color: '#4a3416' }}>
+              הדלת נעולה — נותרו עוד {doorLock.remaining} משימות
+            </h2>
+            <ul style={{ margin: '0 0 14px', paddingInlineStart: 18, color: '#4a3416', fontWeight: 700, lineHeight: 1.45 }}>
+              {doorLock.missions.map((title, i) => (
+                <li key={`${i}-${title}`}>{title}</li>
+              ))}
+            </ul>
+            <button type="button" className="btn" style={{ width: '100%' }} onClick={dismissDoorLock} autoFocus>
+              סגירה
+            </button>
+          </div>
+        </div>
+      )}
       {transitionTo != null && (
         <StageTransition stageIndex={transitionTo} onContinue={finishTransition} />
       )}

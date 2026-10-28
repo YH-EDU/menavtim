@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import {
-  loadTeacher, saveTeacher, teacherLogin, teacherRegister,
-  fetchClasses, createClass, fetchHeatmap, setClassFree,
-  teacherPreviewSession,
-  type TeacherSession, type ClassInfo, type HeatmapStudent,
+  loadTeacher, teacherLogin, teacherRegister, teacherGoogle, teacherLogout,
+  fetchClasses, fetchAdminClasses, createClass, fetchHeatmap, setClassFree,
+  teacherPreviewSession, restoreTeacherSession,
+  type TeacherSession, type ClassInfo, type AdminClassInfo, type HeatmapStudent,
 } from '../lib/api';
+import { isTeacherBackendConfigured, TEACHER_OFFLINE_MSG } from '../lib/supabase';
 import { LETTERS } from '../data/letters';
 
 /** מפת החום מציגה רק מילים שיש בהן מה ללמוד — לא את הזהות לעברית */
@@ -21,15 +22,53 @@ function classJoinUrl(code: string): string {
   return `${base}#/join/${encodeURIComponent(code)}`;
 }
 
+function TeacherOffline() {
+  return (
+    <HeroBg image={asset('/bg-cottage.webp')} overlay="linear-gradient(170deg, rgba(30,41,59,0.72) 0%, rgba(51,65,85,0.65) 100%)">
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <div className="card pop-in" style={{ width: '100%', maxWidth: 440, background: 'rgba(255,255,255,0.95)', textAlign: 'center' }}>
+          <div style={{ fontSize: 40 }}>👩‍🏫</div>
+          <h2>אזור המורים</h2>
+          <p style={{ color: 'var(--ink-soft)', fontSize: 16, lineHeight: 1.55 }}>{TEACHER_OFFLINE_MSG}</p>
+          <button type="button" className="btn" style={{ width: '100%', marginTop: 8 }} onClick={() => nav('/')}>
+            → חזרה למסך הראשי
+          </button>
+        </div>
+      </div>
+    </HeroBg>
+  );
+}
+
 export default function Teacher() {
   const [teacher, setTeacher] = useState<TeacherSession | null>(loadTeacher());
+  const [booting, setBooting] = useState(isTeacherBackendConfigured());
 
+  useEffect(() => {
+    if (!isTeacherBackendConfigured()) {
+      setBooting(false);
+      return;
+    }
+    restoreTeacherSession()
+      .then((t) => {
+        if (t) setTeacher(t);
+      })
+      .finally(() => setBooting(false));
+  }, []);
+
+  if (!isTeacherBackendConfigured()) return <TeacherOffline />;
+  if (booting && !teacher) {
+    return (
+      <SoftPageShell seed="teacher">
+        <p style={{ textAlign: 'center', marginTop: 48 }}>טוען...</p>
+      </SoftPageShell>
+    );
+  }
   if (!teacher) return <TeacherAuth onAuth={setTeacher} />;
   return (
     <TeacherDashboard
       teacher={teacher}
       onLogout={() => {
-        saveTeacher(null);
+        void teacherLogout();
         setTeacher(null);
         nav('/');
       }}
@@ -100,6 +139,24 @@ function TeacherAuth({ onAuth }: { onAuth: (t: TeacherSession) => void }) {
         <button className="btn" style={{ width: '100%', marginTop: 14 }} disabled={busy}>
           {busy ? 'רגע...' : mode === 'login' ? 'התחברות' : 'יצירת חשבון'}
         </button>
+        <button
+          type="button"
+          className="btn"
+          style={{ width: '100%', marginTop: 8, background: '#fff', color: 'var(--ink)', border: '2px solid #e2e8f0' }}
+          disabled={busy}
+          onClick={async () => {
+            setErr('');
+            setBusy(true);
+            try {
+              await teacherGoogle();
+            } catch (ex) {
+              setErr(ex instanceof Error ? ex.message : 'שגיאה');
+              setBusy(false);
+            }
+          }}
+        >
+          כניסה עם גוגל
+        </button>
         <button type="button" className="btn" style={{ width: '100%', background: 'transparent', boxShadow: 'none', color: 'var(--ink-soft)', fontSize: 14 }} onClick={() => nav('/')}>
           → חזרה למסך הראשי
         </button>
@@ -112,21 +169,27 @@ function TeacherAuth({ onAuth }: { onAuth: (t: TeacherSession) => void }) {
 // ─────────────────────────── לוח המורה ───────────────────────────
 
 function TeacherDashboard({ teacher, onLogout }: { teacher: TeacherSession; onLogout: () => void }) {
+  const [tab, setTab] = useState<'mine' | 'admin'>('mine');
   const [classes, setClasses] = useState<ClassInfo[]>([]);
+  const [adminClasses, setAdminClasses] = useState<AdminClassInfo[]>([]);
   const [selected, setSelected] = useState<ClassInfo | null>(null);
   const [newName, setNewName] = useState('');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const shown = tab === 'admin' ? adminClasses : classes;
 
   const refresh = async () => {
     try {
       const list = await fetchClasses(teacher);
       setClasses(list);
-      if (selected) {
-        const cur = list.find((c) => c.id === selected.id) || null;
-        setSelected(cur);
-      }
+      const admin = teacher.isAdmin ? await fetchAdminClasses(teacher) : [];
+      if (teacher.isAdmin) setAdminClasses(admin);
+      setSelected((cur) => {
+        if (!cur) return cur;
+        const pool = tab === 'admin' ? admin : list;
+        return pool.find((c) => c.id === cur.id) ?? null;
+      });
     } catch (ex) {
       setErr(ex instanceof Error ? ex.message : 'שגיאה');
       if (ex instanceof Error && /התחבר/.test(ex.message)) onLogout();
@@ -202,8 +265,39 @@ function TeacherDashboard({ teacher, onLogout }: { teacher: TeacherSession; onLo
 
       {err && <p className="err">{err}</p>}
 
+      {teacher.isAdmin && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }} role="tablist" aria-label="תצוגת כיתות">
+          {([
+            ['mine', 'הכיתות שלי'],
+            ['admin', 'כל הכיתות (מנהל)'],
+          ] as const).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
+              className="btn small"
+              onClick={() => {
+                setTab(id);
+                setSelected(null);
+              }}
+              style={{
+                background: tab === id ? undefined : 'transparent',
+                color: tab === id ? undefined : 'var(--ink-soft)',
+                boxShadow: tab === id ? undefined : 'none',
+                border: tab === id ? undefined : '2px solid rgba(15,118,110,0.35)',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 20, alignItems: 'stretch' }}>
-        {classes.map((c) => (
+        {shown.map((c) => {
+          const adminRow = tab === 'admin' ? (c as AdminClassInfo) : null;
+          return (
           <div
             key={c.id}
             className="card"
@@ -216,6 +310,12 @@ function TeacherDashboard({ teacher, onLogout }: { teacher: TeacherSession; onLo
             }}
           >
             <h3 style={{ fontSize: 17 }}>{c.name}</h3>
+            {adminRow && (
+              <p style={{ margin: '4px 0', color: 'var(--ink-soft)', fontSize: 13.5, lineHeight: 1.4 }}>
+                {adminRow.teacherName}
+                {adminRow.teacherEmail ? ` · ${adminRow.teacherEmail}` : ''}
+              </p>
+            )}
             <p style={{ margin: '4px 0', color: 'var(--ink-soft)', fontSize: 14 }}>{c.students} תלמידים</p>
             <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: 6, color: 'var(--teal-dark)', direction: 'ltr', textAlign: 'center', background: 'var(--teal-soft)', borderRadius: 8, padding: '6px 0' }}>
               {c.code}
@@ -236,6 +336,7 @@ function TeacherDashboard({ teacher, onLogout }: { teacher: TeacherSession; onLo
             <p style={{ margin: '0 0 8px', fontSize: 11.5, color: 'var(--ink-soft)', lineHeight: 1.35, wordBreak: 'break-all', direction: 'ltr', textAlign: 'left' }}>
               {classJoinUrl(c.code)}
             </p>
+            {tab === 'mine' && (
             <label
               onClick={(e) => e.stopPropagation()}
               title="כשמופעל — התלמידים חופשיים לבחור כל פעילות, בלי נעילה לפי סדר"
@@ -256,21 +357,27 @@ function TeacherDashboard({ teacher, onLogout }: { teacher: TeacherSession; onLo
               />
               מסלול חופשי (ללא נעילת שלבים)
             </label>
+            )}
           </div>
-        ))}
+          );
+        })}
+        {tab === 'mine' && (
         <form className="card" onSubmit={addClass} style={{ minWidth: 190, display: 'flex', flexDirection: 'column', gap: 8, justifyContent: 'center' }}>
           <input className="field" placeholder="שם כיתה חדשה" value={newName} onChange={(e) => setNewName(e.target.value)} />
           <button className="btn small" disabled={busy || !newName.trim()}>+ יצירת כיתה</button>
         </form>
+        )}
       </div>
 
       {selected ? (
         <Heatmap teacher={teacher} cls={selected} />
       ) : (
         <p style={{ color: 'var(--ink-soft)', textAlign: 'center', marginTop: 40 }}>
-          {classes.length
+            {shown.length
             ? 'בחרו כיתה כדי לראות את מפת החום'
-            : 'צרו כיתה ראשונה, שלחו לתלמידים את הקישור או את הקוד המספרי — והמפה תתמלא מעצמה'}
+            : tab === 'admin'
+              ? 'עדיין אין כיתות במערכת'
+              : 'צרו כיתה ראשונה, שלחו לתלמידים את הקישור או את הקוד המספרי — והמפה תתמלא מעצמה'}
         </p>
       )}
       <div style={{ marginTop: 40, display: 'flex', justifyContent: 'flex-end' }}>
@@ -396,7 +503,7 @@ function Heatmap({ teacher, cls }: { teacher: TeacherSession; cls: ClassInfo }) 
         <div className="card float-up" style={{ marginTop: 14, background: '#f8fafc' }}>
           <h3 style={{ fontSize: 16 }}>{drill.nickname}</h3>
           <p style={{ fontSize: 13.5, color: 'var(--ink-soft)', margin: '4px 0 10px' }}>
-            {drill.activitiesDone} פעילויות הושלמו · נראה לאחרונה: {drill.lastSeen ? new Date(drill.lastSeen + 'Z').toLocaleString('he-IL') : '—'}
+            {drill.activitiesDone} פעילויות הושלמו · נראה לאחרונה: {drill.lastSeen ? new Date(drill.lastSeen.includes('T') ? drill.lastSeen : `${drill.lastSeen.replace(' ', 'T')}Z`).toLocaleString('he-IL') : '—'}
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {HEAT_COLS.filter((l) => {

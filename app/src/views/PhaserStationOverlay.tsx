@@ -4,7 +4,7 @@ import { starsFor } from '../games/ui';
 import { ACTIVITY_ICONS, Lock, Check, Star3D } from '../ui/icons';
 import { UNIT_COLORS } from '../lib/pathLayout';
 import { ESCAPE_BLURB, ESCAPE_LABEL } from '../lib/escapeRoom';
-import type { JourneyOverlaySync } from '../game/phaser/overlayBridge';
+import type { DoorLockNotice, JourneyOverlaySync } from '../game/phaser/overlayBridge';
 
 function StarArc({ count }: { count: number }) {
   const angles = [-30, 0, 30];
@@ -474,9 +474,11 @@ export function PhaserStationOverlay({
 /** Hook: receives sync payloads from Phaser via bridge callback. */
 export function usePhaserOverlay(onStationClick: (unitId: string, activityId: string) => void) {
   const [sync, setSync] = useState<JourneyOverlaySync | null>(null);
+  const [doorLock, setDoorLock] = useState<DoorLockNotice | null>(null);
   const clickRef = useRef(onStationClick);
   clickRef.current = onStationClick;
   const lastState = useRef('');
+  const dismissDoorLock = useCallback(() => setDoorLock(null), []);
 
   const bridge = useCallback(() => ({
     onSync: (data: JourneyOverlaySync) => {
@@ -516,9 +518,10 @@ export function usePhaserOverlay(onStationClick: (unitId: string, activityId: st
       }
     },
     onStationClick: (unitId: string, activityId: string) => clickRef.current(unitId, activityId),
+    onDoorLocked: (notice: DoorLockNotice) => setDoorLock(notice),
   }), []);
 
-  return { sync, bridgeFactory: bridge };
+  return { sync, bridgeFactory: bridge, doorLock, dismissDoorLock };
 }
 
 export function OverlayBridgeHost({

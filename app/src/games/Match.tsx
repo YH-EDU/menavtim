@@ -54,7 +54,7 @@ export default function Match({
   const settle = (i: number, ok: boolean, side: Side) => {
     if (ok) {
       playCorrect();
-      uniqueLetters(pairs[i].rashi).forEach((l) => addLetterEvent(events, l, true));
+      uniqueLetters(pairs[i].phrase).forEach((l) => addLetterEvent(events, l, true));
       const next = [...matched, i];
       setMatched(next);
       setSelected(null);
@@ -65,7 +65,7 @@ export default function Match({
     } else {
       playWrong();
       setMistakes((m) => m + 1);
-      uniqueLetters(pairs[i].rashi).forEach((l) => addLetterEvent(events, l, false));
+      uniqueLetters(pairs[i].phrase).forEach((l) => addLetterEvent(events, l, false));
       setWrong({ side, i });
       setTimeout(() => setWrong(null), 450);
     }
@@ -85,7 +85,7 @@ export default function Match({
     const active = selected?.side === side && selected.i === i;
     const bad = wrong?.side === side && wrong.i === i;
     const aramaic = side === 'aramaic';
-    const text = aramaic ? pairs[i].rashi : pairs[i].label ?? pairs[i].rashi;
+    const text = aramaic ? pairs[i].phrase : pairs[i].label ?? pairs[i].phrase;
     return (
       <button
         key={i}

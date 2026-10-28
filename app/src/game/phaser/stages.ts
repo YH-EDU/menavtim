@@ -109,6 +109,51 @@ export function stageMissionsCompleted(stageIndex: number, progress: ProgressDat
   return missions.every((m) => !!progress.completed[m.activityId]);
 }
 
+const UNLOCK_ALL_KEY = 'menavtim_unlock_all';
+
+function unlockAllParam(): '1' | '0' | null {
+  if (typeof window === 'undefined') return null;
+  const read = (query: string): '1' | '0' | null => {
+    const v = new URLSearchParams(query).get('unlockAll');
+    return v === '1' || v === '0' ? v : null;
+  };
+  const fromSearch = read(window.location.search.replace(/^\?/, ''));
+  if (fromSearch) return fromSearch;
+  const hash = window.location.hash || '';
+  const qi = hash.indexOf('?');
+  if (qi >= 0) return read(hash.slice(qi + 1));
+  return null;
+}
+
+/**
+ * דגל בדיקה זמני: פותח את מפות השלבים.
+ * לא מסמן משימות כגמורות ולא פותח את דלת סוף השלב.
+ * דולק אם VITE_UNLOCK_ALL=1, או ?unlockAll=1 (גם בתוך ה-hash), או localStorage.
+ * ?unlockAll=0 מוחק את השמירה בדפדפן.
+ */
+export function testUnlockAll(): boolean {
+  if (import.meta.env.VITE_UNLOCK_ALL === '1') return true;
+  if (typeof window === 'undefined') return false;
+  try {
+    const param = unlockAllParam();
+    if (param === '1') localStorage.setItem(UNLOCK_ALL_KEY, '1');
+    else if (param === '0') localStorage.removeItem(UNLOCK_ALL_KEY);
+    return localStorage.getItem(UNLOCK_ALL_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/** משימות השלב שטרם הושלמו (בלי חדר הצופן). */
+export function stageMissionsRemaining(stageIndex: number, progress: ProgressData): StageMission[] {
+  return missionsForStage(stageIndex).filter((m) => !progress.completed[m.activityId]);
+}
+
+/** כל תחנות הלמידה של השלב סומנו ב-progress.completed. */
+export function stageMissionsDone(stageIndex: number, progress: ProgressData): boolean {
+  return stageMissionsRemaining(stageIndex, progress).length === 0;
+}
+
 /** יחס הצלחה לפעילות בודדת (0 אם אין רשומה). */
 export function activitySuccessRatio(progress: ProgressData, activityId: string): number {
   const rec = progress.completed[activityId];
@@ -163,6 +208,7 @@ export function stageGateOpen(stageIndex: number, progress: ProgressData): boole
 }
 
 export function stageUnlocked(stageIndex: number, progress: ProgressData): boolean {
+  if (testUnlockAll()) return true;
   if (progress.freeNav) return true;
   if (stageIndex <= 0) return true;
   return stageCleared(stageIndex - 1, progress);

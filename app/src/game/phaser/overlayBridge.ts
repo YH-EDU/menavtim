@@ -61,9 +61,16 @@ export interface JourneyOverlaySync {
   escapeGuide: EscapeGuideScreenState | null;
 }
 
+/** הדלת בסוף השלב נעולה כי חסרות משימות — לא שער ה-70%. */
+export interface DoorLockNotice {
+  remaining: number;
+  missions: string[];
+}
+
 export interface JourneyOverlayBridge {
   onSync: (data: JourneyOverlaySync) => void;
   onStationClick: (unitId: string, activityId: string) => void;
+  onDoorLocked?: (notice: DoorLockNotice) => void;
 }
 
 export const OVERLAY_BRIDGE_KEY = 'journeyOverlayBridge';

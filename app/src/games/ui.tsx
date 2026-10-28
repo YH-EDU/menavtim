@@ -65,9 +65,6 @@ export function PhraseCard({ text, size = 54 }: { text: string; size?: number })
   );
 }
 
-/** תאימות לאחור */
-export const RashiCard = PhraseCard;
-
 // ───────────────────────── טקסט מעורב עברית/ארמית ─────────────────────────
 
 export interface AramaicToken {

@@ -1,13 +1,18 @@
 import type { LetterEvents } from '../data/types';
 
-// שכבת תקשורת: מול השרת (PHP) כשהתלמיד מחובר לכיתה,
+// שכבת תקשורת: Supabase כשהתלמיד מחובר לכיתה,
 // ומצב "אורח" (localStorage בלבד) כשמתרגלים בלי קוד כיתה.
-
-import { API_BASE } from './basePath';
+// קבצי api/*.php לא בשימוש.
 
 import { clearEphemeralPlayState, LS_LAST_ROUTE, SS_SESSION } from './playStorage';
+import {
+  supabase,
+  isTeacherBackendConfigured,
+  TEACHER_OFFLINE_MSG,
+  teacherOAuthRedirectTo,
+} from './supabase';
 
-const API = API_BASE;
+export { isTeacherBackendConfigured, TEACHER_OFFLINE_MSG };
 
 export interface StudentSession {
   token: string;       // 'guest' במצב אורח
@@ -259,41 +264,73 @@ export function clearLastRoute(): void {
   } catch { /* ignore */ }
 }
 
-async function post<T>(path: string, body: unknown, token?: string): Promise<T> {
-  const res = await fetch(`${API}/${path}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as { error?: string }).error || 'שגיאת שרת');
-  return data as T;
+function asBackendError(error: { message?: string } | null, fallback = TEACHER_OFFLINE_MSG): Error {
+  const msg = (error?.message ?? '').trim();
+  if (/[\u0590-\u05FF]/.test(msg)) return new Error(msg);
+  if (/invalid login|invalid credentials|email not confirmed/i.test(msg)) {
+    return new Error('אימייל או סיסמה שגויים');
+  }
+  if (/already registered|already been registered|user already/i.test(msg)) {
+    return new Error('כתובת האימייל כבר רשומה — נסו להתחבר');
+  }
+  if (/password/i.test(msg) && /short|least|6/i.test(msg)) {
+    return new Error('סיסמה קצרה מדי (לפחות 6 תווים)');
+  }
+  if (/provider is not enabled|unsupported provider/i.test(msg)) {
+    return new Error('כניסת גוגל עדיין לא הופעלה באתר זה');
+  }
+  if (/jwt|session missing|auth session/i.test(msg)) {
+    return new Error('יש להתחבר מחדש');
+  }
+  if (!msg || /fetch|network|failed|404|405|json|not found/i.test(msg)) {
+    return new Error(TEACHER_OFFLINE_MSG);
+  }
+  return new Error(fallback);
 }
 
-async function get<T>(path: string, token?: string): Promise<T> {
-  const res = await fetch(`${API}/${path}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as { error?: string }).error || 'שגיאת שרת');
-  return data as T;
+async function requireBackend() {
+  if (!supabase || !isTeacherBackendConfigured()) throw new Error(TEACHER_OFFLINE_MSG);
+  return supabase;
+}
+
+async function runBackend<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (ex) {
+    if (ex instanceof Error && /[\u0590-\u05FF]/.test(ex.message)) throw ex;
+    throw new Error(TEACHER_OFFLINE_MSG);
+  }
 }
 
 // ─── תלמיד ───
 
 export async function joinClass(code: string, nickname: string, emoji: string): Promise<StudentSession> {
   clearEphemeralPlayState();
-  const r = await post<{ token: string; classId: number; className: string; freeNav: boolean }>(
-    'student.php?a=join',
-    { code, nickname, emoji }
-  );
-  const s: StudentSession = {
-    token: r.token, nickname, emoji,
-    classId: r.classId, className: r.className, freeNav: r.freeNav,
-  };
+  const sb = await requireBackend();
+  const s = await runBackend(async () => {
+    const { data, error } = await sb.rpc('join_class', {
+      p_code: code,
+      p_nickname: nickname,
+      p_emoji: emoji,
+    });
+    if (error) throw asBackendError(error);
+    const row = (data ?? {}) as {
+      token?: string;
+      classId?: number;
+      className?: string;
+      freeNav?: boolean;
+    };
+    if (!row.token) throw new Error(TEACHER_OFFLINE_MSG);
+    const session: StudentSession = {
+      token: row.token,
+      nickname,
+      emoji,
+      classId: Number(row.classId),
+      className: row.className,
+      freeNav: !!row.freeNav,
+    };
+    return session;
+  });
   saveSession(s);
   return s;
 }
@@ -349,7 +386,26 @@ function loadGuestProgress(s: StudentSession): ProgressData {
 
 export async function fetchProgress(s: StudentSession): Promise<ProgressData> {
   if (isLocalSession(s)) return loadGuestProgress(s);
-  return get<ProgressData>('student.php?a=progress', s.token);
+  const sb = await requireBackend();
+  return runBackend(async () => {
+    const { data, error } = await sb.rpc('student_progress', { p_token: s.token });
+    if (error) throw asBackendError(error);
+    const row = (data ?? {}) as {
+      letters?: ProgressData['letters'];
+      completed?: ProgressData['completed'];
+      freeNav?: boolean;
+      mapPos?: MapPosition | null;
+    };
+    const progress: ProgressData = {
+      letters: row.letters && !Array.isArray(row.letters) ? row.letters : {},
+      completed: row.completed && !Array.isArray(row.completed) ? row.completed : {},
+      freeNav: !!row.freeNav,
+    };
+    if (row.mapPos && typeof row.mapPos === 'object' && Number.isFinite(row.mapPos.x) && Number.isFinite(row.mapPos.y)) {
+      progress.mapPos = row.mapPos;
+    }
+    return progress;
+  });
 }
 
 function writeGuestProgress(s: StudentSession, p: ProgressData): void {
@@ -380,7 +436,18 @@ export async function reportAttempt(
     writeGuestProgress(s, p);
     return;
   }
-  await post('student.php?a=attempt', { activityId, unitId, score, max, letters }, s.token);
+  const sb = await requireBackend();
+  await runBackend(async () => {
+    const { error } = await sb.rpc('student_attempt', {
+      p_token: s.token,
+      p_activity_id: activityId,
+      p_unit_id: unitId,
+      p_score: score,
+      p_max: max,
+      p_letters: letters ?? {},
+    });
+    if (error) throw asBackendError(error);
+  });
 }
 
 /** שמירת מיקום השחקן על המפה — אורח ב-localStorage, כיתה בשרת */
@@ -394,15 +461,21 @@ export async function saveMapPosition(s: StudentSession, pos: MapPosition): Prom
     writeGuestProgress(s, p);
     return;
   }
-  await post('student.php?a=map_pos', pos, s.token);
+  const sb = await requireBackend();
+  await runBackend(async () => {
+    const { error } = await sb.rpc('student_map_pos', { p_token: s.token, p_pos: pos });
+    if (error) throw asBackendError(error);
+  });
 }
 
 // ─── מורה ───
 
 export interface TeacherSession {
   token: string;
+  id?: string;
   name: string;
   email: string;
+  isAdmin?: boolean;
 }
 
 const LS_TEACHER = 'aramit_teacher';
@@ -421,23 +494,88 @@ export function saveTeacher(t: TeacherSession | null): void {
   else localStorage.removeItem(LS_TEACHER);
 }
 
+async function profileFromAuth(): Promise<TeacherSession> {
+  const sb = await requireBackend();
+  const { data: userData, error: userErr } = await sb.auth.getUser();
+  if (userErr || !userData.user) throw asBackendError(userErr, 'יש להתחבר מחדש');
+  const user = userData.user;
+  const { data, error } = await sb
+    .from('profiles')
+    .select('name, email, is_admin')
+    .eq('id', user.id)
+    .maybeSingle();
+  if (error || !data) throw asBackendError(error, 'הפרופיל לא נמצא. נסו להירשם שוב.');
+  const session: TeacherSession = {
+    token: user.id,
+    id: user.id,
+    name: data.name || user.email || '',
+    email: data.email || user.email || '',
+    isAdmin: !!data.is_admin,
+  };
+  saveTeacher(session);
+  return session;
+}
+
+/** אחרי רענון או חזרה מגוגל — משחזר מורה אם יש סשן סופאבייס. */
+export async function restoreTeacherSession(): Promise<TeacherSession | null> {
+  if (!supabase || !isTeacherBackendConfigured()) return null;
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error || !data.session) return null;
+    return await profileFromAuth();
+  } catch {
+    return null;
+  }
+}
+
 export async function teacherRegister(name: string, email: string, password: string): Promise<TeacherSession> {
-  const r = await post<{ token: string; name: string; email: string }>('teacher.php?a=register', {
-    name,
-    email,
-    password,
+  const sb = await requireBackend();
+  return runBackend(async () => {
+    const { data, error } = await sb.auth.signUp({
+      email: email.trim(),
+      password,
+      options: { data: { name: name.trim() } },
+    });
+    if (error) throw asBackendError(error);
+    if (!data.session) {
+      throw new Error('נשלח קישור לאימייל. אשרו אותו ואז התחברו. אפשר גם לכבות אישור אימייל בהגדרות סופאבייס.');
+    }
+    return profileFromAuth();
   });
-  saveTeacher(r);
-  return r;
 }
 
 export async function teacherLogin(email: string, password: string): Promise<TeacherSession> {
-  const r = await post<{ token: string; name: string; email: string }>('teacher.php?a=login', {
-    email,
-    password,
+  const sb = await requireBackend();
+  return runBackend(async () => {
+    const { error } = await sb.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    if (error) throw asBackendError(error);
+    return profileFromAuth();
   });
-  saveTeacher(r);
-  return r;
+}
+
+/** מעביר לגוגל. אחרי האישור הדפדפן חוזר לאתר והסשן נשמר. */
+export async function teacherGoogle(): Promise<void> {
+  const sb = await requireBackend();
+  await runBackend(async () => {
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: teacherOAuthRedirectTo() },
+    });
+    if (error) throw asBackendError(error, 'כניסת גוגל עדיין לא הופעלה באתר זה');
+  });
+}
+
+export async function teacherLogout(): Promise<void> {
+  saveTeacher(null);
+  if (!supabase) return;
+  try {
+    await supabase.auth.signOut();
+  } catch {
+    /* היציאה המקומית כבר בוצעה */
+  }
 }
 
 export interface ClassInfo {
@@ -448,17 +586,99 @@ export interface ClassInfo {
   students: number;
 }
 
+export interface AdminClassInfo extends ClassInfo {
+  teacherName: string;
+  teacherEmail: string;
+}
+
+async function classStudentCounts(): Promise<Map<number, number>> {
+  const sb = await requireBackend();
+  const { data, error } = await sb.from('students').select('class_id');
+  if (error) throw asBackendError(error);
+  const counts = new Map<number, number>();
+  for (const row of data ?? []) {
+    const id = Number(row.class_id);
+    counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+  return counts;
+}
+
 export async function setClassFree(t: TeacherSession, classId: number, free: boolean): Promise<void> {
-  await post('teacher.php?a=set_free', { classId, free }, t.token);
+  const sb = await requireBackend();
+  if (!t.id) throw new Error('יש להתחבר מחדש');
+  await runBackend(async () => {
+    const { error } = await sb.from('classes').update({ free_nav: free }).eq('id', classId).eq('teacher_id', t.id);
+    if (error) throw asBackendError(error);
+  });
 }
 
 export async function fetchClasses(t: TeacherSession): Promise<ClassInfo[]> {
-  const r = await get<{ classes: ClassInfo[] }>('teacher.php?a=classes', t.token);
-  return r.classes;
+  const sb = await requireBackend();
+  if (!t.id) throw new Error('יש להתחבר מחדש');
+  return runBackend(async () => {
+    const { data, error } = await sb
+      .from('classes')
+      .select('id, name, code, free_nav')
+      .eq('teacher_id', t.id)
+      .order('id', { ascending: false });
+    if (error) throw asBackendError(error);
+    const counts = await classStudentCounts();
+    return (data ?? []).map((c) => ({
+      id: Number(c.id),
+      name: c.name,
+      code: c.code,
+      freeNav: !!c.free_nav,
+      students: counts.get(Number(c.id)) ?? 0,
+    }));
+  });
+}
+
+export async function fetchAdminClasses(t: TeacherSession): Promise<AdminClassInfo[]> {
+  const sb = await requireBackend();
+  if (!t.isAdmin) throw new Error('אין הרשאת מנהל');
+  return runBackend(async () => {
+    const { data, error } = await sb
+      .from('classes')
+      .select('id, name, code, free_nav, teacher_id')
+      .order('id', { ascending: false });
+    if (error) throw asBackendError(error);
+    const { data: profiles, error: pErr } = await sb.from('profiles').select('id, name, email');
+    if (pErr) throw asBackendError(pErr);
+    const counts = await classStudentCounts();
+    const byId = new Map((profiles ?? []).map((p) => [p.id as string, p]));
+    return (data ?? []).map((c) => {
+      const prof = byId.get(c.teacher_id as string);
+      return {
+        id: Number(c.id),
+        name: c.name as string,
+        code: c.code as string,
+        freeNav: !!c.free_nav,
+        students: counts.get(Number(c.id)) ?? 0,
+        teacherName: (prof?.name as string) ?? '',
+        teacherEmail: (prof?.email as string) ?? '',
+      };
+    });
+  });
 }
 
 export async function createClass(t: TeacherSession, name: string): Promise<ClassInfo> {
-  return post<ClassInfo>('teacher.php?a=create_class', { name }, t.token);
+  const sb = await requireBackend();
+  if (!t.id) throw new Error('יש להתחבר מחדש');
+  return runBackend(async () => {
+    const { data, error } = await sb
+      .from('classes')
+      .insert({ teacher_id: t.id, name })
+      .select('id, name, code, free_nav')
+      .single();
+    if (error || !data) throw asBackendError(error, 'לא הצלחנו ליצור כיתה');
+    return {
+      id: Number(data.id),
+      name: data.name,
+      code: data.code,
+      freeNav: !!data.free_nav,
+      students: 0,
+    };
+  });
 }
 
 export interface HeatmapStudent {
@@ -471,6 +691,54 @@ export interface HeatmapStudent {
 }
 
 export async function fetchHeatmap(t: TeacherSession, classId: number): Promise<HeatmapStudent[]> {
-  const r = await get<{ students: HeatmapStudent[] }>(`teacher.php?a=heatmap&class=${classId}`, t.token);
-  return r.students;
+  const sb = await requireBackend();
+  void t;
+  return runBackend(async () => {
+    const { data: students, error } = await sb
+      .from('students')
+      .select('id, nickname, emoji, last_seen')
+      .eq('class_id', classId)
+      .order('nickname');
+    if (error) throw asBackendError(error);
+    const list = students ?? [];
+    if (list.length === 0) return [];
+    const ids = list.map((s) => Number(s.id));
+    const { data: letters, error: lErr } = await sb
+      .from('letter_stats')
+      .select('student_id, letter, correct, wrong')
+      .in('student_id', ids);
+    if (lErr) throw asBackendError(lErr);
+    const { data: attempts, error: aErr } = await sb
+      .from('attempts')
+      .select('student_id, activity_id')
+      .in('student_id', ids);
+    if (aErr) throw asBackendError(aErr);
+
+    const lettersByStudent = new Map<number, Record<string, { c: number; w: number }>>();
+    for (const row of letters ?? []) {
+      const sid = Number(row.student_id);
+      const bag = lettersByStudent.get(sid) ?? {};
+      bag[row.letter] = { c: Number(row.correct), w: Number(row.wrong) };
+      lettersByStudent.set(sid, bag);
+    }
+    const actsByStudent = new Map<number, Set<string>>();
+    for (const row of attempts ?? []) {
+      const sid = Number(row.student_id);
+      const bag = actsByStudent.get(sid) ?? new Set<string>();
+      bag.add(row.activity_id);
+      actsByStudent.set(sid, bag);
+    }
+
+    return list.map((s) => {
+      const sid = Number(s.id);
+      return {
+        id: sid,
+        nickname: s.nickname,
+        emoji: s.emoji,
+        lastSeen: s.last_seen,
+        activitiesDone: actsByStudent.get(sid)?.size ?? 0,
+        letters: lettersByStudent.get(sid) ?? {},
+      };
+    });
+  });
 }

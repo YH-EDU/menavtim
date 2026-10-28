@@ -33,7 +33,7 @@ export default function Quiz({
   const done = idx >= activity.questions.length;
 
   useSpeechText(
-    done ? null : [q.prompt, q.rashiText].filter(Boolean).join('. '),
+    done ? null : [q.prompt, q.phraseText].filter(Boolean).join('. '),
   );
 
   const choose = (i: number) => {
@@ -43,7 +43,7 @@ export default function Quiz({
     if (ok) playCorrect();
     else playWrong();
     if (!ok) setShakeKey((k) => k + 1);
-    const targets = q.targetLetters ?? (q.rashiText ? uniqueLetters(q.rashiText) : []);
+    const targets = q.targetLetters ?? (q.phraseText ? uniqueLetters(q.phraseText) : []);
     for (const l of targets) addLetterEvent(events, l, ok);
     if (ok) setScore((s) => s + 1);
     setTimeout(() => {
@@ -64,9 +64,9 @@ export default function Quiz({
       <p style={{ fontWeight: 500, margin: '30px 0 16px' }}>
         <MixedText text={q.prompt} highlight={q.highlight} reveal={chosen !== null} fontSize={22} />
       </p>
-      {q.rashiText && (
+      {q.phraseText && (
         <div key={idx} style={{ display: 'flex', justifyContent: 'center', margin: '14px 0 22px' }}>
-          <PhraseCard text={q.rashiText} size={q.rashiText.length > 6 ? 40 : 58} />
+          <PhraseCard text={q.phraseText} size={q.phraseText.length > 6 ? 40 : 58} />
         </div>
       )}
       <div

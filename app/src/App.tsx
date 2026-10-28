@@ -20,6 +20,7 @@ import PathEdit from './views/PathEdit';
 import EscapeRoomPage from './views/EscapeRoomPage';
 import { saveCurrentStage } from './game/phaser/playerState';
 import { trackPage } from './lib/analytics';
+import { teacherOAuthReturnPending } from './lib/supabase';
 
 // ניתוב מבוסס hash — עובד בכל אחסון סטטי בלי הגדרות שרת.
 
@@ -46,6 +47,11 @@ export function nav(to: string) {
 
 export default function App() {
   const hash = useHash();
+
+  useEffect(() => {
+    if (!teacherOAuthReturnPending()) return;
+    if (!window.location.hash.includes('/teacher')) nav('/teacher');
+  }, []);
 
   // צפיית עמוד וירטואלית בכל מעבר מסך.
   // מדלגים על הריצה הראשונה — gtag config כבר שלח את צפיית הכניסה.

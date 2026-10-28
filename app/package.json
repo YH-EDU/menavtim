@@ -16,6 +16,7 @@
     "deploy:netlify": "node scripts/deploy-netlify.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
     "canvas-confetti": "^1.9.3",
     "phaser": "^4.2.1",
     "react": "^18.3.1",

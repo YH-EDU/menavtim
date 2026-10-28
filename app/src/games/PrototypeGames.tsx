@@ -15,7 +15,7 @@ import type {
 import { addLetterEvent } from '../lib/mastery';
 import { stripPunct } from '../data/letters';
 import { playCorrect, playWrong } from '../lib/sound';
-import { shuffleArray } from '../lib/shuffleOptions';
+import { shuffleArray, shuffleOptionsWithCorrect } from '../lib/shuffleOptions';
 import { ChoiceButtons, RevealNote, RoundMeta, useRounds } from './engineShared';
 
 function shuffle<T>(arr: T[]): T[] {
@@ -246,23 +246,46 @@ export function ScrollDecode({
 }) {
   const pool = useMemo(() => shuffle(activity.words.map((_, i) => i)), [activity]);
   const [next, setNext] = useState(0);
-  const [score, setScore] = useState(0);
   const [bad, setBad] = useState<number | null>(null);
+  const [hinted, setHinted] = useState<Record<number, boolean>>({});
+  const [hintText, setHintText] = useState<string | null>(null);
+  const [solved, setSolved] = useState(false);
   const [events] = useState<LetterEvents>({});
   const written = activity.words.slice(0, next);
+  const hintsUsed = Object.keys(hinted).length;
+  const showHebrew = !activity.hideHebrewUntilReveal || solved;
+
+  const revealHint = (wordIndex: number) => {
+    const text = activity.wordHints?.[wordIndex];
+    if (!text || hinted[wordIndex]) return;
+    setHinted((h) => ({ ...h, [wordIndex]: true }));
+    setHintText(text);
+  };
+
+  const finishScore = () => {
+    const max = activity.words.length;
+    const score = Math.max(1, max - hintsUsed);
+    onFinish({ score, max, letters: events });
+  };
 
   const tap = (wordIndex: number) => {
-    if (bad !== null) return;
+    if (bad !== null || solved) return;
     const word = activity.words[wordIndex];
     if (wordIndex === next) {
       playCorrect();
       addLetterEvent(events, stripPunct(word), true);
-      const gained = score + 1;
-      setScore(gained);
       if (next + 1 >= activity.words.length) {
-        window.setTimeout(() => onFinish({ score: gained, max: activity.words.length, letters: events }), 700);
+        setNext(next + 1);
+        if (activity.hideHebrewUntilReveal) {
+          setSolved(true);
+        } else {
+          const max = activity.words.length;
+          const score = Math.max(1, max - hintsUsed);
+          window.setTimeout(() => onFinish({ score, max, letters: events }), 700);
+        }
       } else {
         setNext(next + 1);
+        setHintText(null);
       }
     } else {
       playWrong();
@@ -277,7 +300,7 @@ export function ScrollDecode({
   return (
     <div className="engine-card">
       <p className="engine-kicker">{activity.scrollName}</p>
-      <p className="engine-meaning">{activity.hebrew}</p>
+      {showHebrew ? <p className="engine-meaning">{activity.hebrew}</p> : null}
       <div className={`scroll-sheet ${done ? 'is-sealed' : ''}`}>
         <div className="scroll-roll" />
         <p className="phrase-font scroll-ink">
@@ -285,23 +308,42 @@ export function ScrollDecode({
         </p>
         <div className="scroll-roll" />
       </div>
-      {done ? <p className="engine-reveal">{activity.reveal}</p> : null}
-      <div className="engine-choices">
-        {pool.map((wordIndex) => {
-          if (wordIndex < next) return null;
-          const word = activity.words[wordIndex];
-          return (
-            <button
-              key={word}
-              type="button"
-              className={`engine-choice phrase-font ${bad === wordIndex ? 'is-wrong' : ''}`}
-              onClick={() => tap(wordIndex)}
-            >
-              {word}
-            </button>
-          );
-        })}
-      </div>
+      {done && activity.hideHebrewUntilReveal ? <p className="engine-reveal">{activity.reveal}</p> : null}
+      {hintText && !solved ? <p className="engine-reveal">{hintText}</p> : null}
+      {!solved && (
+        <div className="engine-choices">
+          {pool.map((wordIndex) => {
+            if (wordIndex < next) return null;
+            const word = activity.words[wordIndex];
+            return (
+              <div key={word} className="scroll-word-row">
+                <button
+                  type="button"
+                  className={`engine-choice phrase-font ${bad === wordIndex ? 'is-wrong' : ''}`}
+                  onClick={() => tap(wordIndex)}
+                >
+                  {word}
+                </button>
+                {activity.wordHints?.[wordIndex] && (
+                  <button
+                    type="button"
+                    className="btn small"
+                    disabled={!!hinted[wordIndex]}
+                    onClick={() => revealHint(wordIndex)}
+                  >
+                    {hinted[wordIndex] ? 'רמז נפתח' : 'רמז'}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {solved && (
+        <button type="button" className="btn" onClick={finishScore}>
+          המשך במסע ←
+        </button>
+      )}
     </div>
   );
 }
@@ -343,7 +385,13 @@ export function StoryMoment({
 }) {
   const [panel, setPanel] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
+  const [hintLevel, setHintLevel] = useState(0);
   const q = activity.question;
+  const choiceSeed = useMemo(() => 1 + Math.floor(Math.random() * 233279), [activity.id]);
+  const shuffled = useMemo(() => {
+    if (!q) return null;
+    return shuffleOptionsWithCorrect(q.options, q.correct, choiceSeed);
+  }, [q, choiceSeed]);
   const last = panel >= activity.panels.length - 1;
 
   const finishRead = () => {
@@ -351,9 +399,9 @@ export function StoryMoment({
   };
 
   const answer = (i: number) => {
-    if (!q || picked !== null) return;
+    if (!q || !shuffled || picked !== null) return;
     setPicked(i);
-    const ok = i === q.correct;
+    const ok = i === shuffled.correct;
     if (ok) playCorrect();
     else playWrong();
     window.setTimeout(() => {
@@ -370,10 +418,27 @@ export function StoryMoment({
           המשך
         </button>
       )}
-      {last && q && (
+      {last && q && shuffled && (
         <>
           <p className="engine-kicker">{q.prompt}</p>
-          <ChoiceButtons options={q.options} picked={picked} correct={q.correct} onPick={answer} />
+          <ChoiceButtons options={shuffled.options} picked={picked} correct={shuffled.correct} onPick={answer} />
+          {q.hints && q.hints.length > 0 && picked === null && (
+            <div className="cipher-hints">
+              <button
+                type="button"
+                className="btn small"
+                disabled={hintLevel >= q.hints.length}
+                onClick={() => setHintLevel((n) => Math.min(q.hints!.length, n + 1))}
+              >
+                {hintLevel >= q.hints.length ? 'כל הרמזים נפתחו' : `רמז ${hintLevel + 1} / ${q.hints.length}`}
+              </button>
+              <ol>
+                {q.hints.slice(0, hintLevel).map((h) => (
+                  <li key={h}>{h}</li>
+                ))}
+              </ol>
+            </div>
+          )}
           <RevealNote show={picked !== null} text={q.explain} />
         </>
       )}

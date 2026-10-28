@@ -1,5 +1,6 @@
 <?php
-// תשתית משותפת: SQLite, סכימה, טוקנים, עזרי JSON.
+// לא בשימוש באתר החי. שרת המורים עבר ל-Supabase — ראו SUPABASE_SETUP.md.
+// תשתית ישנה: SQLite, סכימה, טוקנים, עזרי JSON.
 
 declare(strict_types=1);
 

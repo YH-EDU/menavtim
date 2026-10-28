@@ -15,6 +15,7 @@ import {
   stageScorePercent,
   stageTitleHe,
   stageUnlocked,
+  testUnlockAll,
 } from '../game/phaser/stages';
 
 function StageOverviewCards({
@@ -277,6 +278,23 @@ export default function Landing({
           >
             אב-טיפוס · שלושה שלבים: מעברית לארמית, ארמית בסיסית, ולקראת הגמרא. מגלים מילים, אוספים מגילות, ופותחים חדרי צופן. ⭐
           </p>
+          {testUnlockAll() && (
+            <p
+              style={{
+                display: 'inline-block',
+                margin: '14px auto 0',
+                background: '#ea580c',
+                color: '#fff',
+                borderRadius: 999,
+                padding: '6px 14px',
+                fontSize: 14,
+                fontWeight: 800,
+                boxShadow: '0 4px 14px rgba(0,0,0,0.25)',
+              }}
+            >
+              🧪 מצב בדיקה – כל השלבים פתוחים
+            </p>
+          )}
         </div>
 
         <StageOverviewCards

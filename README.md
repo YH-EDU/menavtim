@@ -20,9 +20,9 @@ A playful journey for Hebrew speakers learning **Aramaic** — kids navigate sta
 
 Aramaic is the language of Talmud, prayer, and parts of Scripture — yet it often feels foreign to modern Hebrew speakers. **Navigating Aramaic** turns learning into a simple journey game: pick a character, walk an interactive Phaser maze map, and reach short activity stations. Each station teaches a word, phrase, or pattern — with stars, points, and instant feedback. The journey ends with an escape room in the Beit Midrash.
 
-הפרויקט מבוסס על מנוע המשחקים של [חפציה בן ארצי](https://chepti.com) (מסע כתב רש״י) — אותן מכניקות ליבה, תוכן ארמית חדש.
+הפרויקט מבוסס על מנוע משחקים קודם של חפציה בן ארצי — אותן מכניקות ליבה, תוכן ארמית חדש.
 
-Based on the game engine by [Chepti Ben Artzi](https://chepti.com) (Rashi script journey) — same core mechanics, new Aramaic content.
+Based on an earlier game engine — same core mechanics, new Aramaic content.
 
 ---
 
@@ -73,7 +73,7 @@ Based on the game engine by [Chepti Ben Artzi](https://chepti.com) (Rashi script
 | מצב | מפתח זהות | איפה נשמר | בין מחשבים? |
 |-----|-----------|-----------|-------------|
 | **תרגול חופשי (אורח)** | שם + אימוג'י מזהה | `localStorage` במכשיר | **לא** — רק אותו מחשב/דפדפן |
-| **קוד כיתה** | שם + אימוג'י מזהה | שרת PHP + SQLite (`api/`) | **כן** — אותו שם + אימוג'י מכל מחשב |
+| **קוד כיתה** | שם + אימוג'י מזהה | Supabase (ראו `SUPABASE_SETUP.md`) | **כן** — אותו שם + אימוג'י מכל מחשב |
 
 - בכניסה: כל תלמיד **חייב** להזין **כינוי** ולבחור **אימוג'י מזהה** (מבחר עשיר, כמו ב-WhatsApp) — בנוסף לבחירת דמות.
 - **פתיחה קרה (cold start):** האפליקציה נפתחת תמיד במסך הנחיתה — לא קופצים ישר למפה. סגירת הדפדפן דורשת הרשמה מחדש לפגישה, אבל ההתקדמות נשארת ב־`localStorage` (או בשרת בכיתה).
@@ -129,7 +129,7 @@ Based on the game engine by [Chepti Ben Artzi](https://chepti.com) (Rashi script
 | מפת מסע | Phaser 4 (Tilemap, sprites, physics) |
 | עיצוב | CSS מותאם, RTL, גופן Heebo |
 | אחסון מקומי | localStorage (התקדמות, דמות, הגדרות) |
-| API מורים (אופציונלי) | PHP + SQLite ב-`api/` |
+| שרת מורים (אופציונלי) | Supabase. תיקיית `api/` (PHP) לא בשימוש באתר |
 | Analytics | Google Analytics (hash routing) |
 | אחסון פרודקשן | GitHub Pages (`gh-pages` branch) |
 
@@ -145,12 +145,13 @@ npm run dev
 
 פתחו [http://localhost:5173/menavtim/](http://localhost:5173/menavtim/) — ה-`base` ב-Vite הוא `/menavtim/`.
 
-### API מורים (אופציונלי)
+### שרת מורים (אופציונלי)
 
-```bash
-# משורש mathgame/
-php -S localhost:8090
-```
+האתר החי הוא אתר סטטי. כיתות ומפת חום רצות על Supabase, לא על PHP. בלי `VITE_SUPABASE_URL` ו-`VITE_SUPABASE_ANON_KEY` אפשר לשחק כאורח, ואזור המורים מציג שהשרת לא מחובר.
+
+ההגדרה, צעד אחרי צעד: [`SUPABASE_SETUP.md`](SUPABASE_SETUP.md).
+
+הקבצים ב-`api/` נשארו במאגר ולא נפרסים.
 
 ### בניית דמויות (atlases)
 
@@ -189,7 +190,8 @@ mathgame/
 │       ├── game/phaser/    # מפת מסע, שחקן, תחנות
 │       ├── games/          # רכיבי פעילויות (Quiz, Memory, …)
 │       └── views/          # מסכים (Landing, JourneyMap, PlayView)
-├── api/                    # PHP + SQLite (אופציונלי)
+├── api/                    # PHP ישן — לא בשימוש (השרת החי הוא Supabase)
+├── supabase/schema.sql     # סכמת כיתות, תלמידים והתקדמות
 └── README.md
 ```
 
@@ -202,7 +204,7 @@ mathgame/
 
 ## מנועים ופעילויות — ייחוס מקור · Engines & activities attribution
 
-הטבלה מסווגת לפי הקוד בפרויקט: מנועי הפעילויות המקוריים של [חפציה בן ארצי](https://chepti.com) (מסע כתב רש״י) לעומת מה שנוסף או הורחב ב**מנווטים בארמית**.
+הטבלה מסווגת לפי הקוד בפרויקט: מנועי הפעילויות המקוריים של חפציה בן ארצי לעומת מה שנוסף או הורחב ב**מנווטים בארמית**.
 
 | מנוע / פעילות | מקור | הערות |
 |---------------|------|--------|
@@ -215,7 +217,7 @@ mathgame/
 | **Order** (סידור) | מקורי של חפציה | |
 | **Paint** (ציור) | מבוסס+מורחב | מנוע חפציה, שיפורים למסע ארמית |
 | **Intro** (הקדמה) | מקורי של חפציה | |
-| **Discover** (גילוי) | פיתוח חדש במנווטים | סוג פעילות חדש — לא היה במנוע רש״י |
+| **Discover** (גילוי) | פיתוח חדש במנווטים | סוג פעילות חדש — לא היה במנוע המקורי |
 | **Annotate** (הערה/תיוג) | פיתוח חדש במנווטים | סוג פעילות חדש |
 | **FillInBlank** (השלמת משפט) | פיתוח חדש במנווטים | |
 | **MixedQuestion** (שאלות מעורבות) | פיתוח חדש במנווטים | |
@@ -228,14 +230,14 @@ mathgame/
 | **HUD כוכבים / מדליה** | פיתוח חדש במנווטים | |
 | **רישום אורח / כיתה** | פיתוח חדש במנווטים | |
 | **שליטה במגע (swipe-to-run)** | פיתוח חדש במנווטים | |
-| **Teacher API + SQLite** | מבוסס+מורחב | מורש ממערכת LMS של רש״י, מותאם לארמית |
+| **שרת מורים (Supabase)** | פיתוח חדש במנווטים | כיתות, הצטרפות ומפת חום. `api/` הישן לא רץ באתר |
 
 ---
 
 ## קרדיטים · Credits
 
 ### מנוע ותוכן מקורי
-- **חפציה בן ארצי** — מנוע המשחקים המקורי (מסע כתב רש״י) · [chepti.com](https://chepti.com)
+- **חפציה בן ארצי** — מנוע המשחקים המקורי
 
 ### ספריות
 - **React**, **Vite**, **TypeScript**

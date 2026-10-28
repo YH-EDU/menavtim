@@ -32,6 +32,8 @@ import {
   stageGateOpen as stageGateIsOpen,
   stageGoalLook,
   stageLabelHe,
+  stageMissionsDone,
+  stageMissionsRemaining,
   stageScorePercent,
   stageTitleHe,
   type StageMission,
@@ -111,6 +113,8 @@ export class MainScene extends Phaser.Scene {
   private goalZone!: Phaser.GameObjects.Zone;
   private goalWorld = { x: 0, y: 0 };
   private goalMarker!: GoalMarker;
+  private goalGfx: Phaser.GameObjects.Graphics | null = null;
+  private goalLook: ReturnType<typeof stageGoalLook> = 'gate';
   private goalInside = false;
   private pathCells!: Set<string>;
   private lastValidPos = { x: 0, y: 0 };
@@ -191,7 +195,8 @@ export class MainScene extends Phaser.Scene {
     this.pathCells = journey.pathCells;
 
     this.drawMazeGate(journey.mazeExit, 1);
-    this.drawGoalMarker(journey.goalMarker, stageGoalLook(this.stageIndex));
+    this.goalLook = stageGoalLook(this.stageIndex);
+    this.drawGoalMarker(journey.goalMarker, this.goalLook);
 
     this.goalMarker = journey.goalMarker;
     this.goalWorld = { x: journey.goalMarker.doorCell.px, y: journey.goalMarker.doorCell.py };
@@ -366,8 +371,32 @@ export class MainScene extends Phaser.Scene {
     gfx.fillRect(x - TILE_SIZE + 2, y - TILE_SIZE * 0.14, gateW + TILE_SIZE * 2 - 4, TILE_SIZE * 0.16);
   }
 
+  /** מנעול על הדלת כל עוד משימות השלב לא הושלמו. מסלול חופשי (כולל תצוגת מורה) נשאר פתוח. */
+  private missionsDoorLocked(): boolean {
+    if (this.progress?.freeNav) return false;
+    return !stageMissionsDone(this.stageIndex, this.progress);
+  }
+
+  private paintLatch(gfx: Phaser.GameObjects.Graphics, x: number, y: number) {
+    if (!this.missionsDoorLocked()) {
+      gfx.fillStyle(COLORS.goalAccent, 0.95);
+      gfx.fillCircle(x, y, 4);
+      return;
+    }
+    gfx.lineStyle(2.2, 0xf8f1de, 1);
+    gfx.beginPath();
+    gfx.arc(x, y - 1, 5.5, Math.PI, 0, false);
+    gfx.strokePath();
+    gfx.fillStyle(0x2c2418, 1);
+    gfx.fillRect(x - 6.5, y - 1, 13, 11);
+    gfx.fillStyle(0xf2d48a, 1);
+    gfx.fillCircle(x, y + 3.5, 1.6);
+  }
+
   private drawGoalMarker(marker: GoalMarker, look: ReturnType<typeof stageGoalLook>) {
+    this.goalGfx?.destroy();
     const gfx = this.add.graphics().setDepth(2);
+    this.goalGfx = gfx;
     const { body, roof, door, windows, approachPath } = marker;
 
     gfx.fillStyle(COLORS.path, 0.45);
@@ -388,8 +417,7 @@ export class MainScene extends Phaser.Scene {
       gfx.fillRect(gateX + 4, gateY + TILE_SIZE * 0.35, gateW - 8, TILE_SIZE * 0.35);
       gfx.fillStyle(COLORS.goalWood, 1);
       gfx.fillRect(door.x, door.y - TILE_SIZE * 0.4, door.w, door.h + TILE_SIZE * 0.4);
-      gfx.fillStyle(COLORS.goalAccent, 0.95);
-      gfx.fillCircle(door.x + door.w * 0.78, door.y + door.h * 0.35, 4);
+      this.paintLatch(gfx, door.x + door.w * 0.78, door.y + door.h * 0.35);
       return;
     }
 
@@ -407,8 +435,7 @@ export class MainScene extends Phaser.Scene {
       gfx.strokeRect(door.x - TILE_SIZE * 0.3, chamberY + TILE_SIZE * 0.7, door.w + TILE_SIZE * 0.6, TILE_SIZE * 1.1);
       gfx.fillStyle(COLORS.goalWood, 1);
       gfx.fillRect(door.x, door.y, door.w, door.h);
-      gfx.fillStyle(COLORS.goalAccent, 0.9);
-      gfx.fillCircle(door.x + door.w * 0.82, door.y + door.h * 0.55, 3.5);
+      this.paintLatch(gfx, door.x + door.w * 0.82, door.y + door.h * 0.55);
       return;
     }
 
@@ -439,8 +466,7 @@ export class MainScene extends Phaser.Scene {
 
     gfx.fillStyle(COLORS.goalWood, 1);
     gfx.fillRect(door.x, door.y, door.w, door.h);
-    gfx.fillStyle(COLORS.goalAccent, 0.9);
-    gfx.fillCircle(door.x + door.w * 0.82, door.y + door.h * 0.55, 3.5);
+    this.paintLatch(gfx, door.x + door.w * 0.82, door.y + door.h * 0.55);
   }
 
   onSceneActive() {
@@ -505,6 +531,7 @@ export class MainScene extends Phaser.Scene {
     });
 
     const stageDone = this.stations.every((s) => s.completed);
+    const missionsOpen = !!this.progress.freeNav || stageMissionsDone(this.stageIndex, this.progress);
     const gateOpen = this.stageGateOpen();
     const scorePct = stageScorePercent(this.stageIndex, this.progress);
     const masteryPct = Math.round(MASTERY_THRESHOLD * 100);
@@ -525,7 +552,7 @@ export class MainScene extends Phaser.Scene {
     else if (gateOpen && (!roomDone || (isFinalStage && roomDone && !escapeDone))) mode = 'enter';
     else if (gateOpen && roomDone && !isFinalStage) mode = 'medal';
 
-    const showGoal = nearGoal && (mode !== 'locked' || stageDone || this.currentIdx < 0);
+    const showGoal = missionsOpen && nearGoal && (mode !== 'locked' || stageDone || this.currentIdx < 0);
     const showEscapeGuide = isFinalStage && gateOpen && roomDone && !escapeDone;
 
     const openEscapeNext = isFinalStage && roomDone && !escapeDone;
@@ -626,10 +653,21 @@ export class MainScene extends Phaser.Scene {
     const wasInside = this.goalInside;
     this.goalInside = true;
     if (wasInside) return;
-    if (!this.stageGateOpen()) return;
     if (this.touchCooldown > 0) return;
     if (this.spawnGrace > 0) return;
     if (!this.player.hasMoved) return;
+
+    const missionsOpen = !!this.progress.freeNav || stageMissionsDone(this.stageIndex, this.progress);
+    if (!missionsOpen) {
+      const missing = stageMissionsRemaining(this.stageIndex, this.progress);
+      this.getOverlayBridge()?.onDoorLocked?.({
+        remaining: missing.length,
+        missions: missing.map((m) => m.label),
+      });
+      return;
+    }
+
+    if (!this.stageGateOpen()) return;
 
     const finale = stageFinale(this.stageIndex);
     const roomDone = stageFinalTaskDone(this.stageIndex, this.progress);
@@ -969,6 +1007,7 @@ export class MainScene extends Phaser.Scene {
 
     this.updateCurrentIdx();
     this.updateHint();
+    if (this.goalMarker) this.drawGoalMarker(this.goalMarker, this.goalLook);
     this.syncOverlay();
   }
 }

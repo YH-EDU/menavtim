@@ -44,8 +44,8 @@ export interface MatchActivity {
   id: string;
   title: string;
   instructions: string;
-  /** rashi = הצד הקבוע (יעד); label = הצד לבחירה (אם חסר — משתמשים ב-rashi) */
-  pairs: { rashi: string; label?: string }[];
+  /** phrase = הצד הקבוע (יעד); label = הצד לבחירה (אם חסר — משתמשים ב-phrase) */
+  pairs: { phrase: string; label?: string }[];
 }
 
 export interface MemoryActivity {
@@ -134,7 +134,7 @@ export interface PaintActivity {
 export interface QuizQuestion {
   prompt: string;
   /** טקסט להצגה על כרטיס (ארמית / ביטוי) */
-  rashiText?: string;
+  phraseText?: string;
   options: string[];
   correct: number;
   targetLetters?: string[];
@@ -388,6 +388,10 @@ export interface ScrollActivity {
   hebrew: string;
   words: string[];
   reveal: string;
+  /** שורת העברית מוצגת רק אחרי שהמגילה נכתבה */
+  hideHebrewUntilReveal?: boolean;
+  /** רמז קצר לכל מילה, בלי לגלות את המילה. כל רמז יורד כוכב. */
+  wordHints?: string[];
 }
 
 /** משימת הצלה קצרה — כמה בחירות בתוך סיפור */
@@ -426,6 +430,7 @@ export interface MomentActivity {
     options: string[];
     correct: number;
     explain: string;
+    hints?: string[];
   };
 }
 

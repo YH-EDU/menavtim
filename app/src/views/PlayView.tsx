@@ -45,6 +45,9 @@ export default function PlayView({
   const done = async (r: ActivityResult) => {
     try {
       await reportAttempt(session, activity.id, unit.id, r.score, r.max, r.letters);
+      if (activity.id === 'room-aleph') {
+        await reportAttempt(session, 'scroll-kerem', unit.id, r.score, r.max, {});
+      }
     } catch {
       // גם אם הדיווח נכשל — לא חוסמים את הילד
     }

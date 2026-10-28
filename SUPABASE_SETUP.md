@@ -43,7 +43,27 @@
 
 7. **Authentication** → **Providers** → **Email**. כבו את **Confirm email** (אישור במייל), ושמרו. ככה מורה שנרשם נכנס מיד. אם המתג נשאר דולק, צריך ללחוץ על קישור במייל לפני הכניסה.
 
-8. גוגל הוא רשות. **Authentication** → **Providers** → **Google** → להדליק, ולהדביק Client ID ו-Secret מחשבון Google Cloud. בלי זה כפתור «כניסה עם גוגל» יציג שגיאה, ואימייל+סיסמה ימשיכו לעבוד. בכתובות המורשות של גוגל שימו את כתובת הפרויקט של סופאבייס (היא מופיעה במסך ההגדרה של גוגל אצלם).
+8. כניסה עם גוגל (רשות). בלי זה כפתור «כניסה עם גוגל» מציג שגיאה. אימייל וסיסמה ממשיכים לעבוד. אין צורך בשורת SQL נוספת: כשמורה נכנס עם גוגל בפעם הראשונה, הטריגר על `auth.users` (כבר ב-`schema.sql`) יוצר לו שורה ב-`profiles` עם השם והאימייל מגוגל.
+
+   1. פתחו [Google Cloud Console](https://console.cloud.google.com/).
+   2. למעלה, ליד שם הפרויקט, לחצו **New project**. תנו שם, למשל «מנווטים בארמית», ולחצו **Create**. חכו שהפרויקט ייווצר, וודאו שהוא נבחר למעלה.
+   3. בתפריט (שלושת הפסים) בחרו **APIs & Services** → **OAuth consent screen**.
+   4. בחרו **External** ולחצו **Create**.
+   5. מלאו **App name** (למשל «מנווטים בארמית») ו-**User support email** (האימייל שלכם). למטה, בשדה **Developer contact information**, שוב האימייל שלכם. לחצו **Save and continue**.
+   6. במסך **Scopes** אין חובה להוסיף דבר. לחצו **Save and continue**.
+   7. במסך **Test users**, אם האפליקציה במצב Testing, לחצו **Add users** והוסיפו את האימייל שבו תיכנסו. לחצו **Save and continue**.
+   8. חזרו לתפריט **APIs & Services** → **Credentials**.
+   9. לחצו **Create credentials** → **OAuth client ID**.
+   10. ב-**Application type** בחרו **Web application**.
+   11. בשם אפשר לכתוב «מנווטים בארמית».
+   12. ב-**Authorized redirect URIs** לחצו **Add URI** והדביקו בדיוק את השורה הזו, בלי לוכסן בסוף:
+       `https://crsgputtqxpmhccsgosx.supabase.co/auth/v1/callback`
+       זו הכתובת שגוגל מחזיר אליה. לא את כתובת האתר.
+   13. לחצו **Create**. העתיקו את **Client ID** ואת **Client secret** למקום בטוח.
+   14. בסופאבייס: **Authentication** → **Sign In / Providers** (לפעמים רק **Providers**).
+   15. פתחו **Google**, הדליקו **Enable Sign in with Google**, הדביקו את ה-Client ID ואת ה-Client secret, ולחצו **Save**.
+
+   אחרי השמירה: באתר, כניסת מורים → «כניסה עם גוגל». גוגל מבקש אישור ומחזיר אל `https://yh-edu.github.io/menavtim/` (הכתובת שכבר הוספתם בשלב 6). האתר קולט את החיבור ומעביר למסך המורים.
 
 9. להפוך את עצמכם למנהל: קודם נרשמים פעם אחת באתר (כניסת מורים). אחר כך ב-SQL Editor מריצים שורה אחת, עם האימייל שלכם:
 

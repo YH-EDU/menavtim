@@ -15,7 +15,7 @@ import { totalActivities } from '../data/units';
 import { nav } from '../App';
 import { SoftPageShell, HeroBg } from '../ui/PageShell';
 import { asset } from '../lib/basePath';
-import { FeedbackButton, SiteCredit } from '../ui/Feedback';
+import { FeedbackButton } from '../ui/Feedback';
 
 function classJoinUrl(code: string): string {
   const base = `${window.location.origin}${window.location.pathname.replace(/\/?$/, '/')}`;
@@ -42,6 +42,7 @@ function TeacherOffline() {
 export default function Teacher() {
   const [teacher, setTeacher] = useState<TeacherSession | null>(loadTeacher());
   const [booting, setBooting] = useState(isTeacherBackendConfigured());
+  const [bootErr, setBootErr] = useState('');
 
   useEffect(() => {
     if (!isTeacherBackendConfigured()) {
@@ -51,6 +52,9 @@ export default function Teacher() {
     restoreTeacherSession()
       .then((t) => {
         if (t) setTeacher(t);
+      })
+      .catch((ex) => {
+        setBootErr(ex instanceof Error ? ex.message : 'שגיאה');
       })
       .finally(() => setBooting(false));
   }, []);
@@ -63,7 +67,7 @@ export default function Teacher() {
       </SoftPageShell>
     );
   }
-  if (!teacher) return <TeacherAuth onAuth={setTeacher} />;
+  if (!teacher) return <TeacherAuth onAuth={setTeacher} initialError={bootErr} />;
   return (
     <TeacherDashboard
       teacher={teacher}
@@ -78,13 +82,20 @@ export default function Teacher() {
 
 // ─────────────────────────── התחברות / הרשמה ───────────────────────────
 
-function TeacherAuth({ onAuth }: { onAuth: (t: TeacherSession) => void }) {
+function TeacherAuth({ onAuth, initialError = '' }: { onAuth: (t: TeacherSession) => void; initialError?: string }) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [err, setErr] = useState('');
+  const [err, setErr] = useState(initialError);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get('error') || q.get('error_description')) {
+      setErr('כניסת גוגל לא הושלמה. בדקו שהספק מופעל בסופאבייס, ושהכתובת המורשית שם היא כתובת האתר.');
+    }
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -380,9 +391,6 @@ function TeacherDashboard({ teacher, onLogout }: { teacher: TeacherSession; onLo
               : 'צרו כיתה ראשונה, שלחו לתלמידים את הקישור או את הקוד המספרי — והמפה תתמלא מעצמה'}
         </p>
       )}
-      <div style={{ marginTop: 40, display: 'flex', justifyContent: 'flex-end' }}>
-        <SiteCredit />
-      </div>
     </div>
     </SoftPageShell>
   );
